@@ -1,18 +1,22 @@
-import { UserRegisterDTO, UserUpdateDTO } from "$entities/User"
+import { CreateUserDTO, UpdateUserDTO } from "$entities/User"
 import * as UserService from "$services/UserService"
-import { handleServiceErrorWithResponse, response_created, response_success } from "$utils/response.utils"
+import {
+    handleServiceErrorWithResponse,
+    response_created,
+    response_success,
+} from "$utils/response.utils"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { Context, TypedResponse } from "hono"
 export async function create(c: Context): Promise<TypedResponse> {
-    const data: UserRegisterDTO = await c.req.json();
+    const data: CreateUserDTO = await c.req.json()
 
-    const serviceResponse = await UserService.create(data);
+    const serviceResponse = await UserService.create(data)
 
     if (!serviceResponse.status) {
         return handleServiceErrorWithResponse(c, serviceResponse)
     }
 
-    return response_created(c, serviceResponse.data, "Successfully created new User!");
+    return response_created(c, serviceResponse.data, "Successfully created new User!")
 }
 
 export async function getAll(c: Context): Promise<TypedResponse> {
@@ -28,7 +32,7 @@ export async function getAll(c: Context): Promise<TypedResponse> {
 }
 
 export async function getById(c: Context): Promise<TypedResponse> {
-    const id = c.req.param('id')
+    const id = c.req.param("id")
 
     const serviceResponse = await UserService.getById(id)
 
@@ -40,8 +44,8 @@ export async function getById(c: Context): Promise<TypedResponse> {
 }
 
 export async function update(c: Context): Promise<TypedResponse> {
-    const data: UserUpdateDTO = await c.req.json()
-    const id = c.req.param('id')
+    const data: UpdateUserDTO = await c.req.json()
+    const id = c.req.param("id")
 
     const serviceResponse = await UserService.update(id, data)
 
@@ -53,7 +57,7 @@ export async function update(c: Context): Promise<TypedResponse> {
 }
 
 export async function deleteById(c: Context): Promise<TypedResponse> {
-    const id = c.req.param('id')
+    const id = c.req.param("id")
 
     const serviceResponse = await UserService.deleteById(id)
 

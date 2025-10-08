@@ -1,5 +1,3 @@
-import { Roles } from "../../../generated/prisma/client";
-
 export const ErrorMessages = {
     user: {
         fullName: {
@@ -14,9 +12,9 @@ export const ErrorMessages = {
             required: "Password is required",
             min: "Password must be at least 5 characters long",
         },
-        role: {
-            required: "Role is required",
-            invalid: `Invalid role, must be one of ${Object.values(Roles).join(", ")}`,
-        }
-    }
+        phoneNumber: {
+            required: "Phone number is required",
+            min: "Phone number must be at least 10 characters long",
+        },
+    },
 }

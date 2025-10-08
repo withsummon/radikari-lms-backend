@@ -1,49 +1,50 @@
-import { HandleServiceResponseCustomError, ResponseStatus, ServiceResponse } from '$entities/Service';
-import { exclude, UserRegisterDTO, UserUpdateDTO } from '$entities/User';
-import Logger from '$pkg/logger';
-import * as UserRepository from '$repositories/UserRepository';
-import * as EzFilter from "@nodewave/prisma-ezfilter";
-import { Roles, User } from '../../generated/prisma/client';
+import {
+    HandleServiceResponseCustomError,
+    ResponseStatus,
+    ServiceResponse,
+} from "$entities/Service"
+import { exclude, CreateUserDTO, UpdateUserDTO } from "$entities/User"
+import Logger from "$pkg/logger"
+import * as UserRepository from "$repositories/UserRepository"
+import * as EzFilter from "@nodewave/prisma-ezfilter"
+import { User } from "../../generated/prisma/client"
 
 export type CreateResponse = User | {}
-export async function create(data: UserRegisterDTO): Promise<ServiceResponse<CreateResponse>> {
+export async function create(data: CreateUserDTO): Promise<ServiceResponse<CreateResponse>> {
     try {
-        data.role = Roles.USER
+        data.password = await Bun.password.hash(data.password, "argon2id")
         const user = await UserRepository.create(data)
         return {
             status: true,
-            data: user
+            data: user,
         }
     } catch (err) {
         Logger.error(`UserService.create`, {
             error: err,
-
         })
         return HandleServiceResponseCustomError("Internal Server Error", 500)
     }
 }
 
-
-export async function getAll(filters: EzFilter.FilteringQuery): Promise<ServiceResponse<
-    EzFilter.PaginatedResult<User[]> | {}
->> {
+export async function getAll(
+    filters: EzFilter.FilteringQuery
+): Promise<ServiceResponse<EzFilter.PaginatedResult<User[]> | {}>> {
     try {
         const data = await UserRepository.getAll(filters)
         return {
             status: true,
-            data
+            data,
         }
     } catch (err) {
         Logger.error(`UserService.getAll`, {
             error: err,
-
         })
-        return HandleServiceResponseCustomError("Internal Server Error", ResponseStatus.INTERNAL_SERVER_ERROR)
+        return HandleServiceResponseCustomError(
+            "Internal Server Error",
+            ResponseStatus.INTERNAL_SERVER_ERROR
+        )
     }
 }
-
-
-
 
 export async function getById(id: string): Promise<ServiceResponse<User | {}>> {
     try {
@@ -53,17 +54,20 @@ export async function getById(id: string): Promise<ServiceResponse<User | {}>> {
 
         return {
             status: true,
-            data: exclude(user, "password")
+            data: exclude(user, "password"),
         }
     } catch (err) {
         Logger.error(`UserService.getById`, {
             error: err,
         })
-        return HandleServiceResponseCustomError("Internal Server Error", ResponseStatus.INTERNAL_SERVER_ERROR)
+        return HandleServiceResponseCustomError(
+            "Internal Server Error",
+            ResponseStatus.INTERNAL_SERVER_ERROR
+        )
     }
 }
 
-export async function update(id: string, data: UserUpdateDTO): Promise<ServiceResponse<User | {}>> {
+export async function update(id: string, data: UpdateUserDTO): Promise<ServiceResponse<User | {}>> {
     try {
         let user = await UserRepository.getById(id)
 
@@ -73,14 +77,16 @@ export async function update(id: string, data: UserUpdateDTO): Promise<ServiceRe
 
         return {
             status: true,
-            data: user
+            data: user,
         }
     } catch (err) {
         Logger.error(`UserService.update`, {
             error: err,
-
         })
-        return HandleServiceResponseCustomError("Internal Server Error", ResponseStatus.INTERNAL_SERVER_ERROR)
+        return HandleServiceResponseCustomError(
+            "Internal Server Error",
+            ResponseStatus.INTERNAL_SERVER_ERROR
+        )
     }
 }
 
@@ -90,13 +96,15 @@ export async function deleteById(id: string): Promise<ServiceResponse<{}>> {
 
         return {
             status: true,
-            data: {}
+            data: {},
         }
     } catch (err) {
         Logger.error(`UserService.deleteByIds`, {
             error: err,
         })
-        return HandleServiceResponseCustomError("Internal Server Error", ResponseStatus.INTERNAL_SERVER_ERROR)
+        return HandleServiceResponseCustomError(
+            "Internal Server Error",
+            ResponseStatus.INTERNAL_SERVER_ERROR
+        )
     }
 }
-

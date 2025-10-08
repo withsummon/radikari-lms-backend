@@ -15,14 +15,76 @@ datasource db {
 
 enum Roles {
   ADMIN
-  SUPER_ADMIN
   USER
 }
 
+enum UserType {
+  INTERNAL
+  GOOGLE
+}
+
 model User {
+  id          String   @id @unique
+  fullName    String
+  email       String   @unique
+  password    String
+  phoneNumber String
+  role        Roles    @default(USER)
+  type        UserType @default(INTERNAL)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenantUser TenantUser[]
+}
+
+model Tenant {
+  id          String   @id @unique
+  name        String
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenanRole     TenanRole[]
+  tenantUser    TenantUser[]
+  tenantSetting TenantSetting[]
+}
+
+model TenanRole {
+  id          String   @id @unique
+  identifier  String
+  level       Int
+  name        String
+  description String
+  tenantId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant     Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantUser TenantUser[]
+
+  @@unique([tenantId, identifier])
+}
+
+model TenantUser {
+  id           String @id @unique
+  userId       String
+  tenantId     String
+  tenantRoleId String
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenantRole TenanRole @relation(fields: [tenantRoleId], references: [id], onDelete: Cascade)
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tenantId])
+}
+
+model TenantSetting {
   id       String @id @unique
-  fullName String
-  email    String @unique
-  password String
-  role     Roles
+  key      String
+  value    String
+  tenantId String
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, key])
 }
