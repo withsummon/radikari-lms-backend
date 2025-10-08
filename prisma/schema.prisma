@@ -44,12 +44,12 @@ model Tenant {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  tenanRole     TenanRole[]
+  tenantRole    TenantRole[]
   tenantUser    TenantUser[]
   tenantSetting TenantSetting[]
 }
 
-model TenanRole {
+model TenantRole {
   id          String   @id @unique
   identifier  String
   level       Int
@@ -71,9 +71,9 @@ model TenantUser {
   tenantId     String
   tenantRoleId String
 
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tenantRole TenanRole @relation(fields: [tenantRoleId], references: [id], onDelete: Cascade)
-  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenantRole TenantRole @relation(fields: [tenantRoleId], references: [id], onDelete: Cascade)
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([userId, tenantId])
 }

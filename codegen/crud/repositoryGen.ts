@@ -1,4 +1,4 @@
-import fs from "fs";
+import fs from "fs"
 
 export function generateRepository(entityName: string, schemaName: string) {
     const result = `import * as EzFilter from "@nodewave/prisma-ezfilter";
@@ -26,12 +26,9 @@ export async function getAll(filters: EzFilter.FilteringQuery) {
         if (totalData > usedFilters.query.take) totalPage = Math.ceil(totalData / usedFilters.query.take)
 
         return {
-            status: true,
-            data: {
-                entries: ${schemaName},
-                totalData,
-                totalPage
-            }
+            entries: ${schemaName},
+            totalData,
+            totalPage
         }
 }
 
@@ -70,13 +67,11 @@ export async function deleteById(id: string) {
     // Use writeFile to write the content to the file
     fs.writeFile(filePath, result, (err) => {
         if (err) {
-            console.error('An error occurred:', err);
-            return;
+            console.error("An error occurred:", err)
+            return
         }
-        console.log(`Repository has been written successfully to : ${destination}.ts`);
-
-    });
-
+        console.log(`Repository has been written successfully to : ${destination}.ts`)
+    })
 
     return destination
 }
