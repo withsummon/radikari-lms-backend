@@ -1,9 +1,11 @@
-import ExampleBufferRoutes from "./ExampleBuffer";
-import UserRoutes from "./User";
+import ExampleBufferRoutes from "./ExampleBuffer"
+import UserRoutes from "./User"
+import TenantRoutes from "./Tenant"
 
 const RoutesRegistry = {
     UserRoutes,
-    ExampleBufferRoutes
-};
+    ExampleBufferRoutes,
+    TenantRoutes,
+}
 
-export default RoutesRegistry;
+export default RoutesRegistry

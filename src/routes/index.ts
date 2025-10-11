@@ -12,6 +12,7 @@ router.post("/verify-token", AuthController.verifyToken)
 router.put("/update-password", AuthMiddleware.checkJwt, AuthController.changePassword)
 
 router.route("/users", RoutesRegistry.UserRoutes)
+router.route("/tenants", RoutesRegistry.TenantRoutes)
 
 router.get("/", (c: Context) => {
     return response_success(c, "main routes!")
