@@ -25,3 +25,17 @@ export async function getByTenantId(tenantId: string) {
         },
     })
 }
+
+export async function getByTenantIdAndUserId(tenantId: string, userId: string) {
+    return await prisma.tenantUser.findUnique({
+        where: {
+            userId_tenantId: {
+                userId,
+                tenantId,
+            },
+        },
+        include: {
+            tenantRole: true,
+        },
+    })
+}

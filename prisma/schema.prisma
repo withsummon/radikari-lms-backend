@@ -34,7 +34,9 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  tenantUser TenantUser[]
+  tenantUser           TenantUser[]
+  knowledge            Knowledge[]
+  knowledgeActivityLog KnowledgeActivityLog[]
 }
 
 model Tenant {
@@ -105,22 +107,33 @@ model MasterKnowledgeCase {
   updatedAt DateTime @updatedAt
 }
 
+enum KnowledgeStatus {
+  PENDING
+  APPROVED
+  REVISION
+  REJECTED
+}
+
 model Knowledge {
-  id           String   @id @unique
-  tenantId     String
-  tenantRoleId String
-  category     String
-  subCategory  String
-  case         String
-  headline     String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String          @id @unique
+  tenantId        String
+  tenantRoleId    String
+  category        String
+  subCategory     String
+  case            String
+  headline        String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  status          KnowledgeStatus @default(PENDING)
+  createdByUserId String
 
-  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  tenantRole TenantRole @relation(fields: [tenantRoleId], references: [id], onDelete: Cascade)
+  tenant        Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantRole    TenantRole @relation(fields: [tenantRoleId], references: [id], onDelete: Cascade)
+  createdByUser User       @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
 
-  knowledgeAttachment KnowledgeAttachment[]
-  knowledgeContent    KnowledgeContent[]
+  knowledgeAttachment  KnowledgeAttachment[]
+  knowledgeContent     KnowledgeContent[]
+  knowledgeActivityLog KnowledgeActivityLog[]
 }
 
 model KnowledgeAttachment {
@@ -156,4 +169,22 @@ model KnowledgeContentAttachment {
   knowledgeContent KnowledgeContent @relation(fields: [knowledgeContentId], references: [id], onDelete: Cascade)
 
   @@unique([knowledgeContentId, order])
+}
+
+enum KnowledgeActivityLogAction {
+  CREATE
+  APPROVE
+  REJECT
+  REVISION
+}
+
+model KnowledgeActivityLog {
+  id              String                     @id @unique
+  knowledgeId     String
+  action          KnowledgeActivityLogAction
+  createdByUserId String
+  createdAt       DateTime                   @default(now())
+
+  knowledge     Knowledge @relation(fields: [knowledgeId], references: [id], onDelete: Cascade)
+  createdByUser User      @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
 }
