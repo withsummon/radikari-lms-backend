@@ -6,3 +6,15 @@ export interface TenantRoleDTO {
     description: string
     tenantId: string
 }
+
+export const TenantRoleIdentifier = {
+    HEAD_OF_OFFICE: "HEAD_OF_OFFICE",
+    OPS_MANAGER: "OPS_MANAGER",
+    SUPPORT_MANAGER: "SUPPORT_MANAGER",
+    SUPERVISOR: "SUPERVISOR",
+    SUPPORT_SUPERVISOR: "SUPPORT_SUPERVISOR",
+    TEAM_LEADER: "TEAM_LEADER",
+    TRAINER: "TRAINER",
+    QUALITY_ASSURANCE: "QUALITY_ASSURANCE",
+    AGENT: "AGENT",
+}
