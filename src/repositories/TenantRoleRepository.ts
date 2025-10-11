@@ -6,3 +6,19 @@ export async function createMany(data: Prisma.TenantRoleCreateManyInput[]) {
         data,
     })
 }
+
+export async function getByTenantId(tenantId: string) {
+    return await prisma.tenantRole.findMany({
+        where: {
+            tenantId,
+        },
+    })
+}
+
+export async function getById(id: string) {
+    return await prisma.tenantRole.findUnique({
+        where: {
+            id,
+        },
+    })
+}

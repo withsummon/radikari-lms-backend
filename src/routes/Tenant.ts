@@ -23,6 +23,16 @@ TenantRoutes.put(
     TenantController.update
 )
 
+TenantRoutes.get("/:id/roles", AuthMiddleware.checkJwt, TenantController.getTenantRole)
+TenantRoutes.get("/:id/users", AuthMiddleware.checkJwt, TenantController.getUserInTenant)
+
+TenantRoutes.put(
+    "/:id/users",
+    AuthMiddleware.checkJwt,
+    Validations.validateTenantUserUpdateSchema,
+    TenantController.assignUserToTenant
+)
+
 TenantRoutes.delete("/:id", AuthMiddleware.checkJwt, TenantController.deleteById)
 
 export default TenantRoutes

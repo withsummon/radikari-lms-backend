@@ -1,0 +1,81 @@
+import {
+    HandleServiceResponseCustomError,
+    HandleServiceResponseSuccess,
+    ResponseStatus,
+    ServiceResponse,
+} from "$entities/Service"
+import { TenantUserUpdateDTO } from "$entities/TenantUser"
+import Logger from "$pkg/logger"
+import * as TenantRepository from "$repositories/TenantRepository"
+import * as UserRepository from "$repositories/UserRepository"
+import * as TenantRoleRepository from "$repositories/TenantRoleRepository"
+import { Prisma, TenantUser } from "../../generated/prisma/client"
+import { ulid } from "ulid"
+import * as TenantUserRepository from "$repositories/TenantUserRepository"
+import { exclude } from "$entities/User"
+
+export async function assignUserTenantByTenantId(
+    tenantId: string,
+    data: TenantUserUpdateDTO[]
+): Promise<ServiceResponse<{}>> {
+    try {
+        const tenant = await TenantRepository.getById(tenantId)
+
+        if (!tenant) return HandleServiceResponseCustomError("Invalid ID", ResponseStatus.NOT_FOUND)
+
+        const tenantUserCreateManyInput: Prisma.TenantUserCreateManyInput[] = []
+
+        for (const tenantUser of data) {
+            const [user, tenantRole] = await Promise.all([
+                UserRepository.getById(tenantUser.userId),
+                TenantRoleRepository.getById(tenantUser.tenantRoleId),
+            ])
+
+            if (!user || !tenantRole) continue
+
+            tenantUserCreateManyInput.push({
+                id: ulid(),
+                userId: user.id,
+                tenantId: tenant.id,
+                tenantRoleId: tenantRole.id,
+            })
+        }
+
+        const tenantUsers = await TenantUserRepository.updateTenantUser(
+            tenant.id,
+            tenantUserCreateManyInput
+        )
+
+        return HandleServiceResponseSuccess(tenantUsers)
+    } catch (error) {
+        Logger.error(`TenanUserService.assignUserTenantByTenantId`, {
+            error,
+        })
+        return HandleServiceResponseCustomError("Internal Server Error", 500)
+    }
+}
+
+export async function getByTenantId(tenantId: string): Promise<ServiceResponse<TenantUser[] | {}>> {
+    try {
+        const tenant = await TenantRepository.getById(tenantId)
+
+        if (!tenant) return HandleServiceResponseCustomError("Invalid ID", ResponseStatus.NOT_FOUND)
+
+        const tenantUsers = await TenantUserRepository.getByTenantId(tenantId)
+
+        const mappedTenantUsers = tenantUsers.map((tenantUser) => ({
+            id: tenantUser.id,
+            userId: tenantUser.userId,
+            tenantRoleId: tenantUser.tenantRoleId,
+            tenantRole: tenantUser.tenantRole,
+            user: exclude(tenantUser.user, "password"),
+        }))
+
+        return HandleServiceResponseSuccess(mappedTenantUsers)
+    } catch (error) {
+        Logger.error(`TenanUserService.getByTenantId`, {
+            error,
+        })
+        return HandleServiceResponseCustomError("Internal Server Error", 500)
+    }
+}
