@@ -1,6 +1,7 @@
 import { PrismaClient } from "../../generated/prisma/client"
 import { seedAdmin } from "./seedAdmin"
 import { seedTenant } from "./seedTenant"
+import { seedMasterKnowledgeCategory } from "./seedMasterKnowledgeCategory"
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -13,6 +14,7 @@ async function seed() {
         try {
             await seedAdmin(prisma)
             await seedTenant(prisma)
+            await seedMasterKnowledgeCategory(prisma)
         } catch (seedError) {
             console.error("Seeding error:", seedError)
             throw seedError

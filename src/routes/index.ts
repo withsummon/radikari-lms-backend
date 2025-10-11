@@ -13,6 +13,7 @@ router.put("/update-password", AuthMiddleware.checkJwt, AuthController.changePas
 
 router.route("/users", RoutesRegistry.UserRoutes)
 router.route("/tenants", RoutesRegistry.TenantRoutes)
+router.route("/master-knowledge-categories", RoutesRegistry.MasterKnowledgeCategoryRoutes)
 
 router.get("/", (c: Context) => {
     return response_success(c, "main routes!")

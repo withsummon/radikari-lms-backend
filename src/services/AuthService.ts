@@ -11,7 +11,7 @@ import { User } from "../../generated/prisma/client"
 
 function createToken(user: User) {
     const jwtPayload = exclude(user, "password") as UserJWTDAO
-    const token = jwt.sign(jwtPayload, process.env.JWT_SECRET ?? "", { expiresIn: 3600 })
+    const token = jwt.sign(jwtPayload, process.env.JWT_SECRET ?? "", { expiresIn: "1d" })
     return token
 }
 
