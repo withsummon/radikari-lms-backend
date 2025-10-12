@@ -12,7 +12,6 @@ import * as TenantRoleRepository from "$repositories/TenantRoleRepository"
 import { Prisma, TenantUser } from "../../generated/prisma/client"
 import { ulid } from "ulid"
 import * as TenantUserRepository from "$repositories/TenantUserRepository"
-import { exclude } from "$entities/User"
 
 export async function assignUserTenantByTenantId(
     tenantId: string,
@@ -38,6 +37,22 @@ export async function assignUserTenantByTenantId(
                 userId: user.id,
                 tenantId: tenant.id,
                 tenantRoleId: tenantRole.id,
+                headOfOperationUserId:
+                    !tenantUser.headOfOperationUserId || tenantUser.headOfOperationUserId == ""
+                        ? null
+                        : tenantUser.headOfOperationUserId,
+                teamLeaderUserId:
+                    !tenantUser.teamLeaderUserId || tenantUser.teamLeaderUserId == ""
+                        ? null
+                        : tenantUser.teamLeaderUserId,
+                supervisorUserId:
+                    !tenantUser.supervisorUserId || tenantUser.supervisorUserId == ""
+                        ? null
+                        : tenantUser.supervisorUserId,
+                managerUserId:
+                    !tenantUser.managerUserId || tenantUser.managerUserId == ""
+                        ? null
+                        : tenantUser.managerUserId,
             })
         }
 
@@ -63,15 +78,7 @@ export async function getByTenantId(tenantId: string): Promise<ServiceResponse<T
 
         const tenantUsers = await TenantUserRepository.getByTenantId(tenantId)
 
-        const mappedTenantUsers = tenantUsers.map((tenantUser) => ({
-            id: tenantUser.id,
-            userId: tenantUser.userId,
-            tenantRoleId: tenantUser.tenantRoleId,
-            tenantRole: tenantUser.tenantRole,
-            user: exclude(tenantUser.user, "password"),
-        }))
-
-        return HandleServiceResponseSuccess(mappedTenantUsers)
+        return HandleServiceResponseSuccess(tenantUsers)
     } catch (error) {
         Logger.error(`TenanUserService.getByTenantId`, {
             error,

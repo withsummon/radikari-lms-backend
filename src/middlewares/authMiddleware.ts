@@ -30,8 +30,7 @@ export async function checkJwt(c: Context, next: Next) {
 
 export function checkRole(roles: Roles[]) {
     return async (c: Context, next: Next) => {
-        const role = transformRoleToEnumRole(c.get("jwtPayload"))
-
+        const role = transformRoleToEnumRole(c.get("jwtPayload").role)
         try {
             if (roles.includes(role)) {
                 await next()

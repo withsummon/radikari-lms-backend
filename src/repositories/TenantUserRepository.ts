@@ -20,8 +20,47 @@ export async function getByTenantId(tenantId: string) {
             tenantId,
         },
         include: {
-            user: true,
+            user: {
+                select: {
+                    id: true,
+                    fullName: true,
+                    email: true,
+                    phoneNumber: true,
+                },
+            },
             tenantRole: true,
+            headOfOperation: {
+                select: {
+                    id: true,
+                    fullName: true,
+                    email: true,
+                    phoneNumber: true,
+                },
+            },
+            teamLeader: {
+                select: {
+                    id: true,
+                    fullName: true,
+                    email: true,
+                    phoneNumber: true,
+                },
+            },
+            supervisor: {
+                select: {
+                    id: true,
+                    fullName: true,
+                    email: true,
+                    phoneNumber: true,
+                },
+            },
+            manager: {
+                select: {
+                    id: true,
+                    fullName: true,
+                    email: true,
+                    phoneNumber: true,
+                },
+            },
         },
     })
 }

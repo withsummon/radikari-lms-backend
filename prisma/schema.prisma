@@ -37,14 +37,34 @@ model User {
   tenantUser           TenantUser[]
   knowledge            Knowledge[]
   knowledgeActivityLog KnowledgeActivityLog[]
+  operation            Operation[]
+  teamLeader           TenantUser[]           @relation("teamLeader")
+  supervisor           TenantUser[]           @relation("supervisor")
+  manager              TenantUser[]           @relation("manager")
+  headOfOperation      TenantUser[]           @relation("headOfOperation")
+}
+
+model Operation {
+  id                    String   @id @unique
+  name                  String
+  description           String
+  headOfOperationUserId String
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  headOfOperationUser User     @relation(fields: [headOfOperationUserId], references: [id], onDelete: Cascade)
+  tenant              Tenant[]
 }
 
 model Tenant {
   id          String   @id @unique
   name        String
   description String
+  operationId String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  operation Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
 
   tenantRole    TenantRole[]
   tenantUser    TenantUser[]
@@ -70,14 +90,22 @@ model TenantRole {
 }
 
 model TenantUser {
-  id           String @id @unique
-  userId       String
-  tenantId     String
-  tenantRoleId String
+  id                    String  @id @unique
+  userId                String
+  teamLeaderUserId      String?
+  supervisorUserId      String?
+  managerUserId         String?
+  headOfOperationUserId String?
+  tenantId              String
+  tenantRoleId          String
 
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tenantRole TenantRole @relation(fields: [tenantRoleId], references: [id], onDelete: Cascade)
-  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenantRole      TenantRole @relation(fields: [tenantRoleId], references: [id], onDelete: Cascade)
+  tenant          Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  teamLeader      User?      @relation(name: "teamLeader", fields: [teamLeaderUserId], references: [id], onDelete: Cascade)
+  supervisor      User?      @relation(name: "supervisor", fields: [supervisorUserId], references: [id], onDelete: Cascade)
+  manager         User?      @relation(name: "manager", fields: [managerUserId], references: [id], onDelete: Cascade)
+  headOfOperation User?      @relation(name: "headOfOperation", fields: [headOfOperationUserId], references: [id], onDelete: Cascade)
 
   @@unique([userId, tenantId])
 }

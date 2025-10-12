@@ -12,6 +12,7 @@ router.post("/verify-token", AuthController.verifyToken)
 router.put("/update-password", AuthMiddleware.checkJwt, AuthController.changePassword)
 
 router.route("/users", RoutesRegistry.UserRoutes)
+router.route("/operations", RoutesRegistry.OperationRoutes)
 router.route("/tenants", RoutesRegistry.TenantRoutes)
 router.route("/master-knowledge-categories", RoutesRegistry.MasterKnowledgeCategoryRoutes)
 router.route("/master-knowledge-cases", RoutesRegistry.MasterKnowledgeCaseRoutes)

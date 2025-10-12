@@ -1,9 +1,9 @@
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { prisma } from "$pkg/prisma"
-import { TenantDTO } from "$entities/Tenant"
+import { OperationDTO } from "$entities/Operation"
 
-export async function create(data: TenantDTO) {
-    return await prisma.tenant.create({
+export async function create(data: OperationDTO) {
+    return await prisma.operation.create({
         data,
     })
 }
@@ -12,9 +12,9 @@ export async function getAll(filters: EzFilter.FilteringQuery) {
     const queryBuilder = new EzFilter.BuildQueryFilter()
     const usedFilters = queryBuilder.build(filters)
 
-    const [tenant, totalData] = await Promise.all([
-        prisma.tenant.findMany(usedFilters.query as any),
-        prisma.tenant.count({
+    const [operation, totalData] = await Promise.all([
+        prisma.operation.findMany(usedFilters.query as any),
+        prisma.operation.count({
             where: usedFilters.query.where,
         }),
     ])
@@ -24,26 +24,32 @@ export async function getAll(filters: EzFilter.FilteringQuery) {
         totalPage = Math.ceil(totalData / usedFilters.query.take)
 
     return {
-        entries: tenant,
+        entries: operation,
         totalData,
         totalPage,
     }
 }
 
 export async function getById(id: string) {
-    return await prisma.tenant.findUnique({
+    return await prisma.operation.findUnique({
         where: {
             id,
         },
         include: {
-            tenantRole: true,
-            operation: true,
+            headOfOperationUser: {
+                select: {
+                    id: true,
+                    fullName: true,
+                    email: true,
+                },
+            },
+            tenant: true,
         },
     })
 }
 
-export async function update(id: string, data: TenantDTO) {
-    return await prisma.tenant.update({
+export async function update(id: string, data: OperationDTO) {
+    return await prisma.operation.update({
         where: {
             id,
         },
@@ -52,7 +58,7 @@ export async function update(id: string, data: TenantDTO) {
 }
 
 export async function deleteById(id: string) {
-    return await prisma.tenant.delete({
+    return await prisma.operation.delete({
         where: {
             id,
         },

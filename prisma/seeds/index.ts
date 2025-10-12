@@ -4,6 +4,7 @@ import { seedTenant } from "./seedTenant"
 import { seedMasterKnowledgeCategory } from "./seedMasterKnowledgeCategory"
 import { seedMasterKnowledgeCase } from "./seedMasterKnowledgeCase"
 import { seedKnowledge } from "./seedKnowledge"
+import { seedOperation } from "./seedOperation"
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -15,6 +16,7 @@ async function seed() {
         prisma = new PrismaClient()
         try {
             await seedAdmin(prisma)
+            await seedOperation(prisma)
             await seedTenant(prisma)
             await seedMasterKnowledgeCategory(prisma)
             await seedMasterKnowledgeCase(prisma)

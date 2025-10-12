@@ -5,11 +5,14 @@ export async function seedTenant(prisma: PrismaClient) {
     const countTenant = await prisma.tenant.count()
 
     if (countTenant == 0) {
+        const operation = await prisma.operation.findFirst()
+
         const tenant = await prisma.tenant.create({
             data: {
                 id: ulid(),
                 name: "BABAE INC",
                 description: "BABAE INC - Indonesia",
+                operationId: operation!.id,
             },
         })
 
