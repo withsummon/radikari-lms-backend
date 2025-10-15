@@ -1,0 +1,106 @@
+# =============================================================================
+# BUN SERVICES DOCKERFILE (REST, Cron, Consumer)
+# =============================================================================
+
+# Builder stage
+FROM oven/bun:1-debian AS builder
+
+WORKDIR /app
+
+# Install Bun globally
+RUN apt-get update && apt-get install -y curl unzip
+RUN curl -fsSL https://bun.sh/install | bash
+RUN cp /root/.bun/bin/bun /usr/local/bin/bun
+RUN cp /root/.bun/bin/bunx /usr/local/bin/bunx
+ENV PATH="/usr/local/bin:$PATH"
+
+# Copy package files first for better caching
+COPY package.json ./
+
+# Copy lockfile if it exists in the build context
+COPY bun.lock* ./
+
+# Install dependencies (including dev dependencies for building)
+RUN bun install
+
+# Copy prisma schema for generation
+COPY prisma ./prisma
+
+# Generate Prisma client
+RUN bun prisma generate
+
+# Copy source code and other necessary files
+COPY src ./src
+COPY tsconfig.json ./
+COPY codegen ./codegen
+
+# Build the application (if needed)
+RUN bun run build || echo "No build script found, using source directly"
+
+# Production stage
+FROM oven/bun:1-debian AS production
+
+# Install Bun globally
+RUN apt-get update && apt-get install -y curl unzip
+RUN curl -fsSL https://bun.sh/install | bash
+RUN cp /root/.bun/bin/bun /usr/local/bin/bun
+RUN cp /root/.bun/bin/bunx /usr/local/bin/bunx
+ENV PATH="/usr/local/bin:$PATH"
+
+# Create a non-root user
+RUN groupadd -g 1001 appgroup && \
+    useradd -r -u 1001 -g appgroup radikari
+
+WORKDIR /app
+
+# Copy package files
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/bun.lock* ./
+
+# Copy dependencies from builder stage
+COPY --from=builder /app/node_modules ./node_modules
+
+# Copy built application and generated files
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/generated ./generated
+COPY --from=builder /app/tsconfig.json ./
+
+# Regenerate Prisma client with correct binary target for ARM64 OpenSSL 3.0.x
+RUN bun prisma generate
+
+# Copy built dist if it exists
+RUN mkdir -p dist
+
+# Create necessary directories and set ownership
+RUN mkdir -p logs && \
+    chown -R radikari:appgroup /app
+
+
+# Set default environment variables
+ENV NODE_ENV=production
+ENV SERVICE=${SERVICE:-rest}
+ENV PORT=${PORT:-3000}
+
+# Health check (will be customized per service in docker-compose)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:${PORT}/health 2>/dev/null || curl -f http://localhost:3001/health 2>/dev/null || exit 1
+
+# Switch to non-root user
+USER radikari
+
+# Expose port
+EXPOSE ${PORT}
+
+# Create startup script
+RUN echo '#!/bin/bash\n\
+    # Start Xvfb in background\n\
+    Xvfb :99 -screen 0 1024x768x24 -ac +extension GLX +render -noreset &\n\
+    # Wait a moment for Xvfb to start\n\
+    sleep 2\n\
+    # Start the application\n\
+    exec bun ./src/index.ts --service=${SERVICE}' > /app/start.sh && \
+    chmod +x /app/start.sh
+
+# Use the startup script
+CMD ["/app/start.sh"]

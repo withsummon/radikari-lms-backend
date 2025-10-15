@@ -1,0 +1,265 @@
+version: "3.9"
+
+services:
+  # =============================================================================
+  # INFRASTRUCTURE SERVICES
+  # =============================================================================
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: radikari-lms-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-radikari_lms}
+      POSTGRES_USER: ${POSTGRES_USER:-nwpostgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-radikari123}
+      PGDATA: /var/lib/postgresql/data/radikari_lms
+    volumes:
+      - radikari_lms_postgres_data:/var/lib/postgresql/data/radikari_lms
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nwpostgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - radikari-lms-network
+
+  # # Redis Cache (Commented out - not needed for now)
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: radikari-lms-redis
+  #   command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-localredis} --timeout 0 --tcp-keepalive 300
+  #   volumes:
+  #     - radikari_lms_redis_data:/data
+  #   ports:
+  #     - "${REDIS_PORT:-6379}:6379"
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-localredis}", "ping"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   restart: unless-stopped
+  #   networks:
+  #     - radikari-lms-network
+
+  # # RabbitMQ Message Queue (Commented out - not needed for now)
+  # rabbitmq:
+  #   image: rabbitmq:3-management-alpine
+  #   container_name: radikari-lms-rabbitmq
+  #   environment:
+  #     RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-radikari}
+  #     RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-radikari123}
+  #   volumes:
+  #     - radikari_lms_rabbit_data:/var/lib/rabbitmq
+  #   ports:
+  #     - "${RABBITMQ_PORT:-5672}:5672"
+  #     - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+  #   healthcheck:
+  #     test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 5
+  #   restart: unless-stopped
+  #   networks:
+  #     - radikari-lms-network
+
+  # # Redis Commander (Commented out - not needed for now)
+  # redis-commander:
+  #   image: rediscommander/redis-commander:latest
+  #   container_name: radikari-lms-redis-commander
+  #   environment:
+  #     REDIS_HOST: redis
+  #     REDIS_PORT: ${REDIS_PORT:-6379}
+  #     REDIS_PASSWORD: ${REDIS_PASSWORD:-localredis}
+  #   ports:
+  #     - "${REDIS_COMMANDER_PORT:-8081}:8081"
+  #   depends_on:
+  #     redis:
+  #       condition: service_healthy
+  #   restart: unless-stopped
+  #   networks:
+  #     - radikari-lms-network
+  #   profiles:
+  #     - debug
+
+  # =============================================================================
+  # APPLICATION SERVICES
+  # =============================================================================
+
+  # Database Migration (Run once)
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.deploy
+      target: builder
+    container_name: radikari-lms-migrate
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgres://nwpostgres:radikari123@postgres:5432/radikari_lms?schema=public}
+    command: bun prisma migrate deploy
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./prisma:/app/prisma:ro
+    networks:
+      - radikari-lms-network
+    restart: "no"
+
+  # REST API Service
+  rest:
+    build:
+      context: .
+      dockerfile: Dockerfile.deploy
+      target: production
+    container_name: radikari-lms-rest
+    environment:
+      SERVICE: rest
+      PORT: ${REST_PORT:-3001}
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      SERVICE_NAME: ${SERVICE_NAME:-radikari-lms-backend}
+      SERVICE_VERSION: ${SERVICE_VERSION:-1.0.0}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-*}
+      # REDIS_HOST: redis
+      # REDIS_USERNAME: ${REDIS_USERNAME:-default}
+      # REDIS_DB: ${REDIS_DB:-0}
+      # REDIS_PORT: 6379
+      # REDIS_PASSWORD: ${REDIS_PASSWORD:-localredis}
+      # AMQP_CONN_URL: amqp://${RABBITMQ_USER:-radikari}:${RABBITMQ_PASSWORD:-radikari123}@rabbitmq:5672
+      ENABLE_ELK_LOG: ${ENABLE_ELK_LOG:-false}
+      ELASTIC_HOST: ${ELASTIC_HOST:-}
+      ELASTIC_USER: ${ELASTIC_USER:-}
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Jakarta}
+    ports:
+      - "${REST_PORT:-3001}:${REST_PORT:-3001}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      # redis:
+      #   condition: service_healthy
+      # rabbitmq:
+      #   condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${REST_PORT:-3001}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - radikari-lms-network
+
+  # # Cron Service (Commented out - not needed for now)
+  # cron:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.deploy
+  #     target: production
+  #   container_name: radikari-lms-cron
+  #   environment:
+  #     SERVICE: cron
+  #     DATABASE_URL: ${DATABASE_URL}
+  #     JWT_SECRET: ${JWT_SECRET}
+  #     ENVIRONMENT: ${ENVIRONMENT:-production}
+  #     SERVICE_NAME: ${SERVICE_NAME:-radikari-lms-backend}
+  #     SERVICE_VERSION: ${SERVICE_VERSION:-1.0.0}
+  #     REDIS_HOST: redis
+  #     REDIS_USERNAME: ${REDIS_USERNAME:-default}
+  #     REDIS_DB: ${REDIS_DB:-0}
+  #     REDIS_PORT: 6379
+  #     REDIS_PASSWORD: ${REDIS_PASSWORD:-localredis}
+  #     COMMENT_ACTION_PER_ITERATION: ${COMMENT_ACTION_PER_ITERATION:-10}
+  #     AMQP_CONN_URL: amqp://${RABBITMQ_USER:-radikari}:${RABBITMQ_PASSWORD:-radikari123}@rabbitmq:5672
+  #     ENABLE_ELK_LOG: ${ENABLE_ELK_LOG:-false}
+  #     ELASTIC_HOST: ${ELASTIC_HOST:-}
+  #     ELASTIC_USER: ${ELASTIC_USER:-}
+  #     ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
+  #     OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  #     APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Jakarta}
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     rabbitmq:
+  #       condition: service_healthy
+  #     migrate:
+  #       condition: service_completed_successfully
+  #   restart: unless-stopped
+  #   networks:
+  #     - radikari-lms-network
+
+  # # Consumer Service (Commented out - not needed for now)
+  # consumer:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.deploy
+  #     target: production
+  #   container_name: radikari-lms-consumer
+  #   environment:
+  #     SERVICE: consumer
+  #     DATABASE_URL: ${DATABASE_URL}
+  #     JWT_SECRET: ${JWT_SECRET}
+  #     ENVIRONMENT: ${ENVIRONMENT:-production}
+  #     SERVICE_NAME: ${SERVICE_NAME:-radikari-lms-backend}
+  #     SERVICE_VERSION: ${SERVICE_VERSION:-1.0.0}
+  #     REDIS_HOST: redis
+  #     REDIS_USERNAME: ${REDIS_USERNAME:-default}
+  #     REDIS_DB: ${REDIS_DB:-0}
+  #     REDIS_PORT: 6379
+  #     REDIS_PASSWORD: ${REDIS_PASSWORD:-localredis}
+  #     AMQP_CONN_URL: amqp://${RABBITMQ_USER:-radikari}:${RABBITMQ_PASSWORD:-radikari123}@rabbitmq:5672
+  #     COMMENT_ACTION_PER_ITERATION: ${COMMENT_ACTION_PER_ITERATION:-10}
+  #     ENABLE_ELK_LOG: ${ENABLE_ELK_LOG:-false}
+  #     # Browser configuration
+  #     OVERRIDE_HEADLESS: ${OVERRIDE_HEADLESS:-yes}
+  #     APP_TIMEZONE: ${APP_TIMEZONE:-UTC}
+  #     DISPLAY: :99
+  #     ELASTIC_HOST: ${ELASTIC_HOST:-}
+  #     ELASTIC_USER: ${ELASTIC_USER:-}
+  #     ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
+  #     OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  #   shm_size: 2gb
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 4G
+  #       reservations:
+  #         memory: 2G
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     rabbitmq:
+  #       condition: service_healthy
+  #     migrate:
+  #       condition: service_completed_successfully
+  #   restart: unless-stopped
+  #   networks:
+  #     - radikari-lms-network
+
+# =============================================================================
+# VOLUMES AND NETWORKS
+# =============================================================================
+
+volumes:
+  radikari_lms_postgres_data:
+    driver: local
+  # radikari_lms_redis_data:
+  #   driver: local
+  # radikari_lms_rabbit_data:
+  #   driver: local
+  # radikari_lms_logs:
+  #   driver: local
+
+networks:
+  radikari-lms-network:
+    driver: bridge
