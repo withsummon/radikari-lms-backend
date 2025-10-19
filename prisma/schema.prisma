@@ -42,6 +42,7 @@ model User {
   supervisor           TenantUser[]           @relation("supervisor")
   manager              TenantUser[]           @relation("manager")
   headOfOperation      TenantUser[]           @relation("headOfOperation")
+  aiChatRooms          AiChatRoom[]
 }
 
 model Operation {
@@ -70,6 +71,7 @@ model Tenant {
   tenantUser    TenantUser[]
   tenantSetting TenantSetting[]
   knowledge     Knowledge[]
+  aiChatRooms   AiChatRoom[]
 }
 
 model TenantRole {
@@ -162,6 +164,7 @@ model Knowledge {
   knowledgeAttachment  KnowledgeAttachment[]
   knowledgeContent     KnowledgeContent[]
   knowledgeActivityLog KnowledgeActivityLog[]
+  AiChatRoomMessage    AiChatRoomMessage[]
 }
 
 model KnowledgeAttachment {
@@ -215,4 +218,36 @@ model KnowledgeActivityLog {
 
   knowledge     Knowledge @relation(fields: [knowledgeId], references: [id], onDelete: Cascade)
   createdByUser User      @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+}
+
+model AiChatRoom {
+  id        String   @id @unique
+  tenantId  String
+  userId    String
+  title     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant   Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user     User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages AiChatRoomMessage[]
+}
+
+enum AiChatRoomMessageSender {
+  USER
+  SYSTEM
+}
+
+model AiChatRoomMessage {
+  id                   String                  @id @unique
+  aiChatRoomId         String
+  sender               AiChatRoomMessageSender
+  message              String
+  htmlFormattedMessage String?
+  knowledgeId          String?
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+
+  aiChatRoom AiChatRoom @relation(fields: [aiChatRoomId], references: [id], onDelete: Cascade)
+  knowledge  Knowledge? @relation(fields: [knowledgeId], references: [id], onDelete: Cascade)
 }

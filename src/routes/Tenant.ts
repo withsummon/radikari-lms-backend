@@ -13,7 +13,14 @@ TenantRoutes.get(
     TenantController.getAll
 )
 
-TenantRoutes.get("/:id", AuthMiddleware.checkJwt, TenantController.getById)
+TenantRoutes.get("/users", AuthMiddleware.checkJwt, TenantController.getAllByUserId)
+
+TenantRoutes.get(
+    "/:id",
+    AuthMiddleware.checkJwt,
+    AuthMiddleware.checkRole([Roles.ADMIN]),
+    TenantController.getById
+)
 
 TenantRoutes.post(
     "/",

@@ -5,6 +5,7 @@ import MasterKnowledgeCategoryRoutes from "./MasterKnowledgeCategory"
 import MasterKnowledgeCaseRoutes from "./MasterKnowledgeCase"
 import KnowledgeRoutes from "./Knowledge"
 import OperationRoutes from "./Operation"
+import ChatRoutes from "./AiChat/Chat"
 
 const RoutesRegistry = {
     UserRoutes,
@@ -14,6 +15,7 @@ const RoutesRegistry = {
     MasterKnowledgeCategoryRoutes,
     MasterKnowledgeCaseRoutes,
     KnowledgeRoutes,
+    ChatRoutes,
 }
 
 export default RoutesRegistry

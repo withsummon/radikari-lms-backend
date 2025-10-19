@@ -162,3 +162,18 @@ export async function deleteById(id: string): Promise<ServiceResponse<{}>> {
         return HandleServiceResponseCustomError("Internal Server Error", 500)
     }
 }
+
+export async function getAllByUserId(
+    filters: EzFilter.FilteringQuery,
+    userId: string
+): Promise<ServiceResponse<EzFilter.PaginatedResult<Tenant[]> | {}>> {
+    try {
+        const tenants = await TenantRepository.getAllByUserId(filters, userId)
+        return HandleServiceResponseSuccess(tenants)
+    } catch (err) {
+        Logger.error(`TenantService.getAllByUserId`, {
+            error: err,
+        })
+        return HandleServiceResponseCustomError("Internal Server Error", 500)
+    }
+}
