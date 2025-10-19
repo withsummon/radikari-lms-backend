@@ -30,6 +30,60 @@ export async function getAll(filters: EzFilter.FilteringQuery) {
     }
 }
 
+export async function getAllByUserId(filters: EzFilter.FilteringQuery, userId: string) {
+    const queryBuilder = new EzFilter.BuildQueryFilter()
+    const usedFilters = queryBuilder.build(filters)
+
+    usedFilters.query.where.AND.push({
+        tenantUser: {
+            some: {
+                userId,
+            },
+        },
+    })
+
+    usedFilters.query.select = {
+        id: true,
+        name: true,
+        description: true,
+        createdAt: true,
+        updatedAt: true,
+        tenantRole: {
+            where: {
+                tenantUser: {
+                    some: {
+                        userId,
+                    },
+                },
+            },
+            select: {
+                id: true,
+                identifier: true,
+                level: true,
+                name: true,
+                description: true,
+            },
+        },
+    }
+
+    const [tenant, totalData] = await Promise.all([
+        prisma.tenant.findMany(usedFilters.query as any),
+        prisma.tenant.count({
+            where: usedFilters.query.where,
+        }),
+    ])
+
+    let totalPage = 1
+    if (totalData > usedFilters.query.take)
+        totalPage = Math.ceil(totalData / usedFilters.query.take)
+
+    return {
+        entries: tenant,
+        totalData,
+        totalPage,
+    }
+}
+
 export async function getById(id: string) {
     return await prisma.tenant.findUnique({
         where: {

@@ -1,7 +1,6 @@
 import {
     response_forbidden,
     response_internal_server_error,
-    response_not_found,
     response_unauthorized,
 } from "$utils/response.utils"
 import { transformRoleToEnumRole } from "$utils/user.utils"
@@ -10,6 +9,7 @@ import jwt from "jsonwebtoken"
 import { Roles } from "../../generated/prisma/client"
 import { UserJWTDAO } from "$entities/User"
 import * as TenantUserRepository from "$repositories/TenantUserRepository"
+import * as TenantRepository from "$repositories/TenantRepository"
 
 export async function checkJwt(c: Context, next: Next) {
     const token = c.req.header("Authorization")?.split(" ")[1]
@@ -47,14 +47,18 @@ export async function checkRoleInTenant(c: Context, next: Next) {
     const tenantId = c.req.param("tenantId")
     const user: UserJWTDAO = c.get("jwtPayload")
 
+    const tenant = await TenantRepository.getById(tenantId)
+    if (!tenant || tenant === null) {
+        return response_forbidden(c, "You are not authorized to access this resource!")
+    }
+
     if (user.role == Roles.ADMIN) {
         await next()
     }
 
     const tenantUser = await TenantUserRepository.getByTenantIdAndUserId(tenantId, user.id)
-
     if (!tenantUser) {
-        return response_not_found(c, "Tenant not found!")
+        return response_forbidden(c, "You are not authorized to access this resource!")
     }
     await next()
 }
