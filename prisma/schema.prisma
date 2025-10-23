@@ -43,6 +43,7 @@ model User {
   manager              TenantUser[]           @relation("manager")
   headOfOperation      TenantUser[]           @relation("headOfOperation")
   aiChatRooms          AiChatRoom[]
+  userKnowledge        UserKnowledge[]
 }
 
 model Operation {
@@ -86,7 +87,6 @@ model TenantRole {
 
   tenant     Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   tenantUser TenantUser[]
-  knowledge  Knowledge[]
 
   @@unique([tenantId, identifier])
 }
@@ -144,27 +144,49 @@ enum KnowledgeStatus {
   REJECTED
 }
 
+enum KnowledgeAccess {
+  PUBLIC
+  TENANT
+  EMAIL
+}
+
+enum KnowledgeType {
+  ARTICLE
+  CASE
+}
+
 model Knowledge {
   id              String          @id @unique
-  tenantId        String
-  tenantRoleId    String
+  tenantId        String?
   category        String
   subCategory     String
   case            String
   headline        String
+  type            KnowledgeType
+  access          KnowledgeAccess
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   status          KnowledgeStatus @default(PENDING)
   createdByUserId String
 
-  tenant        Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  tenantRole    TenantRole @relation(fields: [tenantRoleId], references: [id], onDelete: Cascade)
-  createdByUser User       @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  tenant        Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdByUser User    @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
 
   knowledgeAttachment  KnowledgeAttachment[]
   knowledgeContent     KnowledgeContent[]
   knowledgeActivityLog KnowledgeActivityLog[]
   AiChatRoomMessage    AiChatRoomMessage[]
+  userKnowledge        UserKnowledge[]
+}
+
+model UserKnowledge {
+  id          String   @id @unique
+  knowledgeId String
+  userId      String
+  createdAt   DateTime @default(now())
+
+  knowledge Knowledge @relation(fields: [knowledgeId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model KnowledgeAttachment {

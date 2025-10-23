@@ -1,34 +1,53 @@
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { prisma } from "$pkg/prisma"
-import { KnowledgeContentDTO, KnowledgeDTO } from "$entities/Knowledge"
-import { KnowledgeActivityLogAction, KnowledgeStatus, Prisma } from "../../generated/prisma/client"
+import { KnowledgeAttachmentDTO, KnowledgeContentDTO, KnowledgeDTO } from "$entities/Knowledge"
+import {
+    Knowledge,
+    KnowledgeAccess,
+    KnowledgeActivityLogAction,
+    KnowledgeStatus,
+    Prisma,
+} from "../../generated/prisma/client"
 import { ulid } from "ulid"
-import * as TenantRoleHelpers from "./helpers/TenantRoleHelpers"
+// import * as TenantRoleHelpers from "./helpers/TenantRoleHelpers"
 import { UserJWTDAO } from "$entities/User"
 
 export async function create(userId: string, tenantId: string, data: KnowledgeDTO) {
     return await prisma.$transaction(async (tx) => {
-        const { attachments, contents, ...rest } = data
+        const { attachments, contents, emails, ...rest } = data
+        let knowledge: Knowledge
 
-        // Create knowledge
-        const knowledge = await tx.knowledge.create({
-            data: {
-                ...rest,
-                tenantId,
-                createdByUserId: userId,
-                knowledgeAttachment: {
-                    createMany: {
-                        data: attachments.map((attachment) => ({
-                            id: ulid(),
-                            attachmentUrl: attachment.attachmentUrl,
-                        })),
+        switch (data.access) {
+            case KnowledgeAccess.TENANT:
+                knowledge = await tx.knowledge.create({
+                    data: {
+                        ...rest,
+                        tenantId,
+                        createdByUserId: userId,
                     },
-                },
-            },
-        })
+                })
+                break
+            default:
+                knowledge = await tx.knowledge.create({
+                    data: {
+                        ...rest,
+                        tenantId: null,
+                        createdByUserId: userId,
+                    },
+                })
+                break
+        }
 
+        //Create knowledge attachments
+        await createAttachments(tx, knowledge.id, attachments)
         // Create knowledge contents and their attachments
         await createContent(tx, knowledge.id, contents)
+
+        if (rest.access === KnowledgeAccess.EMAIL) {
+            if (emails && emails.length > 0) {
+                await createEmails(tx, knowledge.id, emails)
+            }
+        }
 
         // Create activity log
         await tx.knowledgeActivityLog.create({
@@ -47,7 +66,7 @@ export async function create(userId: string, tenantId: string, data: KnowledgeDT
 export async function getAll(user: UserJWTDAO, tenantId: string, filters: EzFilter.FilteringQuery) {
     const queryBuilder = new EzFilter.BuildQueryFilter()
     let usedFilters = queryBuilder.build(filters)
-    usedFilters = await TenantRoleHelpers.buildFilterTenantRole(usedFilters, user, tenantId)
+    // usedFilters = await TenantRoleHelpers.buildFilterTenantRole(usedFilters, user, tenantId)
 
     usedFilters.query.include = {
         createdByUser: {
@@ -57,6 +76,29 @@ export async function getAll(user: UserJWTDAO, tenantId: string, filters: EzFilt
             },
         },
     }
+
+    usedFilters.query.where.AND.push({
+        OR: [
+            {
+                access: KnowledgeAccess.PUBLIC,
+            },
+            {
+                access: KnowledgeAccess.TENANT,
+                tenantId,
+            },
+            {
+                access: KnowledgeAccess.EMAIL,
+                userKnowledge: {
+                    some: {
+                        userId: user.id,
+                    },
+                },
+            },
+            {
+                createdByUserId: user.id,
+            },
+        ],
+    })
 
     const [knowledge, totalData] = await Promise.all([
         prisma.knowledge.findMany(usedFilters.query as any),
@@ -76,14 +118,23 @@ export async function getAll(user: UserJWTDAO, tenantId: string, filters: EzFilt
     }
 }
 
-export async function getByIdAndTenantId(id: string, tenantId: string) {
+export async function getById(id: string) {
     return await prisma.knowledge.findUnique({
         where: {
             id,
-            tenantId,
         },
         relationLoadStrategy: "join",
         include: {
+            userKnowledge: {
+                select: {
+                    user: {
+                        select: {
+                            id: true,
+                            fullName: true,
+                        },
+                    },
+                },
+            },
             knowledgeAttachment: true,
             knowledgeContent: {
                 include: {
@@ -112,15 +163,26 @@ export async function getByIdAndTenantId(id: string, tenantId: string) {
     })
 }
 
-export async function update(id: string, data: KnowledgeDTO) {
+export async function update(id: string, data: KnowledgeDTO, tenantId: string) {
     return await prisma.$transaction(async (tx) => {
-        const { attachments, contents, ...rest } = data
+        const { attachments, contents, emails, ...rest } = data
+        let knowledge: Knowledge
 
         // Update knowledge
-        const knowledge = await tx.knowledge.update({
-            where: { id },
-            data: { ...rest },
-        })
+        switch (data.access) {
+            case KnowledgeAccess.TENANT:
+                knowledge = await tx.knowledge.update({
+                    where: { id },
+                    data: { ...rest, tenantId },
+                })
+                break
+            default:
+                knowledge = await tx.knowledge.update({
+                    where: { id },
+                    data: { ...rest, tenantId: null },
+                })
+                break
+        }
 
         // Delete old attachments and contents (cascade will delete content attachments)
         await tx.knowledgeAttachment.deleteMany({
@@ -131,18 +193,21 @@ export async function update(id: string, data: KnowledgeDTO) {
         })
 
         // Recreate knowledge attachments
-        if (attachments.length > 0) {
-            await tx.knowledgeAttachment.createMany({
-                data: attachments.map((attachment) => ({
-                    id: ulid(),
-                    knowledgeId: knowledge.id,
-                    attachmentUrl: attachment.attachmentUrl,
-                })),
-            })
+        await createAttachments(tx, id, attachments)
+        // Recreate knowledge contents and their attachments
+        await createContent(tx, id, contents)
+
+        if (emails && emails.length > 0) {
+            if (rest.access === KnowledgeAccess.EMAIL) {
+                await tx.userKnowledge.deleteMany({
+                    where: {
+                        knowledgeId: id,
+                    },
+                })
+                await createEmails(tx, id, emails)
+            }
         }
 
-        // Recreate knowledge contents and their attachments
-        await createContent(tx, knowledge.id, contents)
         return knowledge
     })
 }
@@ -177,6 +242,20 @@ export async function updateStatus(
         })
 
         return knowledge
+    })
+}
+
+export async function createAttachments(
+    tx: Prisma.TransactionClient,
+    knowledgeId: string,
+    attachments: KnowledgeAttachmentDTO[]
+) {
+    await tx.knowledgeAttachment.createMany({
+        data: attachments.map((attachment) => ({
+            id: ulid(),
+            knowledgeId: knowledgeId,
+            attachmentUrl: attachment.attachmentUrl,
+        })),
     })
 }
 
@@ -220,4 +299,27 @@ export async function createContent(
     await tx.knowledgeContentAttachment.createMany({
         data: knowledgeContentAttachmentCreateManyInput,
     })
+}
+
+export async function createEmails(
+    tx: Prisma.TransactionClient,
+    knowledgeId: string,
+    emails: string[]
+) {
+    for (const email of emails) {
+        const userId = await prisma.user.findUnique({
+            where: {
+                email: email,
+            },
+        })
+        if (userId) {
+            await tx.userKnowledge.create({
+                data: {
+                    id: ulid(),
+                    knowledgeId: knowledgeId,
+                    userId: userId.id,
+                },
+            })
+        }
+    }
 }

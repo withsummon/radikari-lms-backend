@@ -4,6 +4,8 @@ import {
     KnowledgeStatus,
     KnowledgeActivityLogAction,
     Roles,
+    KnowledgeType,
+    KnowledgeAccess,
 } from "../../generated/prisma/client"
 
 export async function seedKnowledge(prisma: PrismaClient) {
@@ -20,6 +22,12 @@ export async function seedKnowledge(prisma: PrismaClient) {
             prisma.masterKnowledgeCategory.findMany(),
             prisma.masterKnowledgeCase.findMany(),
         ])
+
+        const userInTenant = await prisma.user.findFirst({
+            where: {
+                role: Roles.USER,
+            },
+        })
         if (!tenant) {
             console.log("Tenant not found. Please seed tenant first.")
             return
@@ -44,11 +52,12 @@ export async function seedKnowledge(prisma: PrismaClient) {
         const knowledgeData = [
             {
                 id: ulid(),
-                tenantId: tenant.id,
-                tenantRoleId: tenantRole.id,
+                tenantId: null,
                 category: categories[0].name,
                 subCategory: "Sub Category 1",
                 case: cases[0].name,
+                type: KnowledgeType.ARTICLE,
+                access: KnowledgeAccess.EMAIL,
                 headline: "Cara Menangani Komplain Pelanggan",
                 status: KnowledgeStatus.APPROVED,
                 createdByUserId: user.id,
@@ -105,12 +114,13 @@ export async function seedKnowledge(prisma: PrismaClient) {
             {
                 id: ulid(),
                 tenantId: tenant.id,
-                tenantRoleId: tenantRole.id,
                 category: categories[1]?.name || categories[0].name,
                 subCategory: "Sub Category 2",
                 case: cases[1]?.name || cases[0].name,
                 headline: "Panduan Penggunaan Sistem CRM",
                 status: KnowledgeStatus.PENDING,
+                type: KnowledgeType.ARTICLE,
+                access: KnowledgeAccess.TENANT,
                 createdByUserId: user.id,
                 attachments: [],
                 contents: [
@@ -140,8 +150,9 @@ export async function seedKnowledge(prisma: PrismaClient) {
             },
             {
                 id: ulid(),
-                tenantId: tenant.id,
-                tenantRoleId: tenantRole.id,
+                tenantId: null,
+                type: KnowledgeType.CASE,
+                access: KnowledgeAccess.PUBLIC,
                 category: categories[2]?.name || categories[0].name,
                 subCategory: "Sub Category 3",
                 case: cases[0].name,
@@ -201,7 +212,8 @@ export async function seedKnowledge(prisma: PrismaClient) {
                     data: {
                         id: knowledge.id,
                         tenantId: knowledge.tenantId,
-                        tenantRoleId: knowledge.tenantRoleId,
+                        type: knowledge.type,
+                        access: knowledge.access,
                         category: knowledge.category,
                         subCategory: knowledge.subCategory,
                         case: knowledge.case,
@@ -242,6 +254,16 @@ export async function seedKnowledge(prisma: PrismaClient) {
                             })),
                         })
                     }
+                }
+
+                if (knowledge.access === KnowledgeAccess.EMAIL) {
+                    await tx.userKnowledge.create({
+                        data: {
+                            id: ulid(),
+                            knowledgeId: knowledge.id,
+                            userId: userInTenant!.id,
+                        },
+                    })
                 }
 
                 // Create activity log

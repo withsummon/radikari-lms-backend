@@ -13,7 +13,6 @@ import {
     ServiceResponse,
 } from "$entities/Service"
 import Logger from "$pkg/logger"
-import * as TenantRepository from "$repositories/TenantRepository"
 import { UserJWTDAO } from "$entities/User"
 
 export async function create(
@@ -22,10 +21,6 @@ export async function create(
     data: KnowledgeDTO
 ): Promise<ServiceResponse<Knowledge | {}>> {
     try {
-        const tenant = await TenantRepository.getById(tenantId)
-
-        if (!tenant) return HandleServiceResponseCustomError("Invalid ID", ResponseStatus.NOT_FOUND)
-
         const createdData = await KnowledgeRepository.create(userId, tenantId, data)
 
         return HandleServiceResponseSuccess(createdData)
@@ -43,10 +38,6 @@ export async function getAll(
     filters: EzFilter.FilteringQuery
 ): Promise<ServiceResponse<EzFilter.PaginatedResult<Knowledge[]> | {}>> {
     try {
-        const tenant = await TenantRepository.getById(tenantId)
-
-        if (!tenant) return HandleServiceResponseCustomError("Invalid ID", ResponseStatus.NOT_FOUND)
-
         const data = await KnowledgeRepository.getAll(user, tenantId, filters)
         return HandleServiceResponseSuccess(data)
     } catch (err) {
@@ -62,7 +53,7 @@ export async function getById(
     tenantId: string
 ): Promise<ServiceResponse<Knowledge | {}>> {
     try {
-        let knowledge = await KnowledgeRepository.getByIdAndTenantId(id, tenantId)
+        let knowledge = await KnowledgeRepository.getById(id)
 
         if (!knowledge)
             return HandleServiceResponseCustomError("Invalid ID", ResponseStatus.NOT_FOUND)
@@ -83,12 +74,12 @@ export async function update(
     data: KnowledgeDTO
 ): Promise<ServiceResponse<UpdateResponse>> {
     try {
-        const knowledge = await KnowledgeRepository.getByIdAndTenantId(id, tenantId)
+        const knowledge = await KnowledgeRepository.getById(id)
 
         if (!knowledge)
             return HandleServiceResponseCustomError("Invalid ID", ResponseStatus.NOT_FOUND)
 
-        const updatedKnowledge = await KnowledgeRepository.update(id, data)
+        const updatedKnowledge = await KnowledgeRepository.update(id, data, tenantId)
 
         return HandleServiceResponseSuccess(updatedKnowledge)
     } catch (err) {
@@ -101,7 +92,7 @@ export async function update(
 
 export async function deleteById(id: string, tenantId: string): Promise<ServiceResponse<{}>> {
     try {
-        const knowledge = await KnowledgeRepository.getByIdAndTenantId(id, tenantId)
+        const knowledge = await KnowledgeRepository.getById(id)
 
         if (!knowledge)
             return HandleServiceResponseCustomError("Invalid ID", ResponseStatus.NOT_FOUND)
@@ -123,7 +114,7 @@ export async function approveById(
     data: KnowledgeApprovalDTO
 ): Promise<ServiceResponse<{}>> {
     try {
-        const knowledge = await KnowledgeRepository.getByIdAndTenantId(id, tenantId)
+        const knowledge = await KnowledgeRepository.getById(id)
 
         if (!knowledge)
             return HandleServiceResponseCustomError("Invalid ID", ResponseStatus.NOT_FOUND)

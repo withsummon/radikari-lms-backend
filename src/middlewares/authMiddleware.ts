@@ -47,13 +47,13 @@ export async function checkRoleInTenant(c: Context, next: Next) {
     const tenantId = c.req.param("tenantId")
     const user: UserJWTDAO = c.get("jwtPayload")
 
+    if (user.role == Roles.ADMIN) {
+        await next()
+    }
+
     const tenant = await TenantRepository.getById(tenantId)
     if (!tenant || tenant === null) {
         return response_forbidden(c, "You are not authorized to access this resource!")
-    }
-
-    if (user.role == Roles.ADMIN) {
-        await next()
     }
 
     const tenantUser = await TenantUserRepository.getByTenantIdAndUserId(tenantId, user.id)

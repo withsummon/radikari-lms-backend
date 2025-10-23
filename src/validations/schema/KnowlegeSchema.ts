@@ -1,10 +1,19 @@
 import { z } from "zod"
-import { KnowledgeActivityLogAction } from "../../../generated/prisma/client"
+import {
+    KnowledgeAccess,
+    KnowledgeActivityLogAction,
+    KnowledgeType,
+} from "../../../generated/prisma/client"
 export const KnowlegeSchema = z
     .strictObject({
-        tenantRoleId: z.string({ required_error: "tenantRoleId is required" }),
         category: z.string({ required_error: "category is required" }),
         subCategory: z.string({ required_error: "subCategory is required" }),
+        type: z.enum([KnowledgeType.ARTICLE, KnowledgeType.CASE], {
+            required_error: "type is required",
+        }),
+        access: z.enum([KnowledgeAccess.PUBLIC, KnowledgeAccess.TENANT, KnowledgeAccess.EMAIL], {
+            required_error: "access is required",
+        }),
         case: z.string({ required_error: "case is required" }),
         headline: z.string({ required_error: "headline is required" }),
         attachments: z
@@ -31,6 +40,7 @@ export const KnowlegeSchema = z
                     .optional(),
             })
         ),
+        emails: z.array(z.string({ required_error: "emails is required" })).optional(),
     })
     .strict()
 

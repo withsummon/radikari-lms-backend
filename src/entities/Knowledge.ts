@@ -1,18 +1,26 @@
-import { KnowledgeActivityLogAction, KnowledgeStatus } from "../../generated/prisma/client"
+import {
+    KnowledgeAccess,
+    KnowledgeActivityLogAction,
+    KnowledgeStatus,
+    KnowledgeType,
+} from "../../generated/prisma/client"
 
 export interface KnowledgeDTO {
     id: string
-    tenantId: string
-    tenantRoleId: string
+    tenantId?: string
     category: string
     subCategory: string
     case: string
     headline: string
+    type: KnowledgeType
+    access: KnowledgeAccess
     status: KnowledgeStatus
-    createdByUserId: string
+    createdByUserId?: string
+    emails?: string[]
     attachments: KnowledgeAttachmentDTO[]
     contents: KnowledgeContentDTO[]
 }
+
 export interface KnowledgeAttachmentDTO {
     id: string
     knowledgeId: string
