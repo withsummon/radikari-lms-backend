@@ -177,6 +177,10 @@ model Knowledge {
   knowledgeActivityLog KnowledgeActivityLog[]
   AiChatRoomMessage    AiChatRoomMessage[]
   userKnowledge        UserKnowledge[]
+
+  @@index([tenantId, access])
+  @@index([createdByUserId])
+  @@index([access])
 }
 
 model UserKnowledge {
@@ -187,6 +191,8 @@ model UserKnowledge {
 
   knowledge Knowledge @relation(fields: [knowledgeId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([knowledgeId, userId])
 }
 
 model KnowledgeAttachment {

@@ -45,26 +45,26 @@ services:
   #   networks:
   #     - radikari-lms-network
 
-  # # RabbitMQ Message Queue (Commented out - not needed for now)
-  # rabbitmq:
-  #   image: rabbitmq:3-management-alpine
-  #   container_name: radikari-lms-rabbitmq
-  #   environment:
-  #     RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-radikari}
-  #     RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-radikari123}
-  #   volumes:
-  #     - radikari_lms_rabbit_data:/var/lib/rabbitmq
-  #   ports:
-  #     - "${RABBITMQ_PORT:-5672}:5672"
-  #     - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
-  #   healthcheck:
-  #     test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 5
-  #   restart: unless-stopped
-  #   networks:
-  #     - radikari-lms-network
+  # RabbitMQ Message Queue (Commented out - not needed for now)
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: radikari-lms-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-radikari}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-radikari123}
+    volumes:
+      - radikari_lms_rabbit_data:/var/lib/rabbitmq
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - radikari-lms-network
 
   # # Redis Commander (Commented out - not needed for now)
   # redis-commander:
@@ -129,7 +129,7 @@ services:
       # REDIS_DB: ${REDIS_DB:-0}
       # REDIS_PORT: 6379
       # REDIS_PASSWORD: ${REDIS_PASSWORD:-localredis}
-      # AMQP_CONN_URL: amqp://${RABBITMQ_USER:-radikari}:${RABBITMQ_PASSWORD:-radikari123}@rabbitmq:5672
+      AMQP_CONN_URL: amqp://${RABBITMQ_USER:-radikari}:${RABBITMQ_PASSWORD:-radikari123}@rabbitmq:5672
       ENABLE_ELK_LOG: ${ENABLE_ELK_LOG:-false}
       ELASTIC_HOST: ${ELASTIC_HOST:-}
       ELASTIC_USER: ${ELASTIC_USER:-}
@@ -143,8 +143,8 @@ services:
         condition: service_healthy
       # redis:
       #   condition: service_healthy
-      # rabbitmq:
-      #   condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
       migrate:
         condition: service_completed_successfully
     healthcheck:
@@ -255,8 +255,8 @@ volumes:
     driver: local
   # radikari_lms_redis_data:
   #   driver: local
-  # radikari_lms_rabbit_data:
-  #   driver: local
+  radikari_lms_rabbit_data:
+    driver: local
   # radikari_lms_logs:
   #   driver: local
 
