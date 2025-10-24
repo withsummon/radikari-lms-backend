@@ -1,7 +1,9 @@
-import {startRestApp} from './rest';
+import { startRestApp } from "./rest"
+import { startConsumerApp } from "./consumer"
 
 const app = {
-    restApp: startRestApp
+    restApp: startRestApp,
+    consumerApp: startConsumerApp,
 }
 
-export default app;
+export default app

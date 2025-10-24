@@ -45,3 +45,16 @@ export interface KnowledgeApprovalDTO {
     action: KnowledgeActivityLogAction
     comment?: string
 }
+
+export interface KnowledgeQueueDTO {
+    metadata: {
+        knowledgeId: string
+        type: KnowledgeType
+        access: KnowledgeAccess
+        tenantId: string | null
+        accessUserIds: string[]
+    }
+    content: string
+    fileType: string
+    fileUrls: string[]
+}

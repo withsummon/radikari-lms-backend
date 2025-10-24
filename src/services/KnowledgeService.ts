@@ -1,9 +1,11 @@
 import {
     Knowledge,
     KnowledgeActivityLogAction,
+    KnowledgeAttachment,
     KnowledgeStatus,
+    UserKnowledge,
 } from "../../generated/prisma/client"
-import { KnowledgeApprovalDTO, KnowledgeDTO } from "$entities/Knowledge"
+import { KnowledgeApprovalDTO, KnowledgeDTO, KnowledgeQueueDTO } from "$entities/Knowledge"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import * as KnowledgeRepository from "$repositories/KnowledgeRepository"
 import {
@@ -14,6 +16,8 @@ import {
 } from "$entities/Service"
 import Logger from "$pkg/logger"
 import { UserJWTDAO } from "$entities/User"
+import { PUBSUB_TOPICS } from "$entities/PubSub"
+import { GlobalPubSub } from "$pkg/pubsub"
 
 export async function create(
     userId: string,
@@ -81,6 +85,17 @@ export async function update(
 
         const updatedKnowledge = await KnowledgeRepository.update(id, data, tenantId)
 
+        if (updatedKnowledge.status == KnowledgeStatus.APPROVED) {
+            const pubsub = GlobalPubSub.getInstance().getPubSub()
+            const knowledgeWithUserKnowledgeAndKnowledgeAttachment =
+                await KnowledgeRepository.getById(id)
+
+            await pubsub.sendToQueue(
+                PUBSUB_TOPICS.KNOWLEDGE_UPDATE,
+                generateKnowledgeQueueDTO(knowledgeWithUserKnowledgeAndKnowledgeAttachment as any)
+            )
+        }
+
         return HandleServiceResponseSuccess(updatedKnowledge)
     } catch (err) {
         Logger.error(`KnowledgeService.update`, {
@@ -98,6 +113,10 @@ export async function deleteById(id: string, tenantId: string): Promise<ServiceR
             return HandleServiceResponseCustomError("Invalid ID", ResponseStatus.NOT_FOUND)
 
         await KnowledgeRepository.deleteById(id)
+        const pubsub = GlobalPubSub.getInstance().getPubSub()
+        await pubsub.sendToQueue(PUBSUB_TOPICS.KNOWLEDGE_DELETE, {
+            knowledgeId: id,
+        })
         return HandleServiceResponseSuccess({})
     } catch (err) {
         Logger.error(`KnowledgeService.deleteById`, {
@@ -135,8 +154,24 @@ export async function approveById(
                 status = KnowledgeStatus.PENDING
                 break
         }
+        if (status == knowledge.status) {
+            return HandleServiceResponseCustomError(
+                `Knowledge is already in status ${status}`,
+                ResponseStatus.BAD_REQUEST
+            )
+        }
+
         // Todo handle comment when action is REVISION
         await KnowledgeRepository.updateStatus(id, userId, status, data.action)
+
+        if (data.action == KnowledgeActivityLogAction.APPROVE) {
+            const pubsub = GlobalPubSub.getInstance().getPubSub()
+
+            await pubsub.sendToQueue(
+                PUBSUB_TOPICS.KNOWLEDGE_CREATE,
+                generateKnowledgeQueueDTO(knowledge as any)
+            )
+        }
 
         return HandleServiceResponseSuccess({})
     } catch (err) {
@@ -145,4 +180,47 @@ export async function approveById(
         })
         return HandleServiceResponseCustomError("Internal Server Error", 500)
     }
+}
+
+function generateKnowledgeQueueDTO(
+    knowledge: Knowledge & { userKnowledge: UserKnowledge[] } & {
+        knowledgeAttachment: KnowledgeAttachment[]
+    }
+): KnowledgeQueueDTO {
+    return {
+        metadata: {
+            knowledgeId: knowledge.id,
+            type: knowledge.type,
+            access: knowledge.access,
+            tenantId: knowledge.access == "TENANT" ? knowledge.tenantId : null,
+            accessUserIds: Array.from(
+                new Set([
+                    ...knowledge.userKnowledge.map((userKnowledge: any) => userKnowledge.user.id),
+                    knowledge.createdByUserId,
+                ])
+            ),
+        },
+        fileType: knowledge.knowledgeAttachment
+            .map((attachment: any) => attachment.attachmentUrl.split(".").pop())
+            .includes("pdf")
+            ? "PDF"
+            : "IMAGE",
+        fileUrls: knowledge.knowledgeAttachment.map((attachment: any) => attachment.attachmentUrl),
+        content: generateContentKnowledge(knowledge),
+    }
+}
+
+function generateContentKnowledge(knowledge: any) {
+    return `
+        Headline: ${knowledge.headline}
+        Category: ${knowledge.category}
+        Sub Category: ${knowledge.subCategory}
+        Case: ${knowledge.case}
+        Knowledge Content: 
+            ${knowledge.knowledgeContent
+                .map(
+                    (content: any) => `Title: ${content.title}, Description: ${content.description}`
+                )
+                .join("\n")}
+    `
 }
