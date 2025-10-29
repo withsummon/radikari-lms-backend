@@ -2,13 +2,27 @@ import { AiChatRoomMessageDTO } from "$entities/AiChatRoomMessage"
 import { prisma } from "$pkg/prisma"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { Prisma } from "../../generated/prisma/client"
+import { ulid } from "ulid"
 
 export async function create(data: AiChatRoomMessageDTO, tx?: Prisma.TransactionClient) {
     console.log(data)
     const prismaClient = tx || prisma
-    return await prismaClient.aiChatRoomMessage.create({
-        data,
+    const { aiChatRoomMessageKnowledge, ...rest } = data
+    const aiChatRoomMessage = await prismaClient.aiChatRoomMessage.create({
+        data: rest,
     })
+
+    if (aiChatRoomMessageKnowledge && aiChatRoomMessageKnowledge.length > 0) {
+        await prismaClient.aiChatRoomMessageKnowledge.createMany({
+            data: aiChatRoomMessageKnowledge.map((knowledge) => ({
+                id: ulid(),
+                aiChatRoomMessageId: aiChatRoomMessage.id,
+                knowledgeId: knowledge.knowledgeId,
+            })),
+        })
+    }
+
+    return aiChatRoomMessage
 }
 
 export async function getAll(filters: EzFilter.FilteringQuery, aiChatRoomId: string) {
@@ -21,10 +35,6 @@ export async function getAll(filters: EzFilter.FilteringQuery, aiChatRoomId: str
 
     usedFilters.query.include = {
         knowledge: true,
-    }
-
-    usedFilters.query.orderBy = {
-        createdAt: "desc",
     }
 
     const [aiChatRoomMessage, totalData] = await Promise.all([
@@ -43,6 +53,21 @@ export async function getAll(filters: EzFilter.FilteringQuery, aiChatRoomId: str
         totalData,
         totalPage,
     }
+}
+
+export async function getLatestChatRoomHistory(aiChatRoomId: string) {
+    return await prisma.aiChatRoomMessage.findMany({
+        where: {
+            aiChatRoomId,
+        },
+        include: {
+            aiChatRoomMessageKnowledge: true,
+        },
+        orderBy: {
+            createdAt: "desc",
+        },
+        take: 20,
+    })
 }
 
 export async function getById(id: string, tx?: Prisma.TransactionClient) {

@@ -57,4 +57,11 @@ ChatRoutes.post(
     AiChatController.chat
 )
 
+ChatRoutes.post(
+    "/tenants/:tenantId/rooms/:chatRoomId/stream",
+    AuthMiddleware.checkJwt,
+    AuthMiddleware.checkRoleInTenant,
+    AiChatController.streamMessage
+)
+
 export default ChatRoutes

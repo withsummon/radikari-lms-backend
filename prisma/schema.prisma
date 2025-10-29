@@ -172,11 +172,12 @@ model Knowledge {
   tenant        Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   createdByUser User    @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
 
-  knowledgeAttachment  KnowledgeAttachment[]
-  knowledgeContent     KnowledgeContent[]
-  knowledgeActivityLog KnowledgeActivityLog[]
-  AiChatRoomMessage    AiChatRoomMessage[]
-  userKnowledge        UserKnowledge[]
+  knowledgeAttachment        KnowledgeAttachment[]
+  knowledgeContent           KnowledgeContent[]
+  knowledgeActivityLog       KnowledgeActivityLog[]
+  AiChatRoomMessage          AiChatRoomMessage[]
+  userKnowledge              UserKnowledge[]
+  aiChatRoomMessageKnowledge AiChatRoomMessageKnowledge[]
 
   @@index([tenantId, access])
   @@index([createdByUserId])
@@ -263,7 +264,7 @@ model AiChatRoom {
 
 enum AiChatRoomMessageSender {
   USER
-  SYSTEM
+  ASSISTANT
 }
 
 model AiChatRoomMessage {
@@ -276,6 +277,16 @@ model AiChatRoomMessage {
   createdAt            DateTime                @default(now())
   updatedAt            DateTime                @updatedAt
 
-  aiChatRoom AiChatRoom @relation(fields: [aiChatRoomId], references: [id], onDelete: Cascade)
-  knowledge  Knowledge? @relation(fields: [knowledgeId], references: [id], onDelete: Cascade)
+  aiChatRoom                 AiChatRoom                   @relation(fields: [aiChatRoomId], references: [id], onDelete: Cascade)
+  knowledge                  Knowledge?                   @relation(fields: [knowledgeId], references: [id], onDelete: Cascade)
+  aiChatRoomMessageKnowledge AiChatRoomMessageKnowledge[]
+}
+
+model AiChatRoomMessageKnowledge {
+  id                  String @id @unique
+  aiChatRoomMessageId String
+  knowledgeId         String
+
+  aiChatRoomMessage AiChatRoomMessage @relation(fields: [aiChatRoomMessageId], references: [id], onDelete: Cascade)
+  knowledge         Knowledge         @relation(fields: [knowledgeId], references: [id], onDelete: Cascade)
 }
