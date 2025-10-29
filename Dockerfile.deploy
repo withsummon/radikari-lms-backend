@@ -78,4 +78,4 @@ USER radikari
 EXPOSE ${PORT}
 
 # Use bun to run the TypeScript source directly with service parameter
-CMD ["sh", "-c", "bun ./src/index.ts --service=${SERVICE}"]
+CMD ["sh", "-c", "NODE_TLS_REJECT_UNAUTHORIZED=0 bun ./src/index.ts --service=${SERVICE}"]
