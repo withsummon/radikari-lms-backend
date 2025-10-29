@@ -130,6 +130,8 @@ services:
       # REDIS_PORT: 6379
       # REDIS_PASSWORD: ${REDIS_PASSWORD:-localredis}
       AMQP_CONN_URL: amqp://${RABBITMQ_USER:-radikari}:${RABBITMQ_PASSWORD:-radikari123}@rabbitmq:5672
+      AI_API_URL: ${AI_API_URL:-https://api.ai.com}
+      AI_API_SSL_VERIFY: ${AI_API_SSL_VERIFY:-true}
       ENABLE_ELK_LOG: ${ENABLE_ELK_LOG:-false}
       ELASTIC_HOST: ${ELASTIC_HOST:-}
       ELASTIC_USER: ${ELASTIC_USER:-}
