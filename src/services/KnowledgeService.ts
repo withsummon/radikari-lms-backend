@@ -205,12 +205,17 @@ function generateKnowledgeQueueDTO(
             type: knowledge.type,
             access: knowledge.access,
             tenantId: knowledge.access == "TENANT" ? knowledge.tenantId : null,
-            accessUserIds: Array.from(
-                new Set([
-                    ...knowledge.userKnowledge.map((userKnowledge: any) => userKnowledge.user.id),
-                    knowledge.createdByUserId,
-                ])
-            ),
+            accessUserIds:
+                knowledge.access == "EMAIL"
+                    ? Array.from(
+                          new Set([
+                              ...knowledge.userKnowledge.map(
+                                  (userKnowledge: any) => userKnowledge.user.id
+                              ),
+                              knowledge.createdByUserId,
+                          ])
+                      )
+                    : [],
         },
         fileType: knowledge.knowledgeAttachment
             .map((attachment: any) => attachment.attachmentUrl.split(".").pop())
