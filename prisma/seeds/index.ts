@@ -2,6 +2,7 @@ import { PrismaClient } from "../../generated/prisma/client"
 import { seedAdmin } from "./seedAdmin"
 import { seedTenant } from "./seedTenant"
 import { seedMasterKnowledgeCategory } from "./seedMasterKnowledgeCategory"
+import { seedMasterKnowledgeSubCategory } from "./seedMasterKnowledgeSubCategory"
 import { seedMasterKnowledgeCase } from "./seedMasterKnowledgeCase"
 import { seedKnowledge } from "./seedKnowledge"
 import { seedOperation } from "./seedOperation"
@@ -19,6 +20,7 @@ async function seed() {
             await seedOperation(prisma)
             await seedTenant(prisma)
             await seedMasterKnowledgeCategory(prisma)
+            await seedMasterKnowledgeSubCategory(prisma)
             await seedMasterKnowledgeCase(prisma)
             await seedKnowledge(prisma)
         } catch (seedError) {

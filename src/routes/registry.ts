@@ -2,6 +2,7 @@ import ExampleBufferRoutes from "./ExampleBuffer"
 import UserRoutes from "./User"
 import TenantRoutes from "./Tenant"
 import MasterKnowledgeCategoryRoutes from "./MasterKnowledgeCategory"
+import MasterKnowledgeSubCategoryRoutes from "./MasterKnowledgeSubCategory"
 import MasterKnowledgeCaseRoutes from "./MasterKnowledgeCase"
 import KnowledgeRoutes from "./Knowledge"
 import OperationRoutes from "./Operation"
@@ -13,6 +14,7 @@ const RoutesRegistry = {
     OperationRoutes,
     TenantRoutes,
     MasterKnowledgeCategoryRoutes,
+    MasterKnowledgeSubCategoryRoutes,
     MasterKnowledgeCaseRoutes,
     KnowledgeRoutes,
     ChatRoutes,
