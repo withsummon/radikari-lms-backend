@@ -1,6 +1,6 @@
 import { RabbitMQConnection } from "$pkg/pubsub"
-// import { PUBSUB_TOPICS } from "$entities/PubSub"
-// import { KnowledgeQueueDTO } from "$entities/Knowledge"
+import { PUBSUB_TOPICS } from "$entities/PubSub"
+import { KnowledgeQueueDTO } from "$entities/Knowledge"
 
 export async function startConsumerApp() {
     const commonChannel = new RabbitMQConnection()
@@ -14,11 +14,11 @@ export async function startConsumerApp() {
     //     console.log(knowledgeQueueDTO)
     // })
 
-    // await commonChannel.consume(PUBSUB_TOPICS.KNOWLEDGE_CREATE, async (message) => {
-    //     const knowledgeQueueDTO = JSON.parse(message) as KnowledgeQueueDTO
-    //     console.log("KNOWLEDGE_CREATE")
-    //     console.log(knowledgeQueueDTO)
-    // })
+    await commonChannel.consume(PUBSUB_TOPICS.KNOWLEDGE_CREATE, async (message) => {
+        const knowledgeQueueDTO = JSON.parse(message) as KnowledgeQueueDTO
+        console.log("KNOWLEDGE_CREATE")
+        console.log(knowledgeQueueDTO)
+    })
     // await commonChannel.consume(PUBSUB_TOPICS.KNOWLEDGE_DELETE, async (message) => {
     //     const knowledgeQueueDTO = JSON.parse(message) as KnowledgeQueueDTO
     //     console.log("KNOWLEDGE_DELETE")
