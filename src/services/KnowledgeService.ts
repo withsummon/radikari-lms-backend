@@ -217,11 +217,14 @@ function generateKnowledgeQueueDTO(
                       )
                     : [],
         },
-        fileType: knowledge.knowledgeAttachment
-            .map((attachment: any) => attachment.attachmentUrl.split(".").pop())
-            .includes("pdf")
-            ? "PDF"
-            : "IMAGE",
+        fileType:
+            knowledge.knowledgeAttachment && knowledge.knowledgeAttachment.length > 0
+                ? knowledge.knowledgeAttachment
+                      .map((attachment: any) => attachment.attachmentUrl.split(".").pop())
+                      .includes("pdf")
+                    ? "PDF"
+                    : "IMAGE"
+                : "",
         fileUrls: knowledge.knowledgeAttachment.map((attachment: any) => attachment.attachmentUrl),
         content: generateContentKnowledge(knowledge),
     }
