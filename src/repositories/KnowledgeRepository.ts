@@ -63,6 +63,24 @@ export async function create(userId: string, tenantId: string, data: KnowledgeDT
     })
 }
 
+export async function createMany(data: Prisma.KnowledgeCreateManyInput[]) {
+    return await prisma.knowledge.createMany({
+        data: data,
+    })
+}
+
+export async function createManyAttachments(data: Prisma.KnowledgeAttachmentCreateManyInput[]) {
+    return await prisma.knowledgeAttachment.createMany({
+        data: data,
+    })
+}
+
+export async function createManyContent(data: Prisma.KnowledgeContentCreateManyInput[]) {
+    return await prisma.knowledgeContent.createMany({
+        data: data,
+    })
+}
+
 export async function getAll(user: UserJWTDAO, tenantId: string, filters: EzFilter.FilteringQuery) {
     const queryBuilder = new EzFilter.BuildQueryFilter()
     let usedFilters = queryBuilder.build(filters)

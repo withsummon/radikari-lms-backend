@@ -165,9 +165,9 @@ enum KnowledgeType {
 model Knowledge {
   id              String          @id @unique
   tenantId        String?
-  category        String
-  subCategory     String
-  case            String
+  category        String?
+  subCategory     String?
+  case            String?
   headline        String
   type            KnowledgeType
   access          KnowledgeAccess

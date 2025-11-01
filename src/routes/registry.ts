@@ -7,6 +7,7 @@ import MasterKnowledgeCaseRoutes from "./MasterKnowledgeCase"
 import KnowledgeRoutes from "./Knowledge"
 import OperationRoutes from "./Operation"
 import ChatRoutes from "./AiChat/Chat"
+import BulkKnowledgeRoutes from "./BulkUpload"
 
 const RoutesRegistry = {
     UserRoutes,
@@ -18,6 +19,7 @@ const RoutesRegistry = {
     MasterKnowledgeCaseRoutes,
     KnowledgeRoutes,
     ChatRoutes,
+    BulkKnowledgeRoutes,
 }
 
 export default RoutesRegistry

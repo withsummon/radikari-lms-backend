@@ -27,6 +27,13 @@ KnowledgeRoutes.post(
     KnowledgeController.create
 )
 
+KnowledgeRoutes.post(
+    "/bulk",
+    AuthMiddleware.checkJwt,
+    AuthMiddleware.checkRoleInTenant,
+    KnowledgeController.bulkCreate
+)
+
 KnowledgeRoutes.put(
     "/:id",
     AuthMiddleware.checkJwt,

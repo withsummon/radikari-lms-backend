@@ -3,9 +3,16 @@ import {
     KnowledgeActivityLogAction,
     KnowledgeAttachment,
     KnowledgeStatus,
+    Prisma,
     UserKnowledge,
 } from "../../generated/prisma/client"
-import { KnowledgeApprovalDTO, KnowledgeDTO, KnowledgeQueueDTO } from "$entities/Knowledge"
+import {
+    KnowledgeApprovalDTO,
+    KnowledgeBulkCreateDataRow,
+    KnowledgeBulkCreateDTO,
+    KnowledgeDTO,
+    KnowledgeQueueDTO,
+} from "$entities/Knowledge"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import * as KnowledgeRepository from "$repositories/KnowledgeRepository"
 import {
@@ -18,6 +25,11 @@ import Logger from "$pkg/logger"
 import { UserJWTDAO } from "$entities/User"
 import { PUBSUB_TOPICS } from "$entities/PubSub"
 import { GlobalPubSub } from "$pkg/pubsub"
+import axios from "axios"
+import * as XLSX from "xlsx"
+import { ulid } from "ulid"
+import * as TenantRepository from "$repositories/TenantRepository"
+import * as OperationRepository from "$repositories/OperationRepository"
 
 export async function create(
     userId: string,
@@ -223,4 +235,100 @@ function generateContentKnowledge(knowledge: any) {
                 )
                 .join("\n")}
     `
+}
+
+export async function bulkCreate(data: KnowledgeBulkCreateDTO, userId: string) {
+    try {
+        console.log("data", data)
+        const file = await axios.get(data.fileUrl, {
+            responseType: "arraybuffer",
+        })
+
+        const responseData = file.data
+        const workbook = XLSX.read(responseData, { type: "buffer" })
+        const knowledges = workbook.Sheets[workbook.SheetNames[2]]
+
+        const rowData: KnowledgeBulkCreateDataRow[] =
+            XLSX.utils.sheet_to_json<KnowledgeBulkCreateDataRow>(knowledges)
+
+        const knowledgeCreateManyInput: Prisma.KnowledgeCreateManyInput[] = []
+        const knwoledgeAttachmentCreateManyInput: Prisma.KnowledgeAttachmentCreateManyInput[] = []
+        const knwoledgeContentCreateManyInput: Prisma.KnowledgeContentCreateManyInput[] = []
+
+        for (const row of rowData) {
+            let tenantId: string | undefined
+            if (row["Tenant Name"] && row["Tenant Name"] !== "") {
+                let tenant = await TenantRepository.getByName(row["Tenant Name"])
+
+                if (!tenant) {
+                    const operation = await OperationRepository.findFirst()
+
+                    tenant = await TenantRepository.create({
+                        id: ulid(),
+                        name: row["Tenant Name"],
+                        description: row["Tenant Name"],
+                        operationId: operation!.id,
+                    })
+                }
+
+                tenantId = tenant.id
+            }
+
+            const knowledgeId = ulid()
+            knowledgeCreateManyInput.push({
+                id: knowledgeId,
+                tenantId: tenantId,
+                createdByUserId: userId,
+                access: data.access,
+                type: data.type,
+                category: row.Category,
+                subCategory: row["Sub Category"],
+                case: row.Case,
+                headline: row.Headline,
+                status: KnowledgeStatus.APPROVED,
+            })
+
+            if (row.Attachments && row.Attachments !== "") {
+                const attachments = row.Attachments.split(",")
+                for (const attachment of attachments) {
+                    knwoledgeAttachmentCreateManyInput.push({
+                        id: ulid(),
+                        knowledgeId: knowledgeId,
+                        attachmentUrl: attachment,
+                    })
+                }
+            }
+
+            knwoledgeContentCreateManyInput.push({
+                id: ulid(),
+                knowledgeId: knowledgeId,
+                title: row.Headline,
+                description: row.Description,
+                order: 1,
+            })
+        }
+
+        await KnowledgeRepository.createMany(knowledgeCreateManyInput)
+        await KnowledgeRepository.createManyAttachments(knwoledgeAttachmentCreateManyInput)
+        await KnowledgeRepository.createManyContent(knwoledgeContentCreateManyInput)
+
+        const pubsub = GlobalPubSub.getInstance().getPubSub()
+
+        for (const knowledge of knowledgeCreateManyInput) {
+            const knowledgeWithUserKnowledgeAndKnowledgeAttachment =
+                await KnowledgeRepository.getById(knowledge.id)
+
+            await pubsub.sendToQueue(
+                PUBSUB_TOPICS.KNOWLEDGE_CREATE,
+                generateKnowledgeQueueDTO(knowledgeWithUserKnowledgeAndKnowledgeAttachment as any)
+            )
+        }
+
+        return HandleServiceResponseSuccess({})
+    } catch (err) {
+        Logger.error(`KnowledgeService.bulkCreate`, {
+            error: err,
+        })
+        return HandleServiceResponseCustomError("Internal Server Error", 500)
+    }
 }

@@ -64,3 +64,7 @@ export async function deleteById(id: string) {
         },
     })
 }
+
+export async function findFirst() {
+    return await prisma.operation.findFirst()
+}

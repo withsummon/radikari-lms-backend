@@ -58,3 +58,20 @@ export interface KnowledgeQueueDTO {
     fileType: string
     fileUrls: string[]
 }
+
+export interface KnowledgeBulkCreateDTO {
+    access: KnowledgeAccess
+    type: KnowledgeType
+    emails: string[]
+    fileUrl: string
+}
+
+export interface KnowledgeBulkCreateDataRow {
+    "Tenant Name": string
+    Description: string
+    Headline: string
+    Category: string
+    "Sub Category": string
+    Case: string
+    Attachments: string
+}

@@ -96,6 +96,14 @@ export async function getById(id: string) {
     })
 }
 
+export async function getByName(name: string) {
+    return await prisma.tenant.findFirst({
+        where: {
+            name,
+        },
+    })
+}
+
 export async function update(id: string, data: TenantDTO) {
     return await prisma.tenant.update({
         where: {

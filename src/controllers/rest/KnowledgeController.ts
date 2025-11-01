@@ -5,7 +5,7 @@ import {
     response_created,
     response_success,
 } from "$utils/response.utils"
-import { KnowledgeApprovalDTO, KnowledgeDTO } from "$entities/Knowledge"
+import { KnowledgeApprovalDTO, KnowledgeBulkCreateDTO, KnowledgeDTO } from "$entities/Knowledge"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { UserJWTDAO } from "$entities/User"
 
@@ -90,4 +90,20 @@ export async function approveById(c: Context): Promise<TypedResponse> {
     }
 
     return response_success(c, serviceResponse.data, "Successfully approved Knowledge!")
+}
+
+export async function bulkCreate(c: Context): Promise<TypedResponse> {
+    const data: KnowledgeBulkCreateDTO = await c.req.json()
+    const user: UserJWTDAO = c.get("jwtPayload")
+
+    console.log("data", data)
+    console.log("user", user)
+
+    const serviceResponse = await KnowledgeService.bulkCreate(data, user.id)
+
+    if (!serviceResponse.status) {
+        return handleServiceErrorWithResponse(c, serviceResponse)
+    }
+
+    return response_success(c, serviceResponse.data, "Successfully bulk created Knowledge!")
 }
