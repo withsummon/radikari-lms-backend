@@ -10,6 +10,7 @@ import {
     KnowledgeApprovalDTO,
     KnowledgeBulkCreateDataRow,
     KnowledgeBulkCreateDTO,
+    KnowledgeBulkCreateTypeCaseDataRow,
     KnowledgeDTO,
     KnowledgeQueueDTO,
 } from "$entities/Knowledge"
@@ -247,7 +248,6 @@ function generateContentKnowledge(knowledge: any) {
 
 export async function bulkCreate(data: KnowledgeBulkCreateDTO, userId: string) {
     try {
-        console.log("data", data)
         const file = await axios.get(data.fileUrl, {
             responseType: "arraybuffer",
         })
@@ -336,6 +336,182 @@ export async function bulkCreate(data: KnowledgeBulkCreateDTO, userId: string) {
     } catch (err) {
         Logger.error(`KnowledgeService.bulkCreate`, {
             error: err,
+        })
+        return HandleServiceResponseCustomError("Internal Server Error", 500)
+    }
+}
+
+export async function bulkCreateTypeCase(data: KnowledgeBulkCreateDTO, userId: string) {
+    try {
+        const file = await axios.get(data.fileUrl, {
+            responseType: "arraybuffer",
+        })
+
+        const responseData = file.data
+        const workbook = XLSX.read(responseData, { type: "buffer" })
+        const knowledges = workbook.Sheets[workbook.SheetNames[2]]
+
+        const rowData: KnowledgeBulkCreateTypeCaseDataRow[] =
+            XLSX.utils.sheet_to_json<KnowledgeBulkCreateTypeCaseDataRow>(knowledges)
+
+        const knowledgeCreateManyInput: Prisma.KnowledgeCreateManyInput[] = []
+        const knwoledgeContentCreateManyInput: Prisma.KnowledgeContentCreateManyInput[] = []
+
+        for (const row of rowData) {
+            let tenantId: string | undefined
+            if (row["Tenant Name"] && row["Tenant Name"] !== "") {
+                let tenant = await TenantRepository.getByName(row["Tenant Name"])
+
+                if (!tenant) {
+                    const operation = await OperationRepository.findFirst()
+
+                    tenant = await TenantRepository.create({
+                        id: ulid(),
+                        name: row["Tenant Name"],
+                        description: row["Tenant Name"],
+                        operationId: operation!.id,
+                    })
+                }
+
+                tenantId = tenant.id
+            }
+
+            const knowledgeId = ulid()
+            knowledgeCreateManyInput.push({
+                id: knowledgeId,
+                tenantId: tenantId,
+                createdByUserId: userId,
+                access: data.access,
+                type: data.type,
+                headline: row["Detail Case"],
+                case: row["Case"],
+                category: row["Category"],
+                subCategory: row["Sub Category"],
+                status: KnowledgeStatus.APPROVED,
+            })
+
+            let order = 1
+
+            if (row["Merchant Name"] && row["Merchant Name"] !== "") {
+                knwoledgeContentCreateManyInput.push({
+                    id: ulid(),
+                    knowledgeId: knowledgeId,
+                    title: "Merchant Name",
+                    description: row["Merchant Name"],
+                    order: order++,
+                })
+            }
+
+            if (row["Aggregator Name"] && row["Aggregator Name"] !== "") {
+                knwoledgeContentCreateManyInput.push({
+                    id: ulid(),
+                    knowledgeId: knowledgeId,
+                    title: "Aggregator Name",
+                    description: row["Aggregator Name"],
+                    order: order++,
+                })
+            }
+
+            if (row["Probing"] && row["Probing"] !== "") {
+                knwoledgeContentCreateManyInput.push({
+                    id: ulid(),
+                    knowledgeId: knowledgeId,
+                    title: "Probing",
+                    description: row["Probing"],
+                    order: order++,
+                })
+            }
+
+            if (row["NEED KBA?"] && row["NEED KBA?"] !== "") {
+                knwoledgeContentCreateManyInput.push({
+                    id: ulid(),
+                    knowledgeId: knowledgeId,
+                    title: "NEED KBA?",
+                    description: row["NEED KBA?"],
+                    order: order++,
+                })
+            }
+
+            if (row["FCR"] && row["FCR"] !== "") {
+                knwoledgeContentCreateManyInput.push({
+                    id: ulid(),
+                    knowledgeId: knowledgeId,
+                    title: "FCR",
+                    description: row["FCR"],
+                    order: order++,
+                })
+            }
+
+            if (row["Guidance"] && row["Guidance"] !== "") {
+                knwoledgeContentCreateManyInput.push({
+                    id: ulid(),
+                    knowledgeId: knowledgeId,
+                    title: "Guidance",
+                    description: row["Guidance"],
+                    order: order++,
+                })
+            }
+
+            if (row["Note"] && row["Note"] !== "") {
+                knwoledgeContentCreateManyInput.push({
+                    id: ulid(),
+                    knowledgeId: knowledgeId,
+                    title: "Note",
+                    description: row["Note"],
+                    order: order++,
+                })
+            }
+
+            if (row["SLA ESCALATION"] && row["SLA ESCALATION"] !== "") {
+                knwoledgeContentCreateManyInput.push({
+                    id: ulid(),
+                    knowledgeId: knowledgeId,
+                    title: "SLA ESCALATION",
+                    description: row["SLA ESCALATION"],
+                    order: order++,
+                })
+            }
+
+            if (row["Assign"] && row["Assign"] !== "") {
+                knwoledgeContentCreateManyInput.push({
+                    id: ulid(),
+                    knowledgeId: knowledgeId,
+                    title: "Assign",
+                    description: row["Assign"],
+                    order: order++,
+                })
+            }
+
+            if (row["Keterangan"] && row["Keterangan"] !== "") {
+                knwoledgeContentCreateManyInput.push({
+                    id: ulid(),
+                    knowledgeId: knowledgeId,
+                    title: "Keterangan",
+                    description: row["Keterangan"],
+                    order: order++,
+                })
+            }
+        }
+
+        await KnowledgeRepository.createMany(knowledgeCreateManyInput)
+        await KnowledgeRepository.createManyContent(knwoledgeContentCreateManyInput)
+
+        const pubsub = GlobalPubSub.getInstance().getPubSub()
+
+        for (const knowledge of knowledgeCreateManyInput) {
+            const knowledgeWithUserKnowledgeAndKnowledgeAttachment =
+                await KnowledgeRepository.getById(knowledge.id)
+
+            await pubsub.sendToQueue(
+                PUBSUB_TOPICS.KNOWLEDGE_CREATE,
+                generateKnowledgeQueueDTO(knowledgeWithUserKnowledgeAndKnowledgeAttachment as any)
+            )
+        }
+
+        return HandleServiceResponseSuccess({})
+    } catch (error) {
+        Logger.error(`KnowledgeService.bulkCreateTypeCase`, {
+            error: error,
         })
         return HandleServiceResponseCustomError("Internal Server Error", 500)
     }

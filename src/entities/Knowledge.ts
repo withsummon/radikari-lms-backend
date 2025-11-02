@@ -75,3 +75,20 @@ export interface KnowledgeBulkCreateDataRow {
     Case: string
     Attachments: string
 }
+export interface KnowledgeBulkCreateTypeCaseDataRow {
+    "Tenant Name": string
+    Category: string
+    "Sub Category": string
+    Case: string
+    "Detail Case": string
+    "Merchant Name": string
+    "Aggregator Name": string
+    Probing: string
+    "NEED KBA?": string
+    FCR: string
+    Guidance: string
+    Note: string
+    "SLA ESCALATION": string
+    Assign: string
+    Keterangan: string
+}

@@ -96,10 +96,20 @@ export async function bulkCreate(c: Context): Promise<TypedResponse> {
     const data: KnowledgeBulkCreateDTO = await c.req.json()
     const user: UserJWTDAO = c.get("jwtPayload")
 
-    console.log("data", data)
-    console.log("user", user)
-
     const serviceResponse = await KnowledgeService.bulkCreate(data, user.id)
+
+    if (!serviceResponse.status) {
+        return handleServiceErrorWithResponse(c, serviceResponse)
+    }
+
+    return response_success(c, serviceResponse.data, "Successfully bulk created Knowledge!")
+}
+
+export async function bulkCreateTypeCase(c: Context): Promise<TypedResponse> {
+    const data: KnowledgeBulkCreateDTO = await c.req.json()
+    const user: UserJWTDAO = c.get("jwtPayload")
+
+    const serviceResponse = await KnowledgeService.bulkCreateTypeCase(data, user.id)
 
     if (!serviceResponse.status) {
         return handleServiceErrorWithResponse(c, serviceResponse)
