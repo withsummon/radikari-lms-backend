@@ -6,6 +6,7 @@ import { seedMasterKnowledgeSubCategory } from "./seedMasterKnowledgeSubCategory
 import { seedMasterKnowledgeCase } from "./seedMasterKnowledgeCase"
 import { seedKnowledge } from "./seedKnowledge"
 import { seedOperation } from "./seedOperation"
+import { seedAccessControlList } from "./seedAcl"
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -19,6 +20,7 @@ async function seed() {
             await seedAdmin(prisma)
             await seedOperation(prisma)
             await seedTenant(prisma)
+            await seedAccessControlList(prisma)
             await seedMasterKnowledgeCategory(prisma)
             await seedMasterKnowledgeSubCategory(prisma)
             await seedMasterKnowledgeCase(prisma)

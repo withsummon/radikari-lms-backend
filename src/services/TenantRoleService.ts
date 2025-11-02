@@ -1,24 +1,15 @@
-import {
-    HandleServiceResponseCustomError,
-    ResponseStatus,
-    ServiceResponse,
-} from "$entities/Service"
+import { HandleServiceResponseCustomError, ServiceResponse } from "$entities/Service"
 import { HandleServiceResponseSuccess } from "$entities/Service"
 import Logger from "$pkg/logger"
-import * as TenantRepository from "$repositories/TenantRepository"
 import * as TenantRoleRepository from "$repositories/TenantRoleRepository"
 
-export async function getByTenantId(tenantId: string): Promise<ServiceResponse<{}>> {
+export async function getAll(): Promise<ServiceResponse<{}>> {
     try {
-        const tenant = await TenantRepository.getById(tenantId)
-
-        if (!tenant) return HandleServiceResponseCustomError("Invalid ID", ResponseStatus.NOT_FOUND)
-
-        const tenantRoles = await TenantRoleRepository.getByTenantId(tenantId)
+        const tenantRoles = await TenantRoleRepository.getAll()
 
         return HandleServiceResponseSuccess(tenantRoles)
     } catch (error) {
-        Logger.error(`TenantRoleService.getByTenantId`, {
+        Logger.error(`TenantRoleService.getAll`, {
             error,
         })
         return HandleServiceResponseCustomError("Internal Server Error", 500)

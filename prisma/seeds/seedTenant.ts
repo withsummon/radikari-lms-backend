@@ -23,7 +23,6 @@ export async function seedTenant(prisma: PrismaClient) {
                 name: "Head of Office",
                 description: "Head of Office",
                 level: 1,
-                tenantId: tenant.id,
             },
             {
                 id: ulid(),
@@ -31,15 +30,6 @@ export async function seedTenant(prisma: PrismaClient) {
                 name: "Ops Manager",
                 description: "Ops Manager",
                 level: 2,
-                tenantId: tenant.id,
-            },
-            {
-                id: ulid(),
-                identifier: "SUPPORT_MANAGER",
-                name: "Support Manager",
-                description: "Support Manager",
-                level: 2,
-                tenantId: tenant.id,
             },
             {
                 id: ulid(),
@@ -47,15 +37,6 @@ export async function seedTenant(prisma: PrismaClient) {
                 name: "Supervisor",
                 description: "Supervisor",
                 level: 3,
-                tenantId: tenant.id,
-            },
-            {
-                id: ulid(),
-                identifier: "SUPPORT_SUPERVISOR",
-                name: "Support Supervisor",
-                description: "Support Supervisor",
-                level: 3,
-                tenantId: tenant.id,
             },
             {
                 id: ulid(),
@@ -63,7 +44,6 @@ export async function seedTenant(prisma: PrismaClient) {
                 name: "Team Leader",
                 description: "Team Leader",
                 level: 4,
-                tenantId: tenant.id,
             },
             {
                 id: ulid(),
@@ -71,7 +51,6 @@ export async function seedTenant(prisma: PrismaClient) {
                 name: "Trainer",
                 description: "Trainer",
                 level: 4,
-                tenantId: tenant.id,
             },
             {
                 id: ulid(),
@@ -79,7 +58,6 @@ export async function seedTenant(prisma: PrismaClient) {
                 name: "Quality Assurance",
                 description: "Quality Assurance",
                 level: 4,
-                tenantId: tenant.id,
             },
             {
                 id: ulid(),
@@ -87,7 +65,6 @@ export async function seedTenant(prisma: PrismaClient) {
                 name: "Agent",
                 description: "Agent",
                 level: 5,
-                tenantId: tenant.id,
             },
         ]
         await prisma.tenantRole.createMany({

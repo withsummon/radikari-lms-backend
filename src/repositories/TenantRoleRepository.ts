@@ -7,12 +7,8 @@ export async function createMany(data: Prisma.TenantRoleCreateManyInput[]) {
     })
 }
 
-export async function getByTenantId(tenantId: string) {
-    return await prisma.tenantRole.findMany({
-        where: {
-            tenantId,
-        },
-    })
+export async function getAll() {
+    return await prisma.tenantRole.findMany()
 }
 
 export async function getById(id: string) {

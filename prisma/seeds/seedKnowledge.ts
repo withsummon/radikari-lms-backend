@@ -38,16 +38,6 @@ export async function seedKnowledge(prisma: PrismaClient) {
             return
         }
 
-        const tenantRole = await prisma.tenantRole.findFirst({
-            where: {
-                tenantId: tenant.id,
-            },
-        })
-        if (!tenantRole) {
-            console.log("Tenant role not found. Please seed tenant first.")
-            return
-        }
-
         // Data knowledge seed
         const knowledgeData = [
             {

@@ -9,7 +9,6 @@ import { TenantDTO } from "$entities/Tenant"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { TenantUserUpdateDTO } from "$entities/TenantUser"
 import * as TenanUserService from "$services/TenanUserService"
-import * as TenantRoleService from "$services/TenantRoleService"
 import { UserJWTDAO } from "$entities/User"
 
 export async function create(c: Context): Promise<TypedResponse> {
@@ -72,16 +71,6 @@ export async function deleteById(c: Context): Promise<TypedResponse> {
     return response_success(c, serviceResponse.data, "Successfully deleted Tenant!")
 }
 
-export async function getTenantRole(c: Context): Promise<TypedResponse> {
-    const id = c.req.param("id")
-
-    const serviceResponse = await TenantRoleService.getByTenantId(id)
-
-    if (!serviceResponse.status) return handleServiceErrorWithResponse(c, serviceResponse)
-
-    return response_success(c, serviceResponse.data, "Successfully fetched tenant roles!")
-}
-
 export async function getUserInTenant(c: Context): Promise<TypedResponse> {
     const id = c.req.param("id")
 
@@ -107,7 +96,7 @@ export async function assignUserToTenant(c: Context): Promise<TypedResponse> {
     return response_success(c, serviceResponse.data, "Successfully assigned user to tenant!")
 }
 
-export async function getAllByUserId(c: Context): Promise<TypedResponse> {
+export async function getAllByUser(c: Context): Promise<TypedResponse> {
     const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(c.req.query())
     const user: UserJWTDAO = c.get("jwtPayload")
 

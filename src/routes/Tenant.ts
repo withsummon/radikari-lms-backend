@@ -13,7 +13,7 @@ TenantRoutes.get(
     TenantController.getAll
 )
 
-TenantRoutes.get("/users", AuthMiddleware.checkJwt, TenantController.getAllByUserId)
+TenantRoutes.get("/users", AuthMiddleware.checkJwt, TenantController.getAllByUser)
 
 TenantRoutes.get(
     "/:id",
@@ -38,7 +38,6 @@ TenantRoutes.put(
     TenantController.update
 )
 
-TenantRoutes.get("/:id/roles", AuthMiddleware.checkJwt, TenantController.getTenantRole)
 TenantRoutes.get("/:id/users", AuthMiddleware.checkJwt, TenantController.getUserInTenant)
 
 TenantRoutes.put(

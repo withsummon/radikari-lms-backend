@@ -78,3 +78,14 @@ export async function getByTenantIdAndUserId(tenantId: string, userId: string) {
         },
     })
 }
+
+export async function getByUserId(userId: string) {
+    return await prisma.tenantUser.findMany({
+        where: {
+            userId,
+        },
+        include: {
+            tenantRole: true,
+        },
+    })
+}

@@ -19,6 +19,7 @@ router.route("/master-knowledge-sub-categories", RoutesRegistry.MasterKnowledgeS
 router.route("/master-knowledge-cases", RoutesRegistry.MasterKnowledgeCaseRoutes)
 router.route("/tenants/:tenantId/knowledges", RoutesRegistry.KnowledgeRoutes)
 router.route("/bulk", RoutesRegistry.BulkKnowledgeRoutes)
+router.route("/access-control-lists", RoutesRegistry.AccessControlListRoutes)
 
 // AI Chat
 router.route("/ai-chat", RoutesRegistry.ChatRoutes)

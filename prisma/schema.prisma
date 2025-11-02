@@ -34,16 +34,18 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  tenantUser           TenantUser[]
-  knowledge            Knowledge[]
-  knowledgeActivityLog KnowledgeActivityLog[]
-  operation            Operation[]
-  teamLeader           TenantUser[]           @relation("teamLeader")
-  supervisor           TenantUser[]           @relation("supervisor")
-  manager              TenantUser[]           @relation("manager")
-  headOfOperation      TenantUser[]           @relation("headOfOperation")
-  aiChatRooms          AiChatRoom[]
-  userKnowledge        UserKnowledge[]
+  tenantUser               TenantUser[]
+  knowledge                Knowledge[]
+  knowledgeActivityLog     KnowledgeActivityLog[]
+  operation                Operation[]
+  teamLeader               TenantUser[]           @relation("teamLeader")
+  supervisor               TenantUser[]           @relation("supervisor")
+  manager                  TenantUser[]           @relation("manager")
+  headOfOperation          TenantUser[]           @relation("headOfOperation")
+  aiChatRooms              AiChatRoom[]
+  userKnowledge            UserKnowledge[]
+  accessControlListCreator AccessControlList[]    @relation("AclCreator")
+  accessControlListUpdater AccessControlList[]    @relation("AclUpdater")
 }
 
 model Operation {
@@ -68,7 +70,6 @@ model Tenant {
 
   operation Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
 
-  tenantRole    TenantRole[]
   tenantUser    TenantUser[]
   tenantSetting TenantSetting[]
   knowledge     Knowledge[]
@@ -81,14 +82,13 @@ model TenantRole {
   level       Int
   name        String
   description String
-  tenantId    String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  tenant     Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  tenantUser TenantUser[]
+  tenantUser        TenantUser[]
+  accessControlList AccessControlList[]
 
-  @@unique([tenantId, identifier])
+  @@unique([identifier])
 }
 
 model TenantUser {
@@ -296,4 +296,47 @@ model AiChatRoomMessageKnowledge {
 
   aiChatRoomMessage AiChatRoomMessage @relation(fields: [aiChatRoomMessageId], references: [id], onDelete: Cascade)
   knowledge         Knowledge         @relation(fields: [knowledgeId], references: [id], onDelete: Cascade)
+}
+
+model AccessControlList {
+  id           String   @id @unique
+  featureName  String
+  actionName   String
+  tenantRoleId String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  createdById  String
+  updatedById  String
+
+  feature    AclFeature @relation(fields: [featureName], references: [name], onDelete: Cascade)
+  tenantRole TenantRole @relation(fields: [tenantRoleId], references: [id], onDelete: Cascade)
+  createdBy  User       @relation("AclCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  updatedBy  User       @relation("AclUpdater", fields: [updatedById], references: [id], onDelete: Cascade)
+
+  @@unique([featureName, actionName, tenantRoleId])
+}
+
+model AclFeature {
+  name        String   @unique
+  isDeletable Boolean  @default(true)
+  isEditable  Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  accessControlList AccessControlList[]
+  action            AclAction[]
+}
+
+model AclAction {
+  id          String   @id @unique
+  name        String
+  featureName String
+  isDeletable Boolean  @default(true)
+  isEditable  Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  feature AclFeature @relation(fields: [featureName], references: [name], onDelete: Cascade)
+
+  @@unique([featureName, name])
 }

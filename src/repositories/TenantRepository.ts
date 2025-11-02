@@ -48,22 +48,6 @@ export async function getAllByUserId(filters: EzFilter.FilteringQuery, userId: s
         description: true,
         createdAt: true,
         updatedAt: true,
-        tenantRole: {
-            where: {
-                tenantUser: {
-                    some: {
-                        userId,
-                    },
-                },
-            },
-            select: {
-                id: true,
-                identifier: true,
-                level: true,
-                name: true,
-                description: true,
-            },
-        },
     }
 
     const [tenant, totalData] = await Promise.all([
@@ -90,7 +74,6 @@ export async function getById(id: string) {
             id,
         },
         include: {
-            tenantRole: true,
             operation: true,
         },
     })
