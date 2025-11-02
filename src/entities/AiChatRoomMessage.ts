@@ -65,9 +65,16 @@ export interface AiClientEndResponse {
 }
 
 export interface AiClientSource {
-    id: string
-    title: string
+    knowledge_id: string
+    chunk_id: string
     content: string
+    metadata: {
+        tenantId: string
+        tenantRoleIds: string[] | null
+        type: string
+        isGlobal: boolean
+    }
+    relevance_score: number
 }
 
 export interface AiClientSourceToSave {

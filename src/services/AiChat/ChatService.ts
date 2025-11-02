@@ -308,8 +308,8 @@ async function processStreamEvent(
                 const sourceResponse = parsedData as AiClientSourceResponse
                 // Convert AI client sources to our format
                 const newSources: AiClientSourceToSave[] = sourceResponse.sources.map((source) => ({
-                    knowledgeId: source.id,
-                    title: source.title,
+                    knowledgeId: source.knowledge_id,
+                    title: source.metadata?.type || "Knowledge", // Use metadata type as title, fallback to "Knowledge"
                     content: source.content,
                 }))
 
@@ -417,34 +417,31 @@ async function saveChatMessages(
             // Save sources to AiChatRoomMessageKnowledge if any
             if (sources.length > 0) {
                 for (const source of sources) {
-                    // First, create or find the knowledge record
-                    const knowledge = await tx.knowledge.upsert({
+                    // Check if knowledge exists before creating relationship
+                    const knowledgeExists = await tx.knowledge.findUnique({
                         where: { id: source.knowledgeId },
-                        update: {
-                            headline: source.title,
-                            case: source.content,
-                        },
-                        create: {
-                            id: source.knowledgeId,
-                            headline: source.title,
-                            case: source.content,
-                            category: "AI Generated",
-                            subCategory: "Chat Sources",
-                            type: "ARTICLE",
-                            access: "PUBLIC",
-                            tenantId: chatRoom.tenantId,
-                            createdByUserId: "system", // You might want to get this from context
-                        },
                     })
 
-                    // Then create the relationship
-                    await tx.aiChatRoomMessageKnowledge.create({
-                        data: {
-                            id: ulid(),
-                            aiChatRoomMessageId: aiMessage.id,
-                            knowledgeId: knowledge.id,
-                        },
-                    })
+                    if (knowledgeExists) {
+                        // Check if relationship already exists to avoid duplicates
+                        const existingRelation = await tx.aiChatRoomMessageKnowledge.findFirst({
+                            where: {
+                                aiChatRoomMessageId: aiMessage.id,
+                                knowledgeId: source.knowledgeId,
+                            },
+                        })
+
+                        if (!existingRelation) {
+                            // Create the relationship to existing knowledge
+                            await tx.aiChatRoomMessageKnowledge.create({
+                                data: {
+                                    id: ulid(),
+                                    aiChatRoomMessageId: aiMessage.id,
+                                    knowledgeId: source.knowledgeId,
+                                },
+                            })
+                        }
+                    }
                 }
             }
         })
