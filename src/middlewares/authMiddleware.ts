@@ -49,16 +49,16 @@ export async function checkRoleInTenant(c: Context, next: Next) {
 
     if (user.role == Roles.ADMIN) {
         await next()
-    }
+    } else {
+        const tenant = await TenantRepository.getById(tenantId)
+        if (!tenant || tenant === null) {
+            return response_forbidden(c, "You are not authorized to access this resource!")
+        }
 
-    const tenant = await TenantRepository.getById(tenantId)
-    if (!tenant || tenant === null) {
-        return response_forbidden(c, "You are not authorized to access this resource!")
+        const tenantUser = await TenantUserRepository.getByTenantIdAndUserId(tenantId, user.id)
+        if (!tenantUser) {
+            return response_forbidden(c, "You are not authorized to access this resource!")
+        }
+        await next()
     }
-
-    const tenantUser = await TenantUserRepository.getByTenantIdAndUserId(tenantId, user.id)
-    if (!tenantUser) {
-        return response_forbidden(c, "You are not authorized to access this resource!")
-    }
-    await next()
 }
