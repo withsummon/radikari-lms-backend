@@ -65,6 +65,23 @@ export async function getAll(
     }
 }
 
+export async function getSummary(
+    user: UserJWTDAO,
+    tenantId: string,
+    filters: EzFilter.FilteringQuery
+): Promise<ServiceResponse<{}>> {
+    try {
+        const data = await KnowledgeRepository.getSummary(user, tenantId, filters)
+
+        return HandleServiceResponseSuccess(data)
+    } catch (err) {
+        Logger.error(`KnowledgeService.getSummary`, {
+            error: err,
+        })
+        return HandleServiceResponseCustomError("Internal Server Error", 500)
+    }
+}
+
 export async function getById(
     id: string,
     tenantId: string

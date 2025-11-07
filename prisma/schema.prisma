@@ -175,6 +175,7 @@ model Knowledge {
   updatedAt       DateTime        @updatedAt
   status          KnowledgeStatus @default(PENDING)
   createdByUserId String
+  totalViews      Int             @default(0)
 
   tenant        Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   createdByUser User    @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
@@ -189,6 +190,8 @@ model Knowledge {
   @@index([tenantId, access])
   @@index([createdByUserId])
   @@index([access])
+  @@index([totalViews])
+  @@index([status])
 }
 
 model UserKnowledge {

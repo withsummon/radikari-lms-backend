@@ -37,6 +37,20 @@ export async function getAll(c: Context): Promise<TypedResponse> {
     return response_success(c, serviceResponse.data, "Successfully fetched all Knowledge!")
 }
 
+export async function getSummary(c: Context): Promise<TypedResponse> {
+    const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(c.req.query())
+    const tenantId = c.req.param("tenantId")
+    const user: UserJWTDAO = c.get("jwtPayload")
+
+    const serviceResponse = await KnowledgeService.getSummary(user, tenantId, filters)
+
+    if (!serviceResponse.status) {
+        return handleServiceErrorWithResponse(c, serviceResponse)
+    }
+
+    return response_success(c, serviceResponse.data, "Successfully fetched Knowledge summary!")
+}
+
 export async function getById(c: Context): Promise<TypedResponse> {
     const id = c.req.param("id")
     const tenantId = c.req.param("tenantId")

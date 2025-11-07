@@ -13,6 +13,13 @@ KnowledgeRoutes.get(
 )
 
 KnowledgeRoutes.get(
+    "/summary",
+    AuthMiddleware.checkJwt,
+    AuthMiddleware.checkRoleInTenant,
+    KnowledgeController.getSummary
+)
+
+KnowledgeRoutes.get(
     "/:id",
     AuthMiddleware.checkJwt,
     AuthMiddleware.checkRoleInTenant,

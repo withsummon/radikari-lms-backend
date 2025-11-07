@@ -24,6 +24,7 @@ import {
     AiClientSourceToSave,
 } from "$entities/AiChatRoomMessage"
 import { UserJWTDAO } from "$entities/User"
+import * as KnowledgeRepository from "$repositories/KnowledgeRepository"
 
 export async function createChatRoom(
     data: AiChatRoomDTO,
@@ -423,6 +424,7 @@ async function saveChatMessages(
                     })
 
                     if (knowledgeExists) {
+                        await KnowledgeRepository.incrementTotalViews(source.knowledgeId)
                         // Check if relationship already exists to avoid duplicates
                         const existingRelation = await tx.aiChatRoomMessageKnowledge.findFirst({
                             where: {

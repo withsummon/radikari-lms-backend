@@ -136,6 +136,82 @@ export async function getAll(user: UserJWTDAO, tenantId: string, filters: EzFilt
     }
 }
 
+export async function getSummary(
+    user: UserJWTDAO,
+    tenantId: string,
+    filters: EzFilter.FilteringQuery
+) {
+    const queryBuilder = new EzFilter.BuildQueryFilter()
+    let usedFilters = queryBuilder.build(filters)
+    // usedFilters = await TenantRoleHelpers.buildFilterTenantRole(usedFilters, user, tenantId)
+
+    usedFilters.query.include = {
+        createdByUser: {
+            select: {
+                id: true,
+                fullName: true,
+            },
+        },
+    }
+
+    usedFilters.query.where.AND.push({
+        OR: [
+            {
+                access: KnowledgeAccess.PUBLIC,
+            },
+            {
+                access: KnowledgeAccess.TENANT,
+                tenantId,
+            },
+            {
+                access: KnowledgeAccess.EMAIL,
+                userKnowledge: {
+                    some: {
+                        userId: user.id,
+                    },
+                },
+            },
+            {
+                createdByUserId: user.id,
+            },
+        ],
+    })
+
+    const [pending, approved, revision, rejected] = await Promise.all([
+        prisma.knowledge.findMany({
+            where: {
+                status: KnowledgeStatus.PENDING,
+                ...usedFilters.query.where,
+            },
+        }),
+        prisma.knowledge.findMany({
+            where: {
+                status: KnowledgeStatus.APPROVED,
+                ...usedFilters.query.where,
+            },
+        }),
+        prisma.knowledge.findMany({
+            where: {
+                status: KnowledgeStatus.REVISION,
+                ...usedFilters.query.where,
+            },
+        }),
+        prisma.knowledge.findMany({
+            where: {
+                status: KnowledgeStatus.REJECTED,
+                ...usedFilters.query.where,
+            },
+        }),
+    ])
+
+    return {
+        pending: pending.length,
+        approved: approved.length,
+        revision: revision.length,
+        rejected: rejected.length,
+    }
+}
+
 export async function getById(id: string) {
     return await prisma.knowledge.findUnique({
         where: {
@@ -340,4 +416,17 @@ export async function createEmails(
             })
         }
     }
+}
+
+export async function incrementTotalViews(id: string) {
+    await prisma.$queryRaw`
+        SELECT *
+        FROM Knowledge
+        WHERE id = ${id}
+        FOR UPDATE
+    `
+    return await prisma.knowledge.update({
+        where: { id },
+        data: { totalViews: { increment: 1 } },
+    })
 }
