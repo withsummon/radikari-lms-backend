@@ -42,12 +42,15 @@ export async function getAllByUserId(filters: EzFilter.FilteringQuery, userId: s
         },
     })
 
-    usedFilters.query.select = {
-        id: true,
-        name: true,
-        description: true,
-        createdAt: true,
-        updatedAt: true,
+    usedFilters.query.include = {
+        tenantUser: {
+            where: {
+                userId,
+            },
+            select: {
+                tenantRole: true,
+            },
+        },
     }
 
     const [tenant, totalData] = await Promise.all([
@@ -62,7 +65,12 @@ export async function getAllByUserId(filters: EzFilter.FilteringQuery, userId: s
         totalPage = Math.ceil(totalData / usedFilters.query.take)
 
     return {
-        entries: tenant,
+        entries: tenant.map((tenant: any) => ({
+            id: tenant.id,
+            name: tenant.name,
+            description: tenant.description,
+            tenantRole: tenant.tenantUser[0].tenantRole,
+        })),
         totalData,
         totalPage,
     }
