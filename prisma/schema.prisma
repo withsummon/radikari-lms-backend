@@ -49,6 +49,7 @@ model User {
   assignmentUserAccesses            AssignmentUserAccess[]
   assignmentUserAttempts            AssignmentUserAttempt[]
   assignmentUserAttemptEssayAnswers AssignmentUserAttemptEssayAnswer[]
+  assignments                       Assignment[]
 }
 
 model Operation {
@@ -360,15 +361,18 @@ enum AssignmentStatus {
 }
 
 model Assignment {
-  id                           String                       @id @unique
-  title                        String
-  durationInMinutes            Int
-  status                       AssignmentStatus             @default(DRAFT)
-  access                       AssignmentAccess
-  expiredDate                  String
-  tenantId                     String
-  createdAt                    DateTime                     @default(now())
-  updatedAt                    DateTime                     @updatedAt
+  id                String           @id @unique
+  title             String
+  durationInMinutes Int
+  status            AssignmentStatus @default(DRAFT)
+  access            AssignmentAccess
+  expiredDate       String
+  tenantId          String
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  createdByUserId   String?
+  createdByUser     User?            @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+
   assignmentTenantRoleAccesses AssignmentTenantRoleAccess[]
   assignmentUserAccesses       AssignmentUserAccess[]
   assignmentQuestions          AssignmentQuestion[]

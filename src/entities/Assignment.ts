@@ -5,6 +5,7 @@ export interface AssignmentCreateDTO {
     title: string
     durationInMinutes: number
     tenantId: string
+    createdByUserId: string
     expiredDate: string
     access: AssignmentAccess
     roleAccesses: string[]
@@ -17,7 +18,8 @@ export interface AssignmentDTO {
     title: string
     durationInMinutes: number
     tenantId: string
-    expiredDate: Date
+    createdByUserId: string
+    expiredDate: string
     access: AssignmentAccess
 }
 

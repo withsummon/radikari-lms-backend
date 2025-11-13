@@ -7,12 +7,14 @@ import {
 } from "$utils/response.utils"
 import { AssignmentCreateDTO } from "$entities/Assignment"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
+import { UserJWTDAO } from "$entities/User"
 
 export async function create(c: Context): Promise<TypedResponse> {
     const data: AssignmentCreateDTO = await c.req.json()
     const tenantId = c.req.param("tenantId")
+    const user: UserJWTDAO = c.get("jwtPayload")
 
-    const serviceResponse = await AssignmentService.create(data, tenantId)
+    const serviceResponse = await AssignmentService.create(data, tenantId, user.id)
 
     if (!serviceResponse.status) {
         return handleServiceErrorWithResponse(c, serviceResponse)

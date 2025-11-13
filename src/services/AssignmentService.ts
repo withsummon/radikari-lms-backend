@@ -12,10 +12,12 @@ import Logger from "$pkg/logger"
 
 export async function create(
     data: AssignmentCreateDTO,
-    tenantId: string
+    tenantId: string,
+    userId: string
 ): Promise<ServiceResponse<Assignment | {}>> {
     try {
         data.tenantId = tenantId
+        data.createdByUserId = userId
 
         const createdData = await AssignmentRepository.create(data)
         return HandleServiceResponseSuccess(createdData)

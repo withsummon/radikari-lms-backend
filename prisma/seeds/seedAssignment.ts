@@ -33,6 +33,7 @@ interface SeedAssignment {
     access: AssignmentAccess
     expiredDate: string
     tenantId: string
+    createdByUserId: string
     roleAccessIdentifiers?: string[]
     userIds?: string[]
     questions: SeedAssignmentQuestion[]
@@ -45,12 +46,17 @@ export async function seedAssignment(prisma: PrismaClient) {
         return
     }
 
-    const [tenant, tenantRoles, regularUser] = await Promise.all([
+    const [tenant, tenantRoles, regularUser, adminUser] = await Promise.all([
         prisma.tenant.findFirst(),
         prisma.tenantRole.findMany(),
         prisma.user.findFirst({
             where: {
                 email: "user@test.com",
+            },
+        }),
+        prisma.user.findFirst({
+            where: {
+                email: "admin@test.com",
             },
         }),
     ])
@@ -62,6 +68,11 @@ export async function seedAssignment(prisma: PrismaClient) {
 
     if (!regularUser) {
         console.log('User with email "user@test.com" not found. Please run seedAdmin first.')
+        return
+    }
+
+    if (!adminUser) {
+        console.log('User with email "admin@test.com" not found. Please run seedAdmin first.')
         return
     }
 
@@ -81,6 +92,7 @@ export async function seedAssignment(prisma: PrismaClient) {
             tenantId: tenant.id,
             access: AssignmentAccess.TENANT_ROLE,
             expiredDate: thirtyDaysLater,
+            createdByUserId: adminUser.id,
             roleAccessIdentifiers: ["TRAINER", "AGENT"],
             questions: [
                 {
@@ -143,6 +155,7 @@ export async function seedAssignment(prisma: PrismaClient) {
             tenantId: tenant.id,
             access: AssignmentAccess.USER,
             expiredDate: fourteenDaysLater,
+            createdByUserId: adminUser.id,
             userIds: [regularUser.id],
             questions: [
                 {
@@ -211,6 +224,7 @@ export async function seedAssignment(prisma: PrismaClient) {
                     tenantId: assignment.tenantId,
                     expiredDate: assignment.expiredDate,
                     access: assignment.access,
+                    createdByUserId: assignment.createdByUserId,
                 },
             })
 

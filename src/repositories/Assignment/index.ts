@@ -69,6 +69,14 @@ export async function getAll(filters: EzFilter.FilteringQuery) {
     const queryBuilder = new EzFilter.BuildQueryFilter()
     const usedFilters = queryBuilder.build(filters)
 
+    usedFilters.query.include = {
+        createdByUser: {
+            select: {
+                id: true,
+                fullName: true,
+            },
+        },
+    }
     const [assignment, totalData] = await Promise.all([
         prisma.assignment.findMany(usedFilters.query as any),
         prisma.assignment.count({
