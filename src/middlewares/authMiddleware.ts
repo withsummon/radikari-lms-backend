@@ -10,6 +10,7 @@ import { Roles } from "../../generated/prisma/client"
 import { UserJWTDAO } from "$entities/User"
 import * as TenantUserRepository from "$repositories/TenantUserRepository"
 import * as TenantRepository from "$repositories/TenantRepository"
+import * as TenantRoleRepository from "$repositories/TenantRoleRepository"
 
 export async function checkJwt(c: Context, next: Next) {
     const token = c.req.header("Authorization")?.split(" ")[1]
@@ -39,6 +40,36 @@ export function checkRole(roles: Roles[]) {
             }
         } catch (err) {
             return response_internal_server_error(c, (err as Error).message)
+        }
+    }
+}
+
+export function checkRoleAssignmentAccess(tenantRoleIdentifiers: string[]) {
+    return async (c: Context, next: Next) => {
+        const user: UserJWTDAO = c.get("jwtPayload")
+        const tenantId = c.req.param("tenantId")
+
+        const tenant = await TenantRepository.getById(tenantId)
+        if (!tenant || tenant === null) {
+            return response_forbidden(c, "You are not authorized to access this resource!")
+        }
+
+        if (user.role == Roles.ADMIN) {
+            await next()
+        } else {
+            const tenantRoles = await TenantRoleRepository.getByUserId(user.id, tenantId)
+            if (!tenantRoles || tenantRoles.length === 0) {
+                return response_forbidden(c, "You are not authorized to access this resource!")
+            }
+
+            if (
+                !tenantRoles.some((tenantRole) =>
+                    tenantRoleIdentifiers.includes(tenantRole.identifier)
+                )
+            ) {
+                return response_forbidden(c, "Forbidden Action!")
+            }
+            await next()
         }
     }
 }
