@@ -4,6 +4,8 @@ import { AssignmentCreateDTO } from "$entities/Assignment"
 import * as AssignmentQuestionRepository from "./AssignmentQuestionRepository"
 import { AssignmentAccess, Prisma } from "../../../generated/prisma/client"
 import { ulid } from "ulid"
+import * as AssignmentHelpers from "./helpers"
+import { UserJWTDAO } from "$entities/User"
 
 export async function create(data: AssignmentCreateDTO) {
     return await prisma.$transaction(
@@ -21,7 +23,6 @@ export async function create(data: AssignmentCreateDTO) {
 
             switch (data.access) {
                 case AssignmentAccess.TENANT_ROLE:
-                    console.log("roleAccesses", roleAccesses)
                     assignmentTenantRoleAccesses.push(
                         ...roleAccesses.map((roleAccess) => ({
                             tenantRoleId: roleAccess,
@@ -65,9 +66,9 @@ export async function create(data: AssignmentCreateDTO) {
     )
 }
 
-export async function getAll(filters: EzFilter.FilteringQuery) {
+export async function getAll(filters: EzFilter.FilteringQuery, user: UserJWTDAO, tenantId: string) {
     const queryBuilder = new EzFilter.BuildQueryFilter()
-    const usedFilters = queryBuilder.build(filters)
+    let usedFilters = queryBuilder.build(filters)
 
     usedFilters.query.include = {
         createdByUser: {
@@ -77,6 +78,13 @@ export async function getAll(filters: EzFilter.FilteringQuery) {
             },
         },
     }
+
+    usedFilters.query.where.AND.push({
+        tenantId,
+    })
+
+    usedFilters = await AssignmentHelpers.generatedFilterForAssignment(usedFilters, user, tenantId)
+
     const [assignment, totalData] = await Promise.all([
         prisma.assignment.findMany(usedFilters.query as any),
         prisma.assignment.count({
@@ -95,10 +103,11 @@ export async function getAll(filters: EzFilter.FilteringQuery) {
     }
 }
 
-export async function getById(id: string) {
+export async function getById(id: string, tenantId: string) {
     return await prisma.assignment.findUnique({
         where: {
             id,
+            tenantId,
         },
         include: {
             assignmentQuestions: {
@@ -188,10 +197,11 @@ export async function update(id: string, data: AssignmentCreateDTO) {
     )
 }
 
-export async function deleteById(id: string) {
+export async function deleteById(id: string, tenantId: string) {
     return await prisma.assignment.delete({
         where: {
             id,
+            tenantId,
         },
     })
 }

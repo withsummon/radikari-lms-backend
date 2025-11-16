@@ -14,6 +14,7 @@ TenantRoutes.get(
 )
 
 TenantRoutes.get("/users", AuthMiddleware.checkJwt, TenantController.getAllByUser)
+TenantRoutes.get("/roles", AuthMiddleware.checkJwt, TenantController.getAllRoles)
 
 TenantRoutes.get(
     "/:id",

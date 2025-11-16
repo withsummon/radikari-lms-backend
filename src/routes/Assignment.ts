@@ -9,20 +9,14 @@ const AssignmentRoutes = new Hono()
 AssignmentRoutes.get(
     "/",
     AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRoleAssignmentAccess([
-        TenantRoleIdentifier.TRAINER,
-        TenantRoleIdentifier.QUALITY_ASSURANCE,
-    ]),
+    AuthMiddleware.checkRoleInTenant,
     AssignmentController.getAll
 )
 
 AssignmentRoutes.get(
     "/:id",
     AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRoleAssignmentAccess([
-        TenantRoleIdentifier.TRAINER,
-        TenantRoleIdentifier.QUALITY_ASSURANCE,
-    ]),
+    AuthMiddleware.checkRoleInTenant,
     AssignmentController.getById
 )
 

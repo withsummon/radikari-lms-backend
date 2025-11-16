@@ -10,6 +10,7 @@ import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { TenantUserUpdateDTO } from "$entities/TenantUser"
 import * as TenanUserService from "$services/TenanUserService"
 import { UserJWTDAO } from "$entities/User"
+import * as TenantRoleService from "$services/TenantRoleService"
 
 export async function create(c: Context): Promise<TypedResponse> {
     const data: TenantDTO = await c.req.json()
@@ -107,4 +108,14 @@ export async function getAllByUser(c: Context): Promise<TypedResponse> {
     }
 
     return response_success(c, serviceResponse.data, "Successfully fetched all tenants by user id!")
+}
+
+export async function getAllRoles(c: Context): Promise<TypedResponse> {
+    const serviceResponse = await TenantRoleService.getAll()
+
+    if (!serviceResponse.status) {
+        return handleServiceErrorWithResponse(c, serviceResponse)
+    }
+
+    return response_success(c, serviceResponse.data, "Successfully fetched all roles!")
 }

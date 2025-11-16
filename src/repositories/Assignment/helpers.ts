@@ -1,0 +1,37 @@
+import { UserJWTDAO } from "$entities/User"
+import * as EzFilter from "@nodewave/prisma-ezfilter"
+import * as TenantRoleRepository from "$repositories/TenantRoleRepository"
+import { Roles } from "../../../generated/prisma/client"
+import { TenantRoleIdentifier } from "$entities/TenantRole"
+
+export async function generatedFilterForAssignment(
+    usedFilters: EzFilter.BuildQueryResult,
+    user: UserJWTDAO,
+    tenantId: string
+) {
+    if (user.role == Roles.ADMIN) {
+        return usedFilters
+    }
+
+    const tenantRoles = await TenantRoleRepository.getByUserId(user.id, tenantId)
+
+    if (
+        tenantRoles.find(
+            (tenantRole) =>
+                tenantRole.identifier == TenantRoleIdentifier.QUALITY_ASSURANCE ||
+                tenantRole.identifier == TenantRoleIdentifier.TRAINER
+        )
+    ) {
+        return usedFilters
+    }
+
+    return usedFilters.query.where.AND.push({
+        assignmentTenantRoleAccesses: {
+            some: {
+                tenantRoleId: {
+                    in: tenantRoles.map((tenantRole) => tenantRole.id),
+                },
+            },
+        },
+    })
+}
