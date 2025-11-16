@@ -17,7 +17,6 @@ export async function validateAssignmentSchema(c: Context, next: Next) {
     const data: AssignmentCreateDTO = await c.req.json()
     const { roleAccesses, userEmails, questions, ...rest } = data
 
-    console.log("rest", rest)
     let invalidFields: Helpers.ErrorStructure[] = Helpers.validateSchema(AssignmentSchema, rest)
 
     switch (data.access) {
@@ -91,7 +90,7 @@ export async function validateAssignmentSchema(c: Context, next: Next) {
     }
 
     // Validate Foreign Keys
-    if (data.access === AssignmentAccess.USER) {
+    if (data.access === AssignmentAccess.TENANT_ROLE) {
         for (const tenantRoleId of roleAccesses) {
             const tenantRole = await TenantRoleRepository.getById(tenantRoleId)
             if (!tenantRole || tenantRole === null) {
