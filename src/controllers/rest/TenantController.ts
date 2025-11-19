@@ -119,3 +119,16 @@ export async function getAllRoles(c: Context): Promise<TypedResponse> {
 
     return response_success(c, serviceResponse.data, "Successfully fetched all roles!")
 }
+
+export async function createTenantUser(c: Context): Promise<TypedResponse> {
+    const data: TenantUserUpdateDTO = await c.req.json()
+    const id = c.req.param("id")
+
+    const serviceResponse = await TenanUserService.create(id, data)
+
+    if (!serviceResponse.status) {
+        return handleServiceErrorWithResponse(c, serviceResponse)
+    }
+
+    return response_success(c, serviceResponse.data, "Successfully created tenant user!")
+}

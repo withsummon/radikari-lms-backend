@@ -1,4 +1,6 @@
+import { TenantUserUpdateDTO } from "$entities/TenantUser"
 import { prisma } from "$pkg/prisma"
+import { ulid } from "ulid"
 import { Prisma } from "../../generated/prisma/client"
 
 export async function updateTenantUser(tenantId: string, data: Prisma.TenantUserCreateManyInput[]) {
@@ -11,6 +13,21 @@ export async function updateTenantUser(tenantId: string, data: Prisma.TenantUser
         return await tx.tenantUser.createMany({
             data,
         })
+    })
+}
+
+export async function createTenantUser(tenantId: string, data: TenantUserUpdateDTO) {
+    return prisma.tenantUser.create({
+        data: {
+            id: ulid(),
+            tenantId,
+            userId: data.userId,
+            tenantRoleId: data.tenantRoleId,
+            headOfOperationUserId: data.headOfOperationUserId,
+            teamLeaderUserId: data.teamLeaderUserId,
+            supervisorUserId: data.supervisorUserId,
+            managerUserId: data.managerUserId,
+        },
     })
 }
 
