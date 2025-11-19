@@ -25,7 +25,10 @@ export async function create(c: Context): Promise<TypedResponse> {
 
 export async function getAll(c: Context): Promise<TypedResponse> {
     const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(c.req.query())
-    const serviceResponse = await AssignmentService.getAll(filters)
+    const user: UserJWTDAO = c.get("jwtPayload")
+    const tenantId = c.req.param("tenantId")
+
+    const serviceResponse = await AssignmentService.getAll(filters, user, tenantId)
 
     if (!serviceResponse.status) {
         return handleServiceErrorWithResponse(c, serviceResponse)
@@ -36,8 +39,9 @@ export async function getAll(c: Context): Promise<TypedResponse> {
 
 export async function getById(c: Context): Promise<TypedResponse> {
     const id = c.req.param("id")
+    const tenantId = c.req.param("tenantId")
 
-    const serviceResponse = await AssignmentService.getById(id)
+    const serviceResponse = await AssignmentService.getById(id, tenantId)
 
     if (!serviceResponse.status) {
         return handleServiceErrorWithResponse(c, serviceResponse)
@@ -49,8 +53,9 @@ export async function getById(c: Context): Promise<TypedResponse> {
 export async function update(c: Context): Promise<TypedResponse> {
     const data: AssignmentCreateDTO = await c.req.json()
     const id = c.req.param("id")
+    const tenantId = c.req.param("tenantId")
 
-    const serviceResponse = await AssignmentService.update(id, data)
+    const serviceResponse = await AssignmentService.update(id, data, tenantId)
 
     if (!serviceResponse.status) {
         return handleServiceErrorWithResponse(c, serviceResponse)
@@ -61,8 +66,9 @@ export async function update(c: Context): Promise<TypedResponse> {
 
 export async function deleteById(c: Context): Promise<TypedResponse> {
     const id = c.req.param("id")
+    const tenantId = c.req.param("tenantId")
 
-    const serviceResponse = await AssignmentService.deleteById(id)
+    const serviceResponse = await AssignmentService.deleteById(id, tenantId)
 
     if (!serviceResponse.status) {
         return handleServiceErrorWithResponse(c, serviceResponse)

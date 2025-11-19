@@ -9,6 +9,7 @@ import {
     ServiceResponse,
 } from "$entities/Service"
 import Logger from "$pkg/logger"
+import { UserJWTDAO } from "$entities/User"
 
 export async function create(
     data: AssignmentCreateDTO,
@@ -30,10 +31,12 @@ export async function create(
 }
 
 export async function getAll(
-    filters: EzFilter.FilteringQuery
+    filters: EzFilter.FilteringQuery,
+    user: UserJWTDAO,
+    tenantId: string
 ): Promise<ServiceResponse<EzFilter.PaginatedResult<Assignment[]> | {}>> {
     try {
-        const data = await AssignmentRepository.getAll(filters)
+        const data = await AssignmentRepository.getAll(filters, user, tenantId)
         return HandleServiceResponseSuccess(data)
     } catch (err) {
         Logger.error(`AssignmentService.getAll`, {
@@ -43,9 +46,12 @@ export async function getAll(
     }
 }
 
-export async function getById(id: string): Promise<ServiceResponse<Assignment | {}>> {
+export async function getById(
+    id: string,
+    tenantId: string
+): Promise<ServiceResponse<Assignment | {}>> {
     try {
-        let assginment = await AssignmentRepository.getById(id)
+        let assginment = await AssignmentRepository.getById(id, tenantId)
 
         if (!assginment)
             return HandleServiceResponseCustomError("Invalid ID", ResponseStatus.NOT_FOUND)
@@ -62,10 +68,11 @@ export async function getById(id: string): Promise<ServiceResponse<Assignment | 
 export type UpdateResponse = Assignment | {}
 export async function update(
     id: string,
-    data: AssignmentCreateDTO
+    data: AssignmentCreateDTO,
+    tenantId: string
 ): Promise<ServiceResponse<UpdateResponse>> {
     try {
-        const assginment = await AssignmentRepository.getById(id)
+        const assginment = await AssignmentRepository.getById(id, tenantId)
 
         if (!assginment)
             return HandleServiceResponseCustomError("Invalid ID", ResponseStatus.NOT_FOUND)
@@ -81,9 +88,9 @@ export async function update(
     }
 }
 
-export async function deleteById(id: string): Promise<ServiceResponse<{}>> {
+export async function deleteById(id: string, tenantId: string): Promise<ServiceResponse<{}>> {
     try {
-        await AssignmentRepository.deleteById(id)
+        await AssignmentRepository.deleteById(id, tenantId)
         return HandleServiceResponseSuccess({})
     } catch (err) {
         Logger.error(`AssignmentService.deleteById`, {
