@@ -38,14 +38,24 @@ export async function seedKnowledge(prisma: PrismaClient) {
             return
         }
 
+        if (!categories || categories.length === 0) {
+            console.log("No knowledge categories found. Please seed master knowledge categories first.")
+            return
+        }
+
+        if (!cases || cases.length === 0) {
+            console.log("No knowledge cases found. Please seed master knowledge cases first.")
+            return
+        }
+
         // Data knowledge seed
         const knowledgeData = [
             {
                 id: ulid(),
                 tenantId: null,
-                category: categories[0].name,
+                category: categories[0]?.name || "General",
                 subCategory: "Sub Category 1",
-                case: cases[0].name,
+                case: cases[0]?.name || "General Case",
                 type: KnowledgeType.ARTICLE,
                 access: KnowledgeAccess.EMAIL,
                 headline: "Cara Menangani Komplain Pelanggan",
@@ -104,9 +114,9 @@ export async function seedKnowledge(prisma: PrismaClient) {
             {
                 id: ulid(),
                 tenantId: tenant.id,
-                category: categories[1]?.name || categories[0].name,
+                category: categories[1]?.name || categories[0]?.name || "General",
                 subCategory: "Sub Category 2",
-                case: cases[1]?.name || cases[0].name,
+                case: cases[1]?.name || cases[0]?.name || "General Case",
                 headline: "Panduan Penggunaan Sistem CRM",
                 status: KnowledgeStatus.PENDING,
                 type: KnowledgeType.ARTICLE,
@@ -143,7 +153,7 @@ export async function seedKnowledge(prisma: PrismaClient) {
                 tenantId: null,
                 type: KnowledgeType.CASE,
                 access: KnowledgeAccess.PUBLIC,
-                category: categories[2]?.name || categories[0].name,
+                category: categories[2]?.name || categories[0]?.name || "General",
                 subCategory: "Sub Category 3",
                 case: cases[0].name,
                 headline: "Prosedur Eskalasi Masalah",
