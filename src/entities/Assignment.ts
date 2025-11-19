@@ -52,3 +52,12 @@ export interface AssignmentQuestionEssayReferenceAnswerDTO {
     assignmentQuestionId: string
     content: string
 }
+
+export interface AssignmentAttemptDTO {
+    id: string
+    assignmentId: string
+    userId: string
+    score: number
+    isSubmitted: boolean
+    submittedAt: Date
+}
