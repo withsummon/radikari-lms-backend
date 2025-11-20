@@ -42,12 +42,14 @@
     "typescript": "^5.1.5"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^2.0.69",
     "@hono/node-server": "^1.11.1",
     "@nodewave/prisma-ezfilter": "^0.2.1",
     "@nodewave/table-to-xlsx": "^0.2.0",
     "@prisma/client": "^6.11.0",
     "@types/amqplib": "^0.10.7",
     "@types/luxon": "^3.3.2",
+    "ai": "^5.0.97",
     "amqplib": "^0.10.9",
     "axios": "^1.6.5",
     "cors": "^2.8.5",
@@ -69,6 +71,9 @@
     "winston-daily-rotate-file": "^5.0.0",
     "winston-elasticsearch": "^0.19.0",
     "xlsx": "^0.18.5",
-    "zod": "^3.25.74"
+    "zod": "^4.1.12"
+  },
+  "overrides": {
+    "zod": "$zod"
   }
 }

@@ -1,4 +1,4 @@
-import { z } from "zod"
+import { z } from "zod/v4"
 export const TenantSchema = z
     .strictObject({
         name: z.string({ required_error: "name is required" }),

@@ -8,20 +8,27 @@ import { cors } from "hono/cors";
 import { prettyJSON } from 'hono/pretty-json';
 
 export default function createRestServer() {
-  let allowedOrigins: string[] = ["*"]
-  let corsOptions: any = {}
-  if (process.env.ALLOWED_ORIGINS == "*") {
-    corsOptions = {}
-  } else {
-    if (process.env.ALLOWED_ORIGINS) {
-      allowedOrigins = process.env.ALLOWED_ORIGINS!.split(",")
-      corsOptions.origin = allowedOrigins
-    }
-  }
-
   const app = new Hono();
-  app.use(cors(corsOptions));
-  app.use(httpLogger)
+
+  app.use(
+    cors({
+      origin: (origin) => {
+        const allowedOrigins = [
+          "http://localhost:3000",
+          ...(process.env.ALLOWED_ORIGINS?.split(",") || []),
+        ];
+        if (allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
+          return origin;
+        }
+        return null;
+      },
+      allowHeaders: ["Content-Type", "Authorization"],
+      allowMethods: ["POST", "GET", "OPTIONS"],
+      credentials: true,
+    })
+  );
+
+  app.use(httpLogger);
 
   app.use(prettyJSON({ space: 4 }));
   app.route("/", routes);
