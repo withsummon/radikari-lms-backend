@@ -114,3 +114,96 @@ export async function validateTenantUserUpdateSchema(c: Context, next: Next) {
 
     await next()
 }
+
+export async function validateTenantUserCreateSchema(c: Context, next: Next) {
+    const data: TenantUserUpdateDTO = await c.req.json()
+    let invalidFields: Helpers.ErrorStructure[] = []
+
+    invalidFields.push(...Helpers.validateSchema(TenantUserUpdateSchema, data))
+
+    if (invalidFields.length > 0) {
+        return response_bad_request(c, "Validation Error", invalidFields)
+    }
+
+    const [tenantRole, user] = await Promise.all([
+        prisma.tenantRole.findUnique({
+            where: {
+                id: data.tenantRoleId,
+            },
+        }),
+        prisma.user.findUnique({
+            where: {
+                id: data.userId,
+            },
+        }),
+    ])
+
+    if (data.headOfOperationUserId) {
+        const headOfOperationUser = await prisma.user.findUnique({
+            where: {
+                id: data.headOfOperationUserId,
+            },
+        })
+        if (!headOfOperationUser) {
+            invalidFields.push(
+                Helpers.generateErrorStructure(
+                    "headOfOperationUserId",
+                    "headOfOperationUser not found"
+                )
+            )
+        }
+    }
+
+    if (data.teamLeaderUserId) {
+        const teamLeaderUser = await prisma.user.findUnique({
+            where: {
+                id: data.teamLeaderUserId,
+            },
+        })
+        if (!teamLeaderUser) {
+            invalidFields.push(
+                Helpers.generateErrorStructure("teamLeaderUserId", "teamLeaderUser not found")
+            )
+        }
+    }
+
+    if (data.supervisorUserId) {
+        const supervisorUser = await prisma.user.findUnique({
+            where: {
+                id: data.supervisorUserId,
+            },
+        })
+        if (!supervisorUser) {
+            invalidFields.push(
+                Helpers.generateErrorStructure("supervisorUserId", "supervisorUser not found")
+            )
+        }
+    }
+
+    if (data.managerUserId) {
+        const managerUser = await prisma.user.findUnique({
+            where: {
+                id: data.managerUserId,
+            },
+        })
+        if (!managerUser) {
+            invalidFields.push(
+                Helpers.generateErrorStructure("managerUserId", "managerUser not found")
+            )
+        }
+    }
+
+    if (!tenantRole) {
+        invalidFields.push(Helpers.generateErrorStructure("tenantRoleId", "tenantRole not found"))
+    }
+
+    if (!user) {
+        invalidFields.push(Helpers.generateErrorStructure("userId", "user not found"))
+    }
+
+    if (invalidFields.length > 0) {
+        return response_bad_request(c, "Validation Error", invalidFields)
+    }
+
+    await next()
+}

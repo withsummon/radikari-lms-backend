@@ -41,6 +41,13 @@ TenantRoutes.put(
 
 TenantRoutes.get("/:id/users", AuthMiddleware.checkJwt, TenantController.getUserInTenant)
 
+TenantRoutes.post(
+    "/:id/users",
+    AuthMiddleware.checkJwt,
+    Validations.validateTenantUserCreateSchema,
+    TenantController.createTenantUser
+)
+
 TenantRoutes.put(
     "/:id/users",
     AuthMiddleware.checkJwt,

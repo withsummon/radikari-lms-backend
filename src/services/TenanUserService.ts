@@ -13,6 +13,19 @@ import { Prisma, TenantUser } from "../../generated/prisma/client"
 import { ulid } from "ulid"
 import * as TenantUserRepository from "$repositories/TenantUserRepository"
 
+export async function create(
+    tenantId: string,
+    data: TenantUserUpdateDTO
+): Promise<ServiceResponse<TenantUser | {}>> {
+    try {
+        const tenantUser = await TenantUserRepository.createTenantUser(tenantId, data)
+        return HandleServiceResponseSuccess(tenantUser)
+    } catch (error) {
+        Logger.error(`TenanUserService.create`, { error })
+        return HandleServiceResponseCustomError("Internal Server Error", 500)
+    }
+}
+
 export async function assignUserTenantByTenantId(
     tenantId: string,
     data: TenantUserUpdateDTO[]
