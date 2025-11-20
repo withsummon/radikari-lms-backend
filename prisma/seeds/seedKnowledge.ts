@@ -12,15 +12,13 @@ export async function seedKnowledge(prisma: PrismaClient) {
     const count = await prisma.knowledge.count()
 
     if (count == 0) {
-        const [tenant, user, categories, cases] = await Promise.all([
+        const [tenant, user] = await Promise.all([
             prisma.tenant.findFirst(),
             prisma.user.findFirst({
                 where: {
                     role: Roles.ADMIN,
                 },
             }),
-            prisma.masterKnowledgeCategory.findMany(),
-            prisma.masterKnowledgeCase.findMany(),
         ])
 
         const userInTenant = await prisma.user.findFirst({
@@ -38,24 +36,14 @@ export async function seedKnowledge(prisma: PrismaClient) {
             return
         }
 
-        if (!categories || categories.length === 0) {
-            console.log("No knowledge categories found. Please seed master knowledge categories first.")
-            return
-        }
-
-        if (!cases || cases.length === 0) {
-            console.log("No knowledge cases found. Please seed master knowledge cases first.")
-            return
-        }
-
         // Data knowledge seed
         const knowledgeData = [
             {
                 id: ulid(),
                 tenantId: null,
-                category: categories[0]?.name || "General",
+                category: "Category 1",
                 subCategory: "Sub Category 1",
-                case: cases[0]?.name || "General Case",
+                case: "Case 1",
                 type: KnowledgeType.ARTICLE,
                 access: KnowledgeAccess.EMAIL,
                 headline: "Cara Menangani Komplain Pelanggan",
@@ -114,9 +102,9 @@ export async function seedKnowledge(prisma: PrismaClient) {
             {
                 id: ulid(),
                 tenantId: tenant.id,
-                category: categories[1]?.name || categories[0]?.name || "General",
+                category: "Category 2",
                 subCategory: "Sub Category 2",
-                case: cases[1]?.name || cases[0]?.name || "General Case",
+                case: "Case 2",
                 headline: "Panduan Penggunaan Sistem CRM",
                 status: KnowledgeStatus.PENDING,
                 type: KnowledgeType.ARTICLE,
@@ -153,9 +141,9 @@ export async function seedKnowledge(prisma: PrismaClient) {
                 tenantId: null,
                 type: KnowledgeType.CASE,
                 access: KnowledgeAccess.PUBLIC,
-                category: categories[2]?.name || categories[0]?.name || "General",
+                category: "Category 3",
                 subCategory: "Sub Category 3",
-                case: cases[0].name,
+                case: "Case 3",
                 headline: "Prosedur Eskalasi Masalah",
                 status: KnowledgeStatus.REVISION,
                 createdByUserId: user.id,

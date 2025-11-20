@@ -77,6 +77,11 @@ export async function getAll(filters: EzFilter.FilteringQuery, user: UserJWTDAO,
                 fullName: true,
             },
         },
+        assignmentUserAttempts: {
+            where: {
+                userId: user.id,
+            },
+        },
     }
 
     usedFilters.query.where.AND.push({
@@ -84,6 +89,10 @@ export async function getAll(filters: EzFilter.FilteringQuery, user: UserJWTDAO,
     })
 
     usedFilters = await AssignmentHelpers.generatedFilterForAssignment(usedFilters, user, tenantId)
+
+    console.log("yyyyy")
+    console.log(usedFilters.query.where)
+    console.log("yyyy")
 
     const [assignment, totalData] = await Promise.all([
         prisma.assignment.findMany(usedFilters.query as any),

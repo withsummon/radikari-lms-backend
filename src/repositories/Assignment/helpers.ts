@@ -25,13 +25,26 @@ export async function generatedFilterForAssignment(
         return usedFilters
     }
 
-    return usedFilters.query.where.AND.push({
-        assignmentTenantRoleAccesses: {
-            some: {
-                tenantRoleId: {
-                    in: tenantRoles.map((tenantRole) => tenantRole.id),
+    usedFilters.query.where.AND.push({
+        OR: [
+            {
+                assignmentTenantRoleAccesses: {
+                    some: {
+                        tenantRoleId: {
+                            in: tenantRoles.map((tenantRole) => tenantRole.id),
+                        },
+                    },
                 },
             },
-        },
+            {
+                assignmentUserAccesses: {
+                    some: {
+                        userId: user.id,
+                    },
+                },
+            },
+        ],
     })
+
+    return usedFilters
 }

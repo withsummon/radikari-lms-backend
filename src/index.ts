@@ -48,6 +48,14 @@ if (parsedArgs["service"] == "consumer") {
     app.consumerApp()
 }
 
+if (parsedArgs["service"] == "cron") {
+    displayAsciiArt(REST_ASCII_ART)
+    Logger.info(`Started Cron Service`, {
+        resource: "cron",
+    })
+    app.cronApp()
+}
+
 async function gracefulShutdown() {
     Logger.info("Stopping server...", {
         resource: "APP_STOP",
