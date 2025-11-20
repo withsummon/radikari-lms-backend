@@ -46,3 +46,12 @@ export const AssignmentQuestionEssayReferenceAnswerSchema = z
         content: z.string({ required_error: "content is required" }),
     })
     .strict()
+
+export const AssignmentUserAttemptAnswerSchema = z
+    .strictObject({
+        assignmentQuestionId: z.string({ required_error: "assignmentQuestionId is required" }),
+        optionAnswerId: z.string().optional(),
+        essayAnswer: z.string().optional(),
+        trueFalseAnswer: z.boolean().optional(),
+    })
+    .strict()

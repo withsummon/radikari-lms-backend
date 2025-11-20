@@ -1,5 +1,5 @@
 import server from "$server/instance"
-
+import * as AssignmentAttemptController from "$controllers/cron/AssignmentAttemptController"
 
 export async function startCronApp() {
     const cronServer = server.cronServer
@@ -8,7 +8,10 @@ export async function startCronApp() {
         console.log("Some Scheduled Task")
     })
 
-    // Example Usages : 
-    // cronServer.addController("Some Scheduled Task", "*/30 * * * * *", TaskController.someTask)
+    cronServer.addController("Check Assignment Expired Date", "*/1 * * * * *", () => {
+        AssignmentAttemptController.checkAssignmentExpiredDate()
+    })
 
+    // Example Usages :
+    // cronServer.addController("Some Scheduled Task", "*/30 * * * * *", TaskController.someTask)
 }

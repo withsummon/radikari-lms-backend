@@ -34,22 +34,22 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  tenantUser                        TenantUser[]
-  knowledge                         Knowledge[]
-  knowledgeActivityLog              KnowledgeActivityLog[]
-  operation                         Operation[]
-  teamLeader                        TenantUser[]                       @relation("teamLeader")
-  supervisor                        TenantUser[]                       @relation("supervisor")
-  manager                           TenantUser[]                       @relation("manager")
-  headOfOperation                   TenantUser[]                       @relation("headOfOperation")
-  aiChatRooms                       AiChatRoom[]
-  userKnowledge                     UserKnowledge[]
-  accessControlListCreator          AccessControlList[]                @relation("AclCreator")
-  accessControlListUpdater          AccessControlList[]                @relation("AclUpdater")
-  assignmentUserAccesses            AssignmentUserAccess[]
-  assignmentUserAttempts            AssignmentUserAttempt[]
-  assignmentUserAttemptEssayAnswers AssignmentUserAttemptEssayAnswer[]
-  assignments                       Assignment[]
+  tenantUser                           TenantUser[]
+  knowledge                            Knowledge[]
+  knowledgeActivityLog                 KnowledgeActivityLog[]
+  operation                            Operation[]
+  teamLeader                           TenantUser[]                          @relation("teamLeader")
+  supervisor                           TenantUser[]                          @relation("supervisor")
+  manager                              TenantUser[]                          @relation("manager")
+  headOfOperation                      TenantUser[]                          @relation("headOfOperation")
+  aiChatRooms                          AiChatRoom[]
+  userKnowledge                        UserKnowledge[]
+  accessControlListCreator             AccessControlList[]                   @relation("AclCreator")
+  accessControlListUpdater             AccessControlList[]                   @relation("AclUpdater")
+  assignmentUserAccesses               AssignmentUserAccess[]
+  assignmentUserAttempts               AssignmentUserAttempt[]
+  assignments                          Assignment[]
+  assignmentUserAttemptQuestionAnswers AssignmentUserAttemptQuestionAnswer[]
 }
 
 model Operation {
@@ -413,10 +413,8 @@ model AssignmentQuestion {
   assignment                             Assignment                              @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
   assignmentQuestionOptions              AssignmentQuestionOption[]
   assignmentQuestionEssayReferenceAnswer AssignmentQuestionEssayReferenceAnswer?
-  assignmentUserAttemptOptionAnswers     AssignmentUserAttemptOptionAnswer[]
-  assignmentUserAttemptEssayAnswers      AssignmentUserAttemptEssayAnswer[]
   assignmentQuestionTrueFalseAnswer      AssignmentQuestionTrueFalseAnswer?
-  assignmentUserAttemptTrueFalseAnswers  AssignmentUserAttemptTrueFalseAnswer[]
+  assignmentUserAttemptQuestionAnswers   AssignmentUserAttemptQuestionAnswer[]
 
   @@unique([assignmentId, order])
 }
@@ -427,8 +425,8 @@ model AssignmentQuestionOption {
   content              String
   isCorrectAnswer      Boolean
 
-  assignmentQuestion                 AssignmentQuestion                  @relation(fields: [assignmentQuestionId], references: [id], onDelete: Cascade)
-  assignmentUserAttemptOptionAnswers AssignmentUserAttemptOptionAnswer[]
+  assignmentQuestion                   AssignmentQuestion                    @relation(fields: [assignmentQuestionId], references: [id], onDelete: Cascade)
+  assignmentUserAttemptQuestionAnswers AssignmentUserAttemptQuestionAnswer[]
 }
 
 model AssignmentQuestionTrueFalseAnswer {
@@ -457,45 +455,29 @@ model AssignmentUserAttempt {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  user                                  User                                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  assignment                            Assignment                             @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-  assignmentUserAttemptOptionAnswers    AssignmentUserAttemptOptionAnswer[]
-  assignmentUserAttemptEssayAnswers     AssignmentUserAttemptEssayAnswer[]
-  assignmentUserAttemptTrueFalseAnswers AssignmentUserAttemptTrueFalseAnswer[]
+  user                                 User                                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignment                           Assignment                            @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  assignmentUserAttemptQuestionAnswers AssignmentUserAttemptQuestionAnswer[]
+
+  @@unique([userId, assignmentId])
 }
 
-model AssignmentUserAttemptOptionAnswer {
-  id                         String   @id @unique
+model AssignmentUserAttemptQuestionAnswer {
+  id                         String                 @id @unique
+  type                       AssignmentQuestionType
   assignmentUserAttemptId    String
   assignmentQuestionId       String
   assignmentQuestionOptionId String?
+  essayAnswer                String?
   isAnswerCorrect            Boolean?
+  graderComment              String?
+  gradedByUserId             String?
+  trueFalseAnswer            Boolean?
 
   assignmentUserAttempt    AssignmentUserAttempt     @relation(fields: [assignmentUserAttemptId], references: [id], onDelete: Cascade)
   assignmentQuestion       AssignmentQuestion        @relation(fields: [assignmentQuestionId], references: [id], onDelete: Cascade)
   assignmentQuestionOption AssignmentQuestionOption? @relation(fields: [assignmentQuestionOptionId], references: [id], onDelete: Cascade)
-}
+  gradedByUser             User?                     @relation(fields: [gradedByUserId], references: [id], onDelete: Cascade)
 
-model AssignmentUserAttemptEssayAnswer {
-  id                      String   @id @unique
-  assignmentUserAttemptId String
-  assignmentQuestionId    String
-  content                 String?
-  isAnswerCorrect         Boolean?
-  graderComment           String?
-  gradedByUserId          String?
-
-  assignmentUserAttempt AssignmentUserAttempt @relation(fields: [assignmentUserAttemptId], references: [id], onDelete: Cascade)
-  assignmentQuestion    AssignmentQuestion    @relation(fields: [assignmentQuestionId], references: [id], onDelete: Cascade)
-  gradedByUser          User?                 @relation(fields: [gradedByUserId], references: [id], onDelete: Cascade)
-}
-
-model AssignmentUserAttemptTrueFalseAnswer {
-  id                      String   @id @unique
-  assignmentUserAttemptId String
-  assignmentQuestionId    String
-  answer                  Boolean?
-
-  assignmentUserAttempt AssignmentUserAttempt @relation(fields: [assignmentUserAttemptId], references: [id], onDelete: Cascade)
-  assignmentQuestion    AssignmentQuestion    @relation(fields: [assignmentQuestionId], references: [id], onDelete: Cascade)
+  @@unique([assignmentUserAttemptId, assignmentQuestionId])
 }

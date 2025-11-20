@@ -61,3 +61,10 @@ export interface AssignmentAttemptDTO {
     isSubmitted: boolean
     submittedAt: Date
 }
+
+export interface AssignmentUserAttemptAnswerDTO {
+    assignmentQuestionId: string
+    optionAnswerId?: string
+    essayAnswer?: string
+    trueFalseAnswer?: boolean
+}

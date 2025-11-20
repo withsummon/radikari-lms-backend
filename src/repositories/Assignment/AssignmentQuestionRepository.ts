@@ -1,6 +1,7 @@
 import { AssignmentQuestionType, Prisma } from "../../../generated/prisma/client"
 import { AssignmentQuestionDTO } from "$entities/Assignment"
 import { ulid } from "ulid"
+import { prisma } from "$pkg/prisma"
 
 export async function createMany(
     tx: Prisma.TransactionClient,
@@ -207,5 +208,38 @@ export async function updateMany(
     })
     await tx.assignmentQuestionEssayReferenceAnswer.createMany({
         data: questionEssayReferenceAnswerCreateManyInput,
+    })
+}
+
+export async function getAllQuestions(assignmentId: string) {
+    return await prisma.assignmentQuestion.findMany({
+        where: {
+            assignmentId,
+        },
+        include: {
+            assignmentQuestionOptions: {
+                select: {
+                    id: true,
+                    content: true,
+                },
+            },
+        },
+    })
+}
+
+export async function getCorrectQuestionAnswers(assignmentId: string) {
+    return await prisma.assignmentQuestion.findMany({
+        where: {
+            assignmentId,
+        },
+        include: {
+            assignmentQuestionOptions: {
+                where: {
+                    isCorrectAnswer: true,
+                },
+            },
+            assignmentQuestionTrueFalseAnswer: true,
+            assignmentQuestionEssayReferenceAnswer: true,
+        },
     })
 }

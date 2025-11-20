@@ -23,22 +23,22 @@ AssignmentRoutes.get(
 AssignmentRoutes.post(
     "/",
     AuthMiddleware.checkJwt,
-    AssignmentValidation.validateAssignmentSchema,
     AuthMiddleware.checkRoleAssignmentAccess([
         TenantRoleIdentifier.TRAINER,
         TenantRoleIdentifier.QUALITY_ASSURANCE,
     ]),
+    AssignmentValidation.validateAssignmentSchema,
     AssignmentController.create
 )
 
 AssignmentRoutes.put(
     "/:id",
     AuthMiddleware.checkJwt,
-    AssignmentValidation.validateAssignmentSchema,
     AuthMiddleware.checkRoleAssignmentAccess([
         TenantRoleIdentifier.TRAINER,
         TenantRoleIdentifier.QUALITY_ASSURANCE,
     ]),
+    AssignmentValidation.validateAssignmentSchema,
     AssignmentController.update
 )
 
