@@ -195,11 +195,22 @@ export async function approveById(
         await KnowledgeRepository.updateStatus(id, userId, status, data.action)
 
         if (data.action == KnowledgeActivityLogAction.APPROVE) {
+            Logger.info("KnowledgeService.approveById: Preparing to send message to queue.", {
+                knowledgeId: knowledge.id,
+                headline: knowledge.headline, // DEBUG: Log the headline from the DB object
+            });
+
+            const payload = generateKnowledgeQueueDTO(knowledge as any);
+            
+            Logger.info("KnowledgeService.approveById: Generated payload for queue.", {
+                payload: payload, // DEBUG: Log the entire payload
+            });
+
             const pubsub = GlobalPubSub.getInstance().getPubSub()
 
             await pubsub.sendToQueue(
                 PUBSUB_TOPICS.KNOWLEDGE_CREATE,
-                generateKnowledgeQueueDTO(knowledge as any)
+                payload
             )
         }
 
@@ -222,6 +233,7 @@ function generateKnowledgeQueueDTO(
             knowledgeId: knowledge.id,
             type: knowledge.type,
             access: knowledge.access,
+            headline: knowledge.headline,
             // FIXED: Always include tenantId in metadata for AI service access control
             // The tenantId represents the context where this knowledge was created
             tenantId: knowledge.tenantId,

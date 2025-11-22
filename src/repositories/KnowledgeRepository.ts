@@ -206,7 +206,19 @@ export async function getById(id: string) {
             id,
         },
         relationLoadStrategy: "join",
-        include: {
+        select: {
+            id: true,
+            tenantId: true,
+            createdByUserId: true,
+            headline: true, // Explicitly select headline
+            category: true,
+            subCategory: true,
+            case: true,
+            access: true,
+            type: true,
+            status: true,
+            createdAt: true,
+            updatedAt: true,
             userKnowledge: {
                 select: {
                     user: {
@@ -219,7 +231,11 @@ export async function getById(id: string) {
             },
             knowledgeAttachment: true,
             knowledgeContent: {
-                include: {
+                select: {
+                    id: true,
+                    title: true,
+                    description: true,
+                    order: true,
                     knowledgeContentAttachment: {
                         orderBy: {
                             order: "asc",
