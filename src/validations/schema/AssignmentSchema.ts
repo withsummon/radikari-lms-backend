@@ -66,3 +66,12 @@ export const AssignmentQuestionEssayReferenceAnswerSchema = z
         }),
     })
     .strict()
+
+export const AssignmentUserAttemptAnswerSchema = z
+    .strictObject({
+        assignmentQuestionId: z.string({ required_error: "assignmentQuestionId is required" }),
+        optionAnswerId: z.string().optional(),
+        essayAnswer: z.string().optional(),
+        trueFalseAnswer: z.boolean().optional(),
+    })
+    .strict()
