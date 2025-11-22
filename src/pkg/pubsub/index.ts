@@ -74,10 +74,7 @@ export class RabbitMQConnection {
 
     async consume(queue: string, consumerHandler: HandlerCB) {
         await this.channel.assertQueue(queue, {
-            durable: true,
-            arguments: {
-                "x-message-ttl": 30000, // 30 seconds in millisecond
-            }
+            durable: true
         });
 
         this.channel.consume(

@@ -222,7 +222,9 @@ function generateKnowledgeQueueDTO(
             knowledgeId: knowledge.id,
             type: knowledge.type,
             access: knowledge.access,
-            tenantId: knowledge.access == "TENANT" ? knowledge.tenantId : null,
+            // FIXED: Always include tenantId in metadata for AI service access control
+            // The tenantId represents the context where this knowledge was created
+            tenantId: knowledge.tenantId,
             accessUserIds:
                 knowledge.access == "EMAIL"
                     ? Array.from(

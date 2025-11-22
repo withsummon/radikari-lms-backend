@@ -8,5 +8,5 @@ logs
 generated/
 bun.lockb
 
-.kilo/**
-.kilo
+.kilocode/**
+.kilocode

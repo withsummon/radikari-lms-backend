@@ -13,6 +13,7 @@ export async function create(c: Context): Promise<TypedResponse> {
     const data: KnowledgeDTO = await c.req.json()
     const user: UserJWTDAO = c.get("jwtPayload")
     const tenantId = c.req.param("tenantId")
+    console.log("TENANT ID used in creating knowledge", tenantId)
 
     const serviceResponse = await KnowledgeService.create(user.id, tenantId, data)
 

@@ -23,7 +23,7 @@ export default function createRestServer() {
         return null;
       },
       allowHeaders: ["Content-Type", "Authorization"],
-      allowMethods: ["POST", "GET", "OPTIONS"],
+      allowMethods: ["POST", "GET", "PUT", "DELETE", "OPTIONS"],
       credentials: true,
     })
   );
