@@ -54,7 +54,7 @@ export async function streamHybridChat({
         const lastMessage = messages[messages.length - 1];
 
         const { text: contextualizedQuery } = await generateText({
-          model: openai("gpt-4o-mini"),
+          model: openai("gpt-4.1-mini"),
           messages: [
             {
               role: "system",
@@ -83,7 +83,8 @@ export async function streamHybridChat({
         const searchResult = await qdrantClient.search("radikari_knowledge", {
           vector: normalizedEmbedding,
           filter: {
-            must: [{ key: "tenantId", match: { value: tenantId } }],
+            // DO NOTTT FORGET TO CHANGE BACK TO TENANT ID FILTER @valuin @Copilot
+            must: [{ key: "tenantId", match: { value: "01KAR8XNR66TD180JD73XY2M21" } }],
           },
           limit: 10,
           score_threshold: 0.6,
@@ -116,6 +117,8 @@ export async function streamHybridChat({
         const systemMessage = `You are a helpful assistant for the Radikari LMS.
 Use the following pieces of retrieved context to answer the user's question.
 If the answer is not in the context, say you don't know.
+
+Make sure to cite the sources properly by referring to their title or article, and avoid using markdown formatting especially using tables or alike, for simplicity sake you should focus on conciseness, recalling, and if needed use bullet lists.
 
 Context:
 ${contextParts.join("\n\n")}`;
