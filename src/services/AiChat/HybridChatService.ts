@@ -7,12 +7,16 @@ import {
   ModelMessage,
 } from "ai";
 import { openai } from "@ai-sdk/openai";
-import { google } from "@ai-sdk/google";
 import { qdrantClient } from "$pkg/qdrant";
 import { prisma } from "$pkg/prisma";
 import { ulid } from "ulid";
 import { AiChatRoomMessageSender } from "../../../generated/prisma/client";
 import Logger from "$pkg/logger";
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || '',
+});
 
 interface HybridChatRequest {
   messages: ModelMessage[];
