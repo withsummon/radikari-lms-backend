@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch ./src/index.ts",
+    "dev": "bun run --watch ./src/index.ts -- --service=rest",
     "start": "bun run ./src/index.ts",
     "build": "rimraf dist && tsc",
     "seed": "bun run prisma/seeds/index.ts",
@@ -42,15 +42,21 @@
     "typescript": "^5.1.5"
   },
   "dependencies": {
+    "@ai-sdk/google": "^2.0.42",
+    "@ai-sdk/openai": "^2.0.69",
     "@hono/node-server": "^1.11.1",
     "@nodewave/prisma-ezfilter": "^0.2.1",
     "@nodewave/table-to-xlsx": "^0.2.0",
     "@prisma/client": "^6.11.0",
+    "@qdrant/js-client-rest": "^1.16.0",
     "@types/amqplib": "^0.10.7",
     "@types/luxon": "^3.3.2",
+    "ai": "^5.0.97",
     "amqplib": "^0.10.9",
     "axios": "^1.6.5",
     "cors": "^2.8.5",
+    "csv-parse": "^6.1.0",
+    "csv-stringify": "^6.6.0",
     "dotenv": "^16.3.1",
     "handlebars": "^4.7.8",
     "hono": "^4.3.6",
@@ -69,6 +75,9 @@
     "winston-daily-rotate-file": "^5.0.0",
     "winston-elasticsearch": "^0.19.0",
     "xlsx": "^0.18.5",
-    "zod": "^3.25.74"
+    "zod": "^4.1.12"
+  },
+  "overrides": {
+    "zod": "$zod"
   }
 }

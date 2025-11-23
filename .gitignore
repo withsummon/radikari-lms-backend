@@ -7,3 +7,6 @@ logs
 *.log
 generated/
 bun.lockb
+
+.kilocode/**
+.kilocode
