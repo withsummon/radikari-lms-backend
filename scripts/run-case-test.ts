@@ -174,7 +174,6 @@ class UATCaseTester {
         const no = record[0];
         const judulCase = record[1];
         const question = record[2];
-        const jawabanAI = record[3];
         const benarSalah = record[4];
         const jawabanSeharusnya = record[5];
 

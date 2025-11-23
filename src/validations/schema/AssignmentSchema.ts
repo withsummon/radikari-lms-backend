@@ -69,7 +69,7 @@ export const AssignmentQuestionEssayReferenceAnswerSchema = z
 
 export const AssignmentUserAttemptAnswerSchema = z
     .strictObject({
-        assignmentQuestionId: z.string({ required_error: "assignmentQuestionId is required" }),
+        assignmentQuestionId: z.string({ error: (issue) => issue.input === undefined ? "assignmentQuestionId is required" : undefined }),
         optionAnswerId: z.string().optional(),
         essayAnswer: z.string().optional(),
         trueFalseAnswer: z.boolean().optional(),

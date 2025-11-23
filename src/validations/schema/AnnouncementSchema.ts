@@ -1,8 +1,8 @@
 import { z } from "zod"
 export const AnnouncementSchema = z
     .strictObject({
-        title: z.string({ required_error: "title is required" }),
-        content: z.string({ required_error: "content is required" }),
-        tenantRoleIds: z.array(z.string({ required_error: "tenantRoleIds is required" })),
+        title: z.string({ error: (issue) => issue.input === undefined ? "title is required" : undefined }),
+        content: z.string({ error: (issue) => issue.input === undefined ? "content is required" : undefined }),
+        tenantRoleIds: z.array(z.string({ error: (issue) => issue.input === undefined ? "tenantRoleId is required" : undefined })),
     })
     .strict()

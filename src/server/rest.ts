@@ -15,6 +15,7 @@ export default function createRestServer() {
       origin: (origin) => {
         const allowedOrigins = [
           "http://localhost:3000",
+          "https://radikari-be.withsummon.com",
           ...(process.env.ALLOWED_ORIGINS?.split(",") || []),
         ];
         if (allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
