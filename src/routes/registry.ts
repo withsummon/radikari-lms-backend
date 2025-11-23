@@ -10,6 +10,7 @@ import ChatRoutes from "./AiChat/Chat"
 import BulkKnowledgeRoutes from "./BulkUpload"
 import AccessControlListRoutes from "./AccessControlList"
 import AssignmentRoutes from "./Assignment"
+import AnnouncementRoutes from "./Announcement"
 
 const RoutesRegistry = {
     UserRoutes,
@@ -24,6 +25,7 @@ const RoutesRegistry = {
     BulkKnowledgeRoutes,
     AccessControlListRoutes,
     AssignmentRoutes,
+    AnnouncementRoutes,
 }
 
 export default RoutesRegistry
