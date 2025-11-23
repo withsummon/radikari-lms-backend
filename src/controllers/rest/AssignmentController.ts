@@ -93,3 +93,90 @@ export async function getSummaryByUserIdAndTenantId(c: Context): Promise<TypedRe
         "Successfully fetched summary by user id and tenant id!"
     )
 }
+
+export async function getSummaryByTenantId(c: Context): Promise<TypedResponse> {
+    const tenantId = c.req.param("tenantId")
+
+    const serviceResponse = await AssignmentService.getSummaryByTenantId(tenantId)
+
+    if (!serviceResponse.status) {
+        return handleServiceErrorWithResponse(c, serviceResponse)
+    }
+
+    return response_success(c, serviceResponse.data, "Successfully fetched summary by tenant id!")
+}
+
+export async function getUserListWithAssignmentSummaryByTenantId(
+    c: Context
+): Promise<TypedResponse> {
+    const tenantId = c.req.param("tenantId")
+
+    const serviceResponse = await AssignmentService.getUserListWithAssignmentSummaryByTenantId(
+        tenantId
+    )
+
+    if (!serviceResponse.status) {
+        return handleServiceErrorWithResponse(c, serviceResponse)
+    }
+
+    return response_success(
+        c,
+        serviceResponse.data,
+        "Successfully fetched user list with assignment summary by tenant id!"
+    )
+}
+
+export async function getAssginmentWithUserSummaryByTenantId(c: Context): Promise<TypedResponse> {
+    const tenantId = c.req.param("tenantId")
+
+    const serviceResponse = await AssignmentService.getAssginmentWithUserSummaryByTenantId(tenantId)
+
+    if (!serviceResponse.status) {
+        return handleServiceErrorWithResponse(c, serviceResponse)
+    }
+
+    return response_success(
+        c,
+        serviceResponse.data,
+        "Successfully fetched assignment with user summary by tenant id!"
+    )
+}
+
+export async function getUserAssignmentList(c: Context): Promise<TypedResponse> {
+    const userId = c.req.param("userId")
+    const tenantId = c.req.param("tenantId")
+
+    const serviceResponse = await AssignmentService.getUserAssignmentList(userId, tenantId)
+
+    if (!serviceResponse.status) {
+        return handleServiceErrorWithResponse(c, serviceResponse)
+    }
+
+    return response_success(
+        c,
+        serviceResponse.data,
+        "Successfully fetched user assignment list by user id and tenant id!"
+    )
+}
+
+export async function getDetailUserAssignmentByUserIdAndAssignmentId(
+    c: Context
+): Promise<TypedResponse> {
+    const userId = c.req.param("userId")
+    const assignmentId = c.req.param("assignmentId")
+
+    const serviceResponse = await AssignmentService.getDetailUserAssignmentByUserIdAndTenantId(
+        userId,
+        assignmentId
+    )
+
+    if (!serviceResponse.status) {
+        return handleServiceErrorWithResponse(c, serviceResponse)
+    }
+
+    return response_success(
+        c,
+        serviceResponse.data,
+        "Successfully fetched detail user assignment by user id and assignment id!"
+    )
+}

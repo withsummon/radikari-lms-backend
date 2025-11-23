@@ -17,6 +17,41 @@ AssignmentRoutes.get(
     "/summary",
     AuthMiddleware.checkJwt,
     AuthMiddleware.checkRoleInTenant,
+    AssignmentController.getSummaryByTenantId
+)
+
+AssignmentRoutes.get(
+    "/summary/users",
+    AuthMiddleware.checkJwt,
+    AuthMiddleware.checkRoleInTenant,
+    AssignmentController.getUserListWithAssignmentSummaryByTenantId
+)
+
+AssignmentRoutes.get(
+    "/summary/users/:userId",
+    AuthMiddleware.checkJwt,
+    AuthMiddleware.checkRoleInTenant,
+    AssignmentController.getUserAssignmentList
+)
+
+AssignmentRoutes.get(
+    "/summary/users/:userId/:assignmentId",
+    AuthMiddleware.checkJwt,
+    AuthMiddleware.checkRoleInTenant,
+    AssignmentController.getDetailUserAssignmentByUserIdAndAssignmentId
+)
+
+AssignmentRoutes.get(
+    "/summary/lists",
+    AuthMiddleware.checkJwt,
+    AuthMiddleware.checkRoleInTenant,
+    AssignmentController.getAssginmentWithUserSummaryByTenantId
+)
+
+AssignmentRoutes.get(
+    "/summary/me",
+    AuthMiddleware.checkJwt,
+    AuthMiddleware.checkRoleInTenant,
     AssignmentController.getSummaryByUserIdAndTenantId
 )
 

@@ -12,6 +12,7 @@ import Logger from "$pkg/logger"
 import { UserJWTDAO } from "$entities/User"
 import * as TenantRoleRepository from "$repositories/TenantRoleRepository"
 import * as AssignmentAttemptRepository from "$repositories/Assignment/AssignmentAttemptRepository"
+import * as TenantUserRepository from "$repositories/TenantUserRepository"
 
 export async function create(
     data: AssignmentCreateDTO,
@@ -134,6 +135,246 @@ export async function getSummaryByUserIdAndTenantId(userId: string, tenantId: st
         })
     } catch (error) {
         Logger.error(`AssignmentService.getSummaryByUserIdAndTenantId`, { error })
+        return HandleServiceResponseCustomError("Internal Server Error", 500)
+    }
+}
+
+export async function getSummaryByTenantId(tenantId: string) {
+    try {
+        const [AssignmentCount, CompletedAssignmentCount]: [any, any] = await Promise.all([
+            AssignmentRepository.getTotalAssignmentByTenantId(tenantId),
+            AssignmentRepository.getTotalCompletedAssignmentByTenantId(tenantId),
+        ])
+
+        const totalAssignment = Number(AssignmentCount[0].count)
+        const totalCompletedAssignment = Number(CompletedAssignmentCount[0].count)
+        const totalUncompletedAssignment = totalAssignment - totalCompletedAssignment
+
+        return HandleServiceResponseSuccess({
+            totalAssignment,
+            totalCompletedAssignment,
+            totalUncompletedAssignment,
+        })
+    } catch (err) {
+        Logger.error(`AssignmentService.getSummaryByTenantId`, {
+            error: err,
+        })
+        return HandleServiceResponseCustomError("Internal Server Error", 500)
+    }
+}
+
+export async function getUserListWithAssignmentSummaryByTenantId(tenantId: string) {
+    try {
+        const userList: any = await AssignmentRepository.getUserListWithAssignmentSummaryByTenantId(
+            tenantId
+        )
+
+        const userListWithAssignmentSummary = userList.map((user: any) => ({
+            id: user.id,
+            fullName: user.fullName,
+            email: user.email,
+            phoneNumber: user.phoneNumber,
+            profilePicture: user.profilePicture,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+            role: user.role,
+            type: user.type,
+            totalAssignment: Number(user.totalAssignment),
+            totalSubmittedAssignment: Number(user.totalSubmittedAssignment),
+            progressPercentage:
+                Number(user.totalAssignment) > 0 && Number(user.totalSubmittedAssignment) > 0
+                    ? Math.round(
+                          (Number(user.totalSubmittedAssignment) / Number(user.totalAssignment)) *
+                              100
+                      )
+                    : 0,
+        }))
+
+        return HandleServiceResponseSuccess(userListWithAssignmentSummary)
+    } catch (error) {
+        Logger.error(`AssignmentService.getUserListWithAssignmentSummaryByTenantId`, { error })
+        return HandleServiceResponseCustomError("Internal Server Error", 500)
+    }
+}
+
+export async function getAssginmentWithUserSummaryByTenantId(tenantId: string) {
+    try {
+        const assignmentList: any =
+            await AssignmentRepository.getAssginmentWithUserSummaryByTenantId(tenantId)
+
+        const assignmentListWithUserSummary = assignmentList.map((assignment: any) => ({
+            id: assignment.id,
+            title: assignment.title,
+            durationInMinutes: assignment.durationInMinutes,
+            status: assignment.status,
+            access: assignment.access,
+            expiredDate: assignment.expiredDate,
+            totalUser: Number(assignment.totalUser),
+            totalUserSubmitted: Number(assignment.totalUserSubmitted),
+            progressPercentage:
+                Number(assignment.totalUser) > 0 && Number(assignment.totalUserSubmitted) > 0
+                    ? Math.round(
+                          (Number(assignment.totalUserSubmitted) / Number(assignment.totalUser)) *
+                              100
+                      )
+                    : 0,
+        }))
+
+        return HandleServiceResponseSuccess(assignmentListWithUserSummary)
+    } catch (error) {
+        Logger.error(`AssignmentService.getAssginmentWithUserSummaryByTenantId`, { error })
+        return HandleServiceResponseCustomError("Internal Server Error", 500)
+    }
+}
+
+export async function getUserAssignmentList(userId: string, tenantId: string) {
+    try {
+        const tenantUser = await TenantUserRepository.getByTenantIdAndUserId(tenantId, userId)
+        if (!tenantUser) {
+            return HandleServiceResponseCustomError("User not found", ResponseStatus.NOT_FOUND)
+        }
+
+        const assignmentList =
+            await AssignmentRepository.getAssignmentListByUserIdAndTenantIdAndTenantRoleId(
+                userId,
+                tenantId,
+                tenantUser.tenantRoleId
+            )
+
+        return HandleServiceResponseSuccess(assignmentList)
+    } catch (error) {
+        Logger.error(`AssignmentService.getUserAssignmentList`, { error })
+        return HandleServiceResponseCustomError("Internal Server Error", 500)
+    }
+}
+
+export async function getDetailUserAssignmentByUserIdAndTenantId(
+    userId: string,
+    assignmentId: string
+) {
+    try {
+        const assignment = await AssignmentRepository.getDetailUserAssignmentByUserIdAndTenantId(
+            userId,
+            assignmentId
+        )
+
+        if (!assignment) {
+            return HandleServiceResponseCustomError(
+                "Assignment not found",
+                ResponseStatus.NOT_FOUND
+            )
+        }
+
+        const assignmentDetail = () => {
+            const submittedAttempt = assignment.assignmentUserAttempts[0]
+
+            // If user hasn't submitted, return only assignment data
+            if (!submittedAttempt) {
+                return {
+                    assignment: {
+                        id: assignment.id,
+                        title: assignment.title,
+                        durationInMinutes: assignment.durationInMinutes,
+                        status: assignment.status,
+                        access: assignment.access,
+                        expiredDate: assignment.expiredDate,
+                        tenantId: assignment.tenantId,
+                        createdAt: assignment.createdAt,
+                        updatedAt: assignment.updatedAt,
+                        createdByUserId: assignment.createdByUserId,
+                        isSubmitted: false,
+                    },
+                    assignmentAttempt: null,
+                    questions: assignment.assignmentQuestions.map((question: any) => {
+                        const baseQuestion = {
+                            id: question.id,
+                            order: question.order,
+                            content: question.content,
+                            type: question.type,
+                        }
+
+                        if (question.type === "MULTIPLE_CHOICE") {
+                            return {
+                                ...baseQuestion,
+                                options: question.assignmentQuestionOptions.map((option: any) => ({
+                                    id: option.id,
+                                    content: option.content,
+                                })),
+                            }
+                        }
+
+                        return baseQuestion
+                    }),
+                }
+            }
+
+            // If user has submitted, return with attempt data (like history endpoint)
+            const mappedQuestions = assignment.assignmentQuestions.map((question: any) => {
+                const assignmentUserAttemptAnswer =
+                    submittedAttempt.assignmentUserAttemptQuestionAnswers.find(
+                        (answer: any) => answer.assignmentQuestionId === question.id
+                    )
+
+                const baseQuestion = {
+                    id: question.id,
+                    order: question.order,
+                    content: question.content,
+                    type: question.type,
+                    isCorrect: assignmentUserAttemptAnswer?.isAnswerCorrect ?? null,
+                }
+
+                if (question.type === "MULTIPLE_CHOICE") {
+                    return {
+                        ...baseQuestion,
+                        options: question.assignmentQuestionOptions.map((option: any) => ({
+                            id: option.id,
+                            content: option.content,
+                        })),
+                        userAnswer: assignmentUserAttemptAnswer?.assignmentQuestionOptionId ?? null,
+                    }
+                } else if (question.type === "ESSAY") {
+                    return {
+                        ...baseQuestion,
+                        userAnswer: assignmentUserAttemptAnswer?.essayAnswer ?? null,
+                    }
+                } else if (question.type === "TRUE_FALSE") {
+                    return {
+                        ...baseQuestion,
+                        userAnswer: assignmentUserAttemptAnswer?.trueFalseAnswer ?? null,
+                    }
+                }
+
+                return baseQuestion
+            })
+
+            return {
+                assignment: {
+                    id: assignment.id,
+                    title: assignment.title,
+                    durationInMinutes: assignment.durationInMinutes,
+                    status: assignment.status,
+                    access: assignment.access,
+                    expiredDate: assignment.expiredDate,
+                    tenantId: assignment.tenantId,
+                    createdAt: assignment.createdAt,
+                    updatedAt: assignment.updatedAt,
+                    createdByUserId: assignment.createdByUserId,
+                    isSubmitted: submittedAttempt.isSubmitted,
+                },
+                assignmentAttempt: {
+                    id: submittedAttempt.id,
+                    score: submittedAttempt.score,
+                    isSubmitted: submittedAttempt.isSubmitted,
+                    submittedAt: submittedAttempt.submittedAt,
+                    createdAt: submittedAttempt.createdAt,
+                    updatedAt: submittedAttempt.updatedAt,
+                },
+                questions: mappedQuestions,
+            }
+        }
+        return HandleServiceResponseSuccess(assignmentDetail())
+    } catch (error) {
+        Logger.error(`AssignmentService.getDetailUserAssignmentByUserIdAndTenantId`, { error })
         return HandleServiceResponseCustomError("Internal Server Error", 500)
     }
 }
