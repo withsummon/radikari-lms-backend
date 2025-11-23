@@ -90,10 +90,6 @@ export async function getAll(filters: EzFilter.FilteringQuery, user: UserJWTDAO,
 
     usedFilters = await AssignmentHelpers.generatedFilterForAssignment(usedFilters, user, tenantId)
 
-    console.log("yyyyy")
-    console.log(usedFilters.query.where)
-    console.log("yyyy")
-
     const [assignment, totalData] = await Promise.all([
         prisma.assignment.findMany(usedFilters.query as any),
         prisma.assignment.count({
@@ -213,4 +209,52 @@ export async function deleteById(id: string, tenantId: string) {
             tenantId,
         },
     })
+}
+
+export async function countAvailableAssignmentByUserIdAndTenantId(
+    userId: string,
+    tenantId: string,
+    tenantRoleIds: string[]
+) {
+    if (tenantRoleIds.length === 0) {
+        return [{ count: BigInt(0) }]
+    }
+
+    const roleIdPlaceholders = tenantRoleIds.map((id) => Prisma.sql`${id}`)
+
+    return await prisma.$queryRaw`
+        SELECT
+            COUNT(*)
+        FROM "Assignment" a
+        WHERE a."tenantId" = ${tenantId}
+            AND (
+                EXISTS (
+                    SELECT 1
+                    FROM "AssignmentTenantRoleAccess" atra
+                    WHERE atra."assignmentId" = a.id
+                    AND atra."tenantRoleId" IN (${Prisma.join(roleIdPlaceholders)})
+                )
+                OR EXISTS (
+                    SELECT 1
+                    FROM "AssignmentUserAccess" aua
+                    WHERE aua."assignmentId" = a.id
+                    AND aua."userId" = ${userId}
+                )
+            )
+    `
+}
+
+export async function countSubmittedAssignmentByUserIdAndTenantId(
+    userId: string,
+    tenantId: string
+) {
+    return await prisma.$queryRaw`
+        SELECT
+            COUNT(*)
+        FROM "AssignmentUserAttempt" aua
+        JOIN "Assignment" a ON aua."assignmentId" = a.id
+        WHERE a."tenantId" = ${tenantId}
+        AND aua."userId" = ${userId}
+        AND aua."isSubmitted" = true
+    `
 }

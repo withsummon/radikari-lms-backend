@@ -364,7 +364,7 @@ model Assignment {
   id                String           @id @unique
   title             String
   durationInMinutes Int
-  status            AssignmentStatus @default(DRAFT)
+  status            AssignmentStatus @default(PUBLISHED)
   access            AssignmentAccess
   expiredDate       String
   tenantId          String

@@ -76,3 +76,20 @@ export async function deleteById(c: Context): Promise<TypedResponse> {
 
     return response_success(c, serviceResponse.data, "Successfully deleted Assignment!")
 }
+
+export async function getSummaryByUserIdAndTenantId(c: Context): Promise<TypedResponse> {
+    const user: UserJWTDAO = c.get("jwtPayload")
+    const tenantId = c.req.param("tenantId")
+
+    const serviceResponse = await AssignmentService.getSummaryByUserIdAndTenantId(user.id, tenantId)
+
+    if (!serviceResponse.status) {
+        return handleServiceErrorWithResponse(c, serviceResponse)
+    }
+
+    return response_success(
+        c,
+        serviceResponse.data,
+        "Successfully fetched summary by user id and tenant id!"
+    )
+}

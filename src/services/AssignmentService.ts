@@ -10,6 +10,8 @@ import {
 } from "$entities/Service"
 import Logger from "$pkg/logger"
 import { UserJWTDAO } from "$entities/User"
+import * as TenantRoleRepository from "$repositories/TenantRoleRepository"
+import * as AssignmentAttemptRepository from "$repositories/Assignment/AssignmentAttemptRepository"
 
 export async function create(
     data: AssignmentCreateDTO,
@@ -96,6 +98,42 @@ export async function deleteById(id: string, tenantId: string): Promise<ServiceR
         Logger.error(`AssignmentService.deleteById`, {
             error: err,
         })
+        return HandleServiceResponseCustomError("Internal Server Error", 500)
+    }
+}
+
+export async function getSummaryByUserIdAndTenantId(userId: string, tenantId: string) {
+    try {
+        const userTenantRoles = await TenantRoleRepository.getByUserId(userId, tenantId)
+        const tenantRoleIds = userTenantRoles.map((tenantRole) => tenantRole.id)
+
+        const [availableAssignmentCount, submittedAssignmentCount, pointAssignment]: [
+            any,
+            any,
+            any
+        ] = await Promise.all([
+            AssignmentRepository.countAvailableAssignmentByUserIdAndTenantId(
+                userId,
+                tenantId,
+                tenantRoleIds
+            ),
+            AssignmentRepository.countSubmittedAssignmentByUserIdAndTenantId(userId, tenantId),
+            AssignmentAttemptRepository.getUserTotalPointAssignment(userId, tenantId),
+        ])
+
+        const totalAvailableAssignment = Number(availableAssignmentCount[0].count)
+        const totalSubmittedAssignment = Number(submittedAssignmentCount[0].count)
+        const totalUnsubmittedAssignment = totalAvailableAssignment - totalSubmittedAssignment
+        const totalPointAssignment = Number(pointAssignment[0].sum)
+
+        return HandleServiceResponseSuccess({
+            totalAvailableAssignment,
+            totalSubmittedAssignment,
+            totalUnsubmittedAssignment,
+            totalPointAssignment,
+        })
+    } catch (error) {
+        Logger.error(`AssignmentService.getSummaryByUserIdAndTenantId`, { error })
         return HandleServiceResponseCustomError("Internal Server Error", 500)
     }
 }

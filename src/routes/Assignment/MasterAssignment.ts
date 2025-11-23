@@ -14,6 +14,13 @@ AssignmentRoutes.get(
 )
 
 AssignmentRoutes.get(
+    "/summary",
+    AuthMiddleware.checkJwt,
+    AuthMiddleware.checkRoleInTenant,
+    AssignmentController.getSummaryByUserIdAndTenantId
+)
+
+AssignmentRoutes.get(
     "/:id",
     AuthMiddleware.checkJwt,
     AuthMiddleware.checkRoleInTenant,

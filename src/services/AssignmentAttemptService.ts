@@ -15,12 +15,29 @@ import {
     AssignmentUserAttemptQuestionAnswer,
 } from "../../generated/prisma/client"
 import * as AssignmentQuestionRepository from "$repositories/Assignment/AssignmentQuestionRepository"
+import * as AssignmentRepository from "$repositories/Assignment"
 
 export async function create(
     assignmentId: string,
-    userId: string
+    userId: string,
+    tenantId: string
 ): Promise<ServiceResponse<AssignmentUserAttempt | {}>> {
     try {
+        const assignment = await AssignmentRepository.getById(assignmentId, tenantId)
+        if (!assignment) {
+            return HandleServiceResponseCustomError(
+                "Assignment not found",
+                ResponseStatus.NOT_FOUND
+            )
+        }
+
+        if (assignment.status == "EXPIRED") {
+            return HandleServiceResponseCustomError(
+                "Assignment is expired",
+                ResponseStatus.BAD_REQUEST
+            )
+        }
+
         const currentUserAssignmentAttempt =
             await AssignmentAttemptRepository.getCurrentUserAssignmentAttemptByUserId(userId)
         if (currentUserAssignmentAttempt) {
@@ -316,5 +333,83 @@ export async function getAssignmentsByExpiredDate() {
         Logger.error(`AssignmentAttemptService.getAssignmentsByExpiredDate`, {
             error: err,
         })
+    }
+}
+
+export async function getHistoryUserAssignmentAttempts(userId: string, assignmentId: string) {
+    try {
+        const assignmentAttempt =
+            await AssignmentAttemptRepository.getHistoryUserAssignmentAttempts(userId, assignmentId)
+
+        if (!assignmentAttempt) {
+            return HandleServiceResponseCustomError(
+                "Assignment user attempt not found",
+                ResponseStatus.NOT_FOUND
+            )
+        }
+
+        const mappedQuestions = assignmentAttempt.assignment.assignmentQuestions.map((question) => {
+            const assignmentUserAttemptAnswer =
+                assignmentAttempt.assignmentUserAttemptQuestionAnswers.find(
+                    (answer) => answer.assignmentQuestionId === question.id
+                )
+
+            if (question.type === AssignmentQuestionType.MULTIPLE_CHOICE) {
+                return {
+                    id: question.id,
+                    order: question.order,
+                    content: question.content,
+                    type: question.type,
+                    options: question.assignmentQuestionOptions.map((option) => {
+                        return {
+                            id: option.id,
+                            content: option.content,
+                        }
+                    }),
+                    isCorrect: assignmentUserAttemptAnswer?.isAnswerCorrect,
+                    userAnswer: assignmentUserAttemptAnswer?.assignmentQuestionOptionId,
+                }
+            } else if (question.type === AssignmentQuestionType.ESSAY) {
+                return {
+                    id: question.id,
+                    order: question.order,
+                    content: question.content,
+                    type: question.type,
+                    isCorrect: assignmentUserAttemptAnswer?.isAnswerCorrect,
+                    userAnswer: assignmentUserAttemptAnswer?.essayAnswer,
+                }
+            } else if (question.type === AssignmentQuestionType.TRUE_FALSE) {
+                return {
+                    id: question.id,
+                    order: question.order,
+                    content: question.content,
+                    type: question.type,
+                    isCorrect: assignmentUserAttemptAnswer?.isAnswerCorrect,
+                    userAnswer: assignmentUserAttemptAnswer?.trueFalseAnswer,
+                }
+            }
+        })
+
+        return HandleServiceResponseSuccess({
+            assignmentAttempt: {
+                id: assignmentAttempt.id,
+                score: assignmentAttempt.score,
+                isSubmitted: assignmentAttempt.isSubmitted,
+                submittedAt: assignmentAttempt.submittedAt,
+                createdAt: assignmentAttempt.createdAt,
+                updatedAt: assignmentAttempt.updatedAt,
+            },
+            assignment: {
+                id: assignmentAttempt.assignment.id,
+                title: assignmentAttempt.assignment.title,
+                durationInMinutes: assignmentAttempt.assignment.durationInMinutes,
+            },
+            questions: mappedQuestions,
+        })
+    } catch (err) {
+        Logger.error(`AssignmentAttemptService.getHistoryUserAssignmentAttempts`, {
+            error: err,
+        })
+        return HandleServiceResponseCustomError("Internal Server Error", 500)
     }
 }
