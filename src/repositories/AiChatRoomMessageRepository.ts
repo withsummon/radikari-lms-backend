@@ -34,7 +34,11 @@ export async function getAll(filters: EzFilter.FilteringQuery, aiChatRoomId: str
     })
 
     usedFilters.query.include = {
-        knowledge: true,
+        aiChatRoomMessageKnowledge: {
+            include: {
+                knowledge: true
+            }
+        },
     }
 
     const [aiChatRoomMessage, totalData] = await Promise.all([
@@ -61,7 +65,11 @@ export async function getLatestChatRoomHistory(aiChatRoomId: string) {
             aiChatRoomId,
         },
         include: {
-            aiChatRoomMessageKnowledge: true,
+            aiChatRoomMessageKnowledge: {
+                include: {
+                    knowledge: true
+                }
+            },
         },
         orderBy: {
             createdAt: "desc",

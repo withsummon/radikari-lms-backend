@@ -1,6 +1,6 @@
 import { Context, TypedResponse } from "hono";
 import * as AiChatService from "$services/AiChat";
-import * as SimpleChatService from "$services/AiChat/SimpleChatService";
+import * as HybridChatService from "$services/AiChat/HybridChatService";
 import {
   handleServiceErrorWithResponse,
   response_created,
@@ -232,10 +232,10 @@ export async function streamMessage(c: Context): Promise<Response> {
     return c.json({ error: "Chat Room ID is required" }, 400);
   }
 
-  return SimpleChatService.streamSimpleChat(
-    modelMessages,
+  return HybridChatService.streamHybridChat({
+    messages: modelMessages,
     chatRoomId,
     tenantId,
-    user.id
-  );
+    userId: user.id
+  });
 }
