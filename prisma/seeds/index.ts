@@ -7,6 +7,7 @@ import { seedAccessControlList } from "./seedAcl"
 import { seedMasterKnowledgeCategorySubCategoryAndCase } from "./seedMasterKnowledgeCategorySubCategoryAndCase"
 import { seedAssignment } from "./seedAssignment"
 import { seedAnnouncement } from "./seedAnnoucement"
+import { seedForum } from "./seedForum"
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -25,6 +26,7 @@ async function seed() {
             await seedKnowledge(prisma)
             await seedAssignment(prisma)
             await seedAnnouncement(prisma)
+            await seedForum(prisma)
         } catch (seedError) {
             console.error("Seeding error:", seedError)
             throw seedError

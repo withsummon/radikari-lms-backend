@@ -11,6 +11,7 @@ import BulkKnowledgeRoutes from "./BulkUpload"
 import AccessControlListRoutes from "./AccessControlList"
 import AssignmentRoutes from "./Assignment"
 import AnnouncementRoutes from "./Announcement"
+import ForumRoutes from "./Forum"
 
 const RoutesRegistry = {
     UserRoutes,
@@ -26,6 +27,7 @@ const RoutesRegistry = {
     AccessControlListRoutes,
     AssignmentRoutes,
     AnnouncementRoutes,
+    ForumRoutes,
 }
 
 export default RoutesRegistry

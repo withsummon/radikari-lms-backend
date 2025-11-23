@@ -22,6 +22,7 @@ router.route("/bulk", RoutesRegistry.BulkKnowledgeRoutes)
 router.route("/access-control-lists", RoutesRegistry.AccessControlListRoutes)
 router.route("/tenants/:tenantId/assignments", RoutesRegistry.AssignmentRoutes)
 router.route("/tenants/:tenantId/announcements", RoutesRegistry.AnnouncementRoutes)
+router.route("/tenants/:tenantId/forums", RoutesRegistry.ForumRoutes)
 
 // AI Chat
 router.route("/ai-chat", RoutesRegistry.ChatRoutes)

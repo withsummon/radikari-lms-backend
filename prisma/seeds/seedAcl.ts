@@ -36,6 +36,10 @@ export async function seedAccessControlList(prisma: PrismaClient) {
             featureName: "ASSIGNMENT",
             actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
         },
+        {
+            featureName: "FORUM",
+            actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+        },
         // Add More Features
     ]
 
@@ -169,6 +173,10 @@ export async function seedAccessControlList(prisma: PrismaClient) {
                 featureName: "ASSIGNMENT",
                 actions: ["VIEW"],
             },
+            {
+                featureName: "FORUM",
+                actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+            },
         ]
         for (const action of allAction) {
             if (
@@ -227,6 +235,10 @@ export async function seedAccessControlList(prisma: PrismaClient) {
             {
                 featureName: "ASSIGNMENT",
                 actions: ["VIEW"],
+            },
+            {
+                featureName: "FORUM",
+                actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
             },
         ]
         for (const action of allAction) {
@@ -308,6 +320,10 @@ export async function seedAccessControlList(prisma: PrismaClient) {
                 featureName: "ASSIGNMENT",
                 actions: ["VIEW"],
             },
+            {
+                featureName: "FORUM",
+                actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+            },
         ]
 
         for (const action of allAction) {
@@ -362,6 +378,10 @@ export async function seedAccessControlList(prisma: PrismaClient) {
             },
             {
                 featureName: "ASSIGNMENT",
+                actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+            },
+            {
+                featureName: "FORUM",
                 actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
             },
         ]
@@ -444,6 +464,10 @@ export async function seedAccessControlList(prisma: PrismaClient) {
             {
                 featureName: "ASSIGNMENT",
                 actions: ["VIEW"],
+            },
+            {
+                featureName: "FORUM",
+                actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
             },
         ]
 

@@ -421,7 +421,7 @@ export async function createEmails(
 export async function incrementTotalViews(id: string) {
     await prisma.$queryRaw`
         SELECT *
-        FROM Knowledge
+        FROM "Knowledge"
         WHERE id = ${id}
         FOR UPDATE
     `

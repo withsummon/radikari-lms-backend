@@ -52,6 +52,10 @@ model User {
   assignments                          Assignment[]
   assignmentUserAttemptQuestionAnswers AssignmentUserAttemptQuestionAnswer[]
   announcements                        Announcement[]
+  forums                               Forum[]
+  forumComments                        ForumComment[]
+  forumLikes                           ForumLike[]
+  forumCommentLikes                    ForumCommentLike[]
 }
 
 model Operation {
@@ -81,6 +85,7 @@ model Tenant {
   knowledge     Knowledge[]
   aiChatRooms   AiChatRoom[]
   announcements Announcement[]
+  forums        Forum[]
 }
 
 model TenantRole {
@@ -507,4 +512,73 @@ model AnnouncementTenantRoleAccess {
 
   announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
   tenantRole   TenantRole   @relation(fields: [tenantRoleId], references: [id], onDelete: Cascade)
+}
+
+model Forum {
+  id              String   @id @unique
+  tenantId        String
+  title           String
+  content         String   @db.Text
+  createdByUserId String
+  likesCount      Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdByUser    User              @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  forumComments    ForumComment[]
+  forumAttachments ForumAttachment[]
+  forumLikes       ForumLike[]
+}
+
+model ForumAttachment {
+  id            String @id @unique
+  forumId       String
+  attachmentUrl String @db.Text
+
+  forum Forum @relation(fields: [forumId], references: [id], onDelete: Cascade)
+}
+
+model ForumComment {
+  id               String   @id @unique
+  forumId          String
+  content          String   @db.Text
+  likesCount       Int      @default(0)
+  replyToCommentId String?
+  createdByUserId  String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  createdByUser     User               @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  replyToComment    ForumComment?      @relation(name: "ForumCommentReplies", fields: [replyToCommentId], references: [id], onDelete: Cascade)
+  forum             Forum              @relation(fields: [forumId], references: [id], onDelete: Cascade)
+  replies           ForumComment[]     @relation(name: "ForumCommentReplies")
+  forumCommentLikes ForumCommentLike[]
+
+  @@index([forumId])
+  @@index([replyToCommentId])
+  @@index([createdByUserId])
+}
+
+model ForumLike {
+  id        String   @id @unique
+  userId    String
+  forumId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  forum Forum @relation(fields: [forumId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, forumId])
+}
+
+model ForumCommentLike {
+  id             String @id @unique
+  userId         String
+  forumCommentId String
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  forumComment ForumComment @relation(fields: [forumCommentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, forumCommentId])
 }
