@@ -248,3 +248,41 @@ export async function getUnsubmittedAssignmentUserAttempts() {
         },
     })
 }
+
+export async function getHistoryUserAssignmentAttempts(userId: string, assignmentId: string) {
+    return await prisma.assignmentUserAttempt.findUnique({
+        where: {
+            userId_assignmentId: {
+                userId,
+                assignmentId,
+            },
+            isSubmitted: true,
+        },
+        include: {
+            assignment: {
+                include: {
+                    assignmentQuestions: {
+                        include: {
+                            assignmentQuestionOptions: true,
+                            assignmentQuestionEssayReferenceAnswer: true,
+                            assignmentQuestionTrueFalseAnswer: true,
+                        },
+                    },
+                },
+            },
+            assignmentUserAttemptQuestionAnswers: true,
+        },
+    })
+}
+
+export async function getUserTotalPointAssignment(userId: string, tenantId: string) {
+    return await prisma.$queryRaw`
+        SELECT
+            SUM(aua.score)
+        FROM "AssignmentUserAttempt" aua
+        JOIN "Assignment" a ON aua."assignmentId" = a.id
+        WHERE a."tenantId" = ${tenantId}
+        AND aua."userId" = ${userId}
+        AND aua."isSubmitted" = true
+    `
+}

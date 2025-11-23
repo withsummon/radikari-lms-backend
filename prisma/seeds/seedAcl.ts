@@ -28,6 +28,14 @@ export async function seedAccessControlList(prisma: PrismaClient) {
             featureName: "BULK_UPLOAD",
             actions: ["CREATE"],
         },
+        {
+            featureName: "ANNOUNCEMENT",
+            actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+        },
+        {
+            featureName: "ASSIGNMENT",
+            actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+        },
         // Add More Features
     ]
 
@@ -153,6 +161,14 @@ export async function seedAccessControlList(prisma: PrismaClient) {
                 featureName: "OPERATION",
                 actions: ["VIEW"],
             },
+            {
+                featureName: "ANNOUNCEMENT",
+                actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+            },
+            {
+                featureName: "ASSIGNMENT",
+                actions: ["VIEW"],
+            },
         ]
         for (const action of allAction) {
             if (
@@ -202,6 +218,14 @@ export async function seedAccessControlList(prisma: PrismaClient) {
             },
             {
                 featureName: "OPERATION",
+                actions: ["VIEW"],
+            },
+            {
+                featureName: "ANNOUNCEMENT",
+                actions: ["VIEW"],
+            },
+            {
+                featureName: "ASSIGNMENT",
                 actions: ["VIEW"],
             },
         ]
@@ -276,6 +300,14 @@ export async function seedAccessControlList(prisma: PrismaClient) {
                 featureName: "OPERATION",
                 actions: ["VIEW"],
             },
+            {
+                featureName: "ANNOUNCEMENT",
+                actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+            },
+            {
+                featureName: "ASSIGNMENT",
+                actions: ["VIEW"],
+            },
         ]
 
         for (const action of allAction) {
@@ -323,6 +355,14 @@ export async function seedAccessControlList(prisma: PrismaClient) {
             {
                 featureName: "TENANT",
                 actions: ["VIEW"],
+            },
+            {
+                featureName: "ANNOUNCEMENT",
+                actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+            },
+            {
+                featureName: "ASSIGNMENT",
+                actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
             },
         ]
 
@@ -395,6 +435,14 @@ export async function seedAccessControlList(prisma: PrismaClient) {
             },
             {
                 featureName: "TENANT",
+                actions: ["VIEW"],
+            },
+            {
+                featureName: "ANNOUNCEMENT",
+                actions: ["VIEW"],
+            },
+            {
+                featureName: "ASSIGNMENT",
                 actions: ["VIEW"],
             },
         ]

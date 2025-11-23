@@ -11,8 +11,9 @@ import { AssignmentUserAttemptAnswerDTO } from "$entities/Assignment"
 export async function create(c: Context): Promise<TypedResponse> {
     const assignmentId = c.req.param("assignmentId")
     const user: UserJWTDAO = c.get("jwtPayload")
+    const tenantId = c.get("tenantId")
 
-    const serviceResponse = await AssignmentAttemptService.create(assignmentId, user.id)
+    const serviceResponse = await AssignmentAttemptService.create(assignmentId, user.id, tenantId)
 
     if (!serviceResponse.status) {
         return handleServiceErrorWithResponse(c, serviceResponse)
@@ -84,4 +85,24 @@ export async function submitAssignment(c: Context): Promise<TypedResponse> {
     }
 
     return response_success(c, serviceResponse.data, "Successfully submitted assignment!")
+}
+
+export async function getHistoryUserAssignmentAttempts(c: Context): Promise<TypedResponse> {
+    const assignmentId = c.req.param("assignmentId")
+    const user: UserJWTDAO = c.get("jwtPayload")
+
+    const serviceResponse = await AssignmentAttemptService.getHistoryUserAssignmentAttempts(
+        user.id,
+        assignmentId
+    )
+
+    if (!serviceResponse.status) {
+        return handleServiceErrorWithResponse(c, serviceResponse)
+    }
+
+    return response_success(
+        c,
+        serviceResponse.data,
+        "Successfully fetched history user assignment attempts!"
+    )
 }

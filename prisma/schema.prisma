@@ -24,15 +24,16 @@ enum UserType {
 }
 
 model User {
-  id          String   @id @unique
-  fullName    String
-  email       String   @unique
-  password    String
-  phoneNumber String
-  role        Roles    @default(USER)
-  type        UserType @default(INTERNAL)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String   @id @unique
+  fullName          String
+  email             String   @unique
+  password          String
+  phoneNumber       String
+  role              Roles    @default(USER)
+  type              UserType @default(INTERNAL)
+  profilePictureUrl String?  @db.Text
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   tenantUser                           TenantUser[]
   knowledge                            Knowledge[]
@@ -50,6 +51,7 @@ model User {
   assignmentUserAttempts               AssignmentUserAttempt[]
   assignments                          Assignment[]
   assignmentUserAttemptQuestionAnswers AssignmentUserAttemptQuestionAnswer[]
+  announcements                        Announcement[]
 }
 
 model Operation {
@@ -78,6 +80,7 @@ model Tenant {
   tenantSetting TenantSetting[]
   knowledge     Knowledge[]
   aiChatRooms   AiChatRoom[]
+  announcements Announcement[]
 }
 
 model TenantRole {
@@ -89,9 +92,10 @@ model TenantRole {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  tenantUser                   TenantUser[]
-  accessControlList            AccessControlList[]
-  assignmentTenantRoleAccesses AssignmentTenantRoleAccess[]
+  tenantUser                     TenantUser[]
+  accessControlList              AccessControlList[]
+  assignmentTenantRoleAccesses   AssignmentTenantRoleAccess[]
+  announcementTenantRoleAccesses AnnouncementTenantRoleAccess[]
 
   @@unique([identifier])
 }
@@ -364,7 +368,7 @@ model Assignment {
   id                String           @id @unique
   title             String
   durationInMinutes Int
-  status            AssignmentStatus @default(DRAFT)
+  status            AssignmentStatus @default(PUBLISHED)
   access            AssignmentAccess
   expiredDate       String
   tenantId          String
@@ -480,4 +484,27 @@ model AssignmentUserAttemptQuestionAnswer {
   gradedByUser             User?                     @relation(fields: [gradedByUserId], references: [id], onDelete: Cascade)
 
   @@unique([assignmentUserAttemptId, assignmentQuestionId])
+}
+
+model Announcement {
+  id              String   @id @unique
+  title           String
+  content         String   @db.Text
+  tenantId        String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdByUserId String?
+  createdByUser   User?    @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  tenant                         Tenant                         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  announcementTenantRoleAccesses AnnouncementTenantRoleAccess[]
+}
+
+model AnnouncementTenantRoleAccess {
+  id             String @id @unique
+  announcementId String
+  tenantRoleId   String
+
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  tenantRole   TenantRole   @relation(fields: [tenantRoleId], references: [id], onDelete: Cascade)
 }
