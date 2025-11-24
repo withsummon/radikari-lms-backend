@@ -45,15 +45,20 @@ services:
   #   networks:
   #     - radikari-lms-network
 
-  # RabbitMQ Message Queue (Commented out - not needed for now)
+  # RabbitMQ Message Queue
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: radikari-lms-rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-radikari}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-radikari123}
+      # Enable management plugin and configure for better queue handling
+      RABBITMQ_MANAGEMENT_PLUGIN: "rabbitmq_management"
     volumes:
+      # Use conditional volume mounting to allow fresh start when needed
       - radikari_lms_rabbit_data:/var/lib/rabbitmq
+      # Add initialization script for queue management
+      - ./docker/rabbitmq/init-queues.sh:/docker-entrypoint-init.d/10-init-queues.sh:ro
     ports:
       - "${RABBITMQ_PORT:-5672}:5672"
       - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
@@ -203,7 +208,7 @@ services:
     networks:
       - radikari-lms-network
 
-  # Consumer Service (Commented out - not needed for now)
+  # Consumer Service - Enabled for assignment processing
   consumer:
     build:
       context: .
