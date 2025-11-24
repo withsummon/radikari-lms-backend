@@ -300,7 +300,7 @@ export async function bulkCreate(data: KnowledgeBulkCreateDTO, userId: string) {
                 let tenant = await TenantRepository.getByName(row["Tenant Name"])
 
                 if (row["Tenant Name"] === "DANA") {
-                    tenant = await TenantRepository.getById("01K9201BYQKF3FGXTW1878YVZV")
+                    tenant = await TenantRepository.getById("01K9201Z97H20E4NKTEANCFVCP")
                 }
                 console.log("Tenant fetched or created:", tenant); // DEBUG LOG
 
@@ -308,7 +308,7 @@ export async function bulkCreate(data: KnowledgeBulkCreateDTO, userId: string) {
                     const operation = await OperationRepository.findFirst()
 
                     tenant = await TenantRepository.create({
-                        id: row["Tenant Name"] === "DANA" ? "01K9201BYQKF3FGXTW1878YVZV" : ulid(),
+                        id: row["Tenant Name"] === "DANA" ? "01K9201Z97H20E4NKTEANCFVCP" : ulid(),
                         name: row["Tenant Name"],
                         description: row["Tenant Name"],
                         operationId: operation!.id,
@@ -402,7 +402,7 @@ export async function bulkCreateTypeCase(data: KnowledgeBulkCreateDTO, userId: s
                     const operation = await OperationRepository.findFirst()
 
                     tenant = await TenantRepository.create({
-                        id: row["Tenant Name"] === "DANA" ? "01K9201BYQKF3FGXTW1878YVZV" : ulid(),
+                        id: row["Tenant Name"] === "DANA" ? "01K9201Z97H20E4NKTEANCFVCP" : ulid(),
                         name: row["Tenant Name"],
                         description: row["Tenant Name"],
                         operationId: operation!.id,
