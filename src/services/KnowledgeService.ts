@@ -299,11 +299,16 @@ export async function bulkCreate(data: KnowledgeBulkCreateDTO, userId: string) {
             if (row["Tenant Name"] && row["Tenant Name"] !== "") {
                 let tenant = await TenantRepository.getByName(row["Tenant Name"])
 
+                if (row["Tenant Name"] === "DANA") {
+                    tenant = await TenantRepository.getById("01K9201BYQKF3FGXTW1878YVZV")
+                }
+                console.log("Tenant fetched or created:", tenant); // DEBUG LOG
+
                 if (!tenant) {
                     const operation = await OperationRepository.findFirst()
 
                     tenant = await TenantRepository.create({
-                        id: ulid(),
+                        id: row["Tenant Name"] === "DANA" ? "01K9201BYQKF3FGXTW1878YVZV" : ulid(),
                         name: row["Tenant Name"],
                         description: row["Tenant Name"],
                         operationId: operation!.id,
