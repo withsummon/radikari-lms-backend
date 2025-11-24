@@ -87,8 +87,7 @@ export async function streamHybridChat({
         const searchResult = await qdrantClient.search("radikari_knowledge", {
           vector: normalizedEmbedding,
           filter: {
-            // DO NOTTT FORGET TO CHANGE BACK TO TENANT ID FILTER @valuin @Copilot
-            must: [{ key: "tenantId", match: { value: "01KAR8XNR66TD180JD73XY2M21" } }],
+            must: [{ key: "tenantId", match: { value: tenantId } }],
           },
           limit: 10,
           score_threshold: 0.6,

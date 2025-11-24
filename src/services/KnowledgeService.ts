@@ -397,7 +397,7 @@ export async function bulkCreateTypeCase(data: KnowledgeBulkCreateDTO, userId: s
                     const operation = await OperationRepository.findFirst()
 
                     tenant = await TenantRepository.create({
-                        id: ulid(),
+                        id: row["Tenant Name"] === "DANA" ? "01K9201BYQKF3FGXTW1878YVZV" : ulid(),
                         name: row["Tenant Name"],
                         description: row["Tenant Name"],
                         operationId: operation!.id,
