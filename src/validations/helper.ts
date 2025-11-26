@@ -13,25 +13,13 @@ export function generateErrorStructure(field: string, message: string): ErrorStr
 }
 
 
-function extractUnknownKeys(errorMessage: string): string[] {
-    // Match keys between single quotes, separated by commas
-    const match = errorMessage.match(/Unrecognized key\(s\) in object: '([^']+)'(?:,\s*'([^']+)')*/)
-
-    if (!match) return [];
-
-    // Remove the full match and filter out undefined values
-    return match.slice(1).filter((m) => m !== undefined);
-}
-
-
 export function validateSchema(schema: any, data: any): ErrorStructure[] {
     const schemaValidationResult = schema.safeParse(data)
     if (schemaValidationResult.error) {
-        const flattenError = z.flattenError(schemaValidationResult.error as any)
-        const errorFieldsEntry = flattenError.fieldErrors as Record<string, string[]>
-        const formErrorFieldsEntry = flattenError.formErrors
+        const errorFieldsEntry = z.treeifyError(schemaValidationResult.error) as Record<string, string[]>
         const errorFields = Object.keys(errorFieldsEntry)
         const invalidFields: ErrorStructure[] = []
+        
         for (const field of errorFields) {
             const fieldError = errorFieldsEntry[field]
             if (fieldError) {
@@ -39,9 +27,11 @@ export function validateSchema(schema: any, data: any): ErrorStructure[] {
             }
         }
 
-        for (const errorMessage of formErrorFieldsEntry) {
-            if (errorMessage.startsWith(`Unrecognized`)) {
-                extractUnknownKeys(errorMessage).map((key) => {
+        // Handle unrecognized keys from error issues
+        for (const issue of schemaValidationResult.error.issues) {
+            if (issue.code === "unrecognized_keys") {
+                const unrecognizedKeys = issue.keys || []
+                unrecognizedKeys.forEach((key: string) => {
                     invalidFields.push({ field: key, message: `Field ${key} is not allowed` })
                 })
             }

@@ -73,12 +73,30 @@ export class RabbitMQConnection {
     }
 
     async consume(queue: string, consumerHandler: HandlerCB) {
-        await this.channel.assertQueue(queue, {
-            durable: true,
-            arguments: {
-                "x-message-ttl": 30000, // 30 seconds in millisecond
+        Logger.info(`[CONSUMER] Attempting to declare queue: ${queue} with options: { durable: true }`, {});
+        
+        try {
+            await this.channel.assertQueue(queue, {
+                durable: true
+            });
+            Logger.info(`[CONSUMER] Successfully declared queue: ${queue}`, {});
+        } catch (error: any) {
+            if (error.message.includes('PRECONDITION_FAILED') && error.message.includes('x-message-ttl')) {
+                Logger.info(`[CONSUMER] Queue ${queue} has incompatible TTL configuration. Attempting to delete and recreate...`, {});
+                
+                // Delete the existing queue with incompatible configuration
+                await this.channel.deleteQueue(queue);
+                Logger.info(`[CONSUMER] Deleted existing queue: ${queue}`, {});
+                
+                // Recreate the queue with correct configuration
+                await this.channel.assertQueue(queue, {
+                    durable: true
+                });
+                Logger.info(`[CONSUMER] Successfully recreated queue: ${queue} with correct configuration`, {});
+            } else {
+                throw error;
             }
-        });
+        }
 
         this.channel.consume(
             queue,

@@ -195,11 +195,22 @@ export async function approveById(
         await KnowledgeRepository.updateStatus(id, userId, status, data.action)
 
         if (data.action == KnowledgeActivityLogAction.APPROVE) {
+            Logger.info("KnowledgeService.approveById: Preparing to send message to queue.", {
+                knowledgeId: knowledge.id,
+                headline: knowledge.headline, // DEBUG: Log the headline from the DB object
+            });
+
+            const payload = generateKnowledgeQueueDTO(knowledge as any);
+            
+            Logger.info("KnowledgeService.approveById: Generated payload for queue.", {
+                payload: payload, // DEBUG: Log the entire payload
+            });
+
             const pubsub = GlobalPubSub.getInstance().getPubSub()
 
             await pubsub.sendToQueue(
                 PUBSUB_TOPICS.KNOWLEDGE_CREATE,
-                generateKnowledgeQueueDTO(knowledge as any)
+                payload
             )
         }
 
@@ -222,7 +233,10 @@ function generateKnowledgeQueueDTO(
             knowledgeId: knowledge.id,
             type: knowledge.type,
             access: knowledge.access,
-            tenantId: knowledge.access == "TENANT" ? knowledge.tenantId : null,
+            headline: knowledge.headline,
+            // FIXED: Always include tenantId in metadata for AI service access control
+            // The tenantId represents the context where this knowledge was created
+            tenantId: knowledge.tenantId,
             accessUserIds:
                 knowledge.access == "EMAIL"
                     ? Array.from(
@@ -285,11 +299,16 @@ export async function bulkCreate(data: KnowledgeBulkCreateDTO, userId: string) {
             if (row["Tenant Name"] && row["Tenant Name"] !== "") {
                 let tenant = await TenantRepository.getByName(row["Tenant Name"])
 
+                if (row["Tenant Name"] === "DANA") {
+                    tenant = await TenantRepository.getById("01K9201Z97H20E4NKTEANCFVCP")
+                }
+                console.log("Tenant fetched or created:", tenant); // DEBUG LOG
+
                 if (!tenant) {
                     const operation = await OperationRepository.findFirst()
 
                     tenant = await TenantRepository.create({
-                        id: ulid(),
+                        id: row["Tenant Name"] === "DANA" ? "01K9201Z97H20E4NKTEANCFVCP" : ulid(),
                         name: row["Tenant Name"],
                         description: row["Tenant Name"],
                         operationId: operation!.id,
@@ -383,7 +402,7 @@ export async function bulkCreateTypeCase(data: KnowledgeBulkCreateDTO, userId: s
                     const operation = await OperationRepository.findFirst()
 
                     tenant = await TenantRepository.create({
-                        id: ulid(),
+                        id: row["Tenant Name"] === "DANA" ? "01K9201Z97H20E4NKTEANCFVCP" : ulid(),
                         name: row["Tenant Name"],
                         description: row["Tenant Name"],
                         operationId: operation!.id,

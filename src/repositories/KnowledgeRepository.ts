@@ -17,26 +17,14 @@ export async function create(userId: string, tenantId: string, data: KnowledgeDT
         const { attachments, contents, emails, ...rest } = data
         let knowledge: Knowledge
 
-        switch (data.access) {
-            case KnowledgeAccess.TENANT:
-                knowledge = await tx.knowledge.create({
-                    data: {
-                        ...rest,
-                        tenantId,
-                        createdByUserId: userId,
-                    },
-                })
-                break
-            default:
-                knowledge = await tx.knowledge.create({
-                    data: {
-                        ...rest,
-                        tenantId: null,
-                        createdByUserId: userId,
-                    },
-                })
-                break
-        }
+        // Access control is handled at query level, not by nullifying tenantId
+        knowledge = await tx.knowledge.create({
+            data: {
+                ...rest,
+                tenantId, // Always store the tenant context
+                createdByUserId: userId,
+            },
+        })
 
         //Create knowledge attachments
         await createAttachments(tx, knowledge.id, attachments)
@@ -218,7 +206,19 @@ export async function getById(id: string) {
             id,
         },
         relationLoadStrategy: "join",
-        include: {
+        select: {
+            id: true,
+            tenantId: true,
+            createdByUserId: true,
+            headline: true, // Explicitly select headline
+            category: true,
+            subCategory: true,
+            case: true,
+            access: true,
+            type: true,
+            status: true,
+            createdAt: true,
+            updatedAt: true,
             userKnowledge: {
                 select: {
                     user: {
@@ -231,7 +231,11 @@ export async function getById(id: string) {
             },
             knowledgeAttachment: true,
             knowledgeContent: {
-                include: {
+                select: {
+                    id: true,
+                    title: true,
+                    description: true,
+                    order: true,
                     knowledgeContentAttachment: {
                         orderBy: {
                             order: "asc",
@@ -262,21 +266,12 @@ export async function update(id: string, data: KnowledgeDTO, tenantId: string) {
         const { attachments, contents, emails, ...rest } = data
         let knowledge: Knowledge
 
-        // Update knowledge
-        switch (data.access) {
-            case KnowledgeAccess.TENANT:
-                knowledge = await tx.knowledge.update({
-                    where: { id },
-                    data: { ...rest, tenantId },
-                })
-                break
-            default:
-                knowledge = await tx.knowledge.update({
-                    where: { id },
-                    data: { ...rest, tenantId: null },
-                })
-                break
-        }
+        // FIXED: Always maintain tenantId to preserve context for AI service
+        // Access control is handled at query level, not by nullifying tenantId
+        knowledge = await tx.knowledge.update({
+            where: { id },
+            data: { ...rest, tenantId }, // Always maintain the tenant context
+        })
 
         // Delete old attachments and contents (cascade will delete content attachments)
         await tx.knowledgeAttachment.deleteMany({

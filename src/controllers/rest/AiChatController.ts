@@ -1,15 +1,15 @@
 import { Context, TypedResponse } from "hono"
 import * as AiChatService from "$services/AiChat"
+import * as HybridChatService from "$services/AiChat/HybridChatService"
 import {
     handleServiceErrorWithResponse,
     response_created,
     response_success,
-    response_stream,
 } from "$utils/response.utils"
 import { AiChatRoomDTO } from "$entities/AiChatRoom"
-import { AiChatRoomMessageCreateDTO } from "$entities/AiChatRoomMessage"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { UserJWTDAO } from "$entities/User"
+import { z } from "zod"
 
 export async function createChatRoom(c: Context): Promise<TypedResponse> {
     const data: AiChatRoomDTO = await c.req.json()
@@ -109,69 +109,78 @@ export async function chat(c: Context): Promise<TypedResponse> {
     return response_success(c, serviceResponse.data, "Successfully sent message to AiChatRoom!")
 }
 
-export async function streamMessage(c: Context): Promise<TypedResponse | Response> {
-    const formData = await c.req.json()
-    const message = formData.message as string
+const StreamChatSchema = z.object({
+    messages: z
+        .array(
+            z.object({
+                role: z.enum(["user", "assistant", "system"]),
+                content: z.string().optional(),
+                parts: z.array(z.any()).optional(),
+            })
+        )
+        .optional(),
+    message: z.string().optional(), // Support single message format from AI SDK
+    chatRoomId: z.string().optional(), // Optional for new chats
+})
+
+export async function streamMessage(c: Context): Promise<Response> {
+    const user = c.get("jwtPayload")
+    const tenantId = c.req.param("tenantId")
     const chatRoomId = c.req.param("chatRoomId")
-    const user: UserJWTDAO = c.get("jwtPayload")
 
-    if (!message) {
-        return c.json({ error: "Message is required" }, 400)
+    const body = await c.req.json()
+    const parseResult = StreamChatSchema.safeParse(body)
+
+    if (!parseResult.success) {
+        return c.json({ error: "Invalid request body", details: parseResult.error }, 400)
     }
 
-    const payload: AiChatRoomMessageCreateDTO = {
-        question: message,
+    // Handle both single message and array formats
+    let messages = parseResult.data.messages
+
+    // Convert single message to array format
+    if (!messages && parseResult.data.message) {
+        console.log("Converting single message to array format")
+        messages = [
+            {
+                role: "user",
+                content: parseResult.data.message,
+                parts: [{ type: "text", text: parseResult.data.message }],
+            },
+        ]
     }
 
-    const streamData = new ReadableStream({
-        async start(controller) {
-            try {
-                // Set headers untuk Server-Sent Events
-                controller.enqueue(
-                    `data: ${JSON.stringify({
-                        event: "start",
-                        data: { message: "Starting AI response..." },
-                    })}\n\n`
-                )
+    if (!messages || messages.length === 0) {
+        return c.json({ error: "Messages are required" }, 400)
+    }
 
-                await AiChatService.Chat.streamMessage(
-                    user,
-                    chatRoomId,
-                    payload,
-                    (chunk: string) => {
-                        try {
-                            const parsedChunk = JSON.parse(chunk)
-
-                            // Format response sesuai dengan SSE standard
-                            const eventType = parsedChunk.event || "message"
-                            const data = parsedChunk.data || chunk
-
-                            // Kirim ke client dalam format SSE
-                            controller.enqueue(`event: ${eventType}\n`)
-                            controller.enqueue(`data: ${data}\n\n`)
-                        } catch (error) {
-                            console.error("Error parsing chunk:", error)
-                            // Kirim raw data jika parsing gagal
-                            controller.enqueue(`event: message\n`)
-                            controller.enqueue(`data: ${chunk}\n\n`)
-                        }
-                    }
-                )
-
-                // Stream selesai
-                controller.enqueue(`event: end\n`)
-                controller.enqueue(`data: ${JSON.stringify({ type: "end" })}\n\n`)
-            } catch (err) {
-                console.error("Error in streaming chat:", err)
-                controller.enqueue(`event: error\n`)
-                controller.enqueue(
-                    `data: ${JSON.stringify({ error: "Failed to process message" })}\n\n`
-                )
-            } finally {
-                controller.close()
-            }
-        },
+    // Convert to ModelMessage format
+    const modelMessages = messages.map((m: any) => {
+        let content = m.content
+        if (!content && m.parts) {
+            // Simple conversion: join text parts
+            content = m.parts
+                .filter((p: any) => p.type === "text")
+                .map((p: any) => p.text)
+                .join("")
+        }
+        return {
+            role: m.role,
+            content: content || "",
+        }
     })
 
-    return response_stream(c, streamData as ReadableStream)
+    // For new chats, the chatRoomId might not exist yet.
+    // The frontend will handle creating the room first.
+    // For now, we assume chatRoomId is always present.
+    if (!chatRoomId) {
+        return c.json({ error: "Chat Room ID is required" }, 400)
+    }
+
+    return HybridChatService.streamHybridChat({
+        messages: modelMessages,
+        chatRoomId,
+        tenantId,
+        userId: user.id,
+    })
 }

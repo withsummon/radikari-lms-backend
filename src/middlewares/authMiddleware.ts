@@ -5,6 +5,7 @@ import {
 } from "$utils/response.utils"
 import { transformRoleToEnumRole } from "$utils/user.utils"
 import { Context, Next } from "hono"
+import { getCookie } from "hono/cookie"
 import jwt from "jsonwebtoken"
 import { Roles } from "../../generated/prisma/client"
 import { UserJWTDAO } from "$entities/User"
@@ -13,20 +14,40 @@ import * as TenantRepository from "$repositories/TenantRepository"
 import * as TenantRoleRepository from "$repositories/TenantRoleRepository"
 
 export async function checkJwt(c: Context, next: Next) {
-    const token = c.req.header("Authorization")?.split(" ")[1]
-    const JWT_SECRET = process.env.JWT_SECRET ?? ""
+    let token: string | undefined;
+    const authHeader = c.req.header("Authorization");
+
+    if (authHeader) {
+        const parts = authHeader.split(" ");
+        if (parts.length === 2 && parts[0] === "Bearer") {
+            token = parts[1];
+        }
+    }
+
     if (!token) {
-        return response_unauthorized(c, "Token should be provided")
+        const cookie = getCookie(c, "radikari-session");
+        if (cookie) {
+            try {
+                const session = JSON.parse(cookie);
+                token = session.accessToken;
+            } catch (error) {
+                console.error("Failed to parse radikari-session cookie:", error);
+            }
+        }
+    }
+    
+    if (!token) {
+        return response_unauthorized(c, "Token should be provided");
     }
 
     try {
-        const decodedValue = jwt.verify(token, JWT_SECRET)
-        c.set("jwtPayload", decodedValue)
+        const decodedValue = jwt.verify(token, process.env.JWT_SECRET ?? "");
+        c.set("jwtPayload", decodedValue);
     } catch (err) {
-        console.log(err)
-        return response_unauthorized(c, (err as Error).message)
+        console.log(err);
+        return response_unauthorized(c, (err as Error).message);
     }
-    await next()
+    await next();
 }
 
 export function checkRole(roles: Roles[]) {

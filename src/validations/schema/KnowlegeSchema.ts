@@ -6,41 +6,61 @@ import {
 } from "../../../generated/prisma/client"
 export const KnowlegeSchema = z
     .strictObject({
-        category: z.string({ required_error: "category is required" }),
-        subCategory: z.string({ required_error: "subCategory is required" }),
+        category: z.string({
+            error: (issue) => issue.input === undefined ? "category is required" : undefined
+        }),
+        subCategory: z.string({
+            error: (issue) => issue.input === undefined ? "subCategory is required" : undefined
+        }),
         type: z.enum([KnowledgeType.ARTICLE, KnowledgeType.CASE], {
-            required_error: "type is required",
+            error: (issue) => issue.input === undefined ? "type is required" : undefined
         }),
         access: z.enum([KnowledgeAccess.PUBLIC, KnowledgeAccess.TENANT, KnowledgeAccess.EMAIL], {
-            required_error: "access is required",
+            error: (issue) => issue.input === undefined ? "access is required" : undefined
         }),
-        case: z.string({ required_error: "case is required" }),
-        headline: z.string({ required_error: "headline is required" }),
+        case: z.string({
+            error: (issue) => issue.input === undefined ? "case is required" : undefined
+        }),
+        headline: z.string({
+            error: (issue) => issue.input === undefined ? "headline is required" : undefined
+        }),
         attachments: z
             .array(
                 z.object({
-                    attachmentUrl: z.string({ required_error: "attachmentUrl is required" }),
+                    attachmentUrl: z.string({
+                        error: (issue) => issue.input === undefined ? "attachmentUrl is required" : undefined
+                    }),
                 })
             )
             .optional(),
         contents: z.array(
             z.object({
-                title: z.string({ required_error: "title is required" }),
-                description: z.string({ required_error: "description is required" }),
-                order: z.number({ required_error: "order is required" }),
+                title: z.string({
+                    error: (issue) => issue.input === undefined ? "title is required" : undefined
+                }),
+                description: z.string({
+                    error: (issue) => issue.input === undefined ? "description is required" : undefined
+                }),
+                order: z.number({
+                    error: (issue) => issue.input === undefined ? "order is required" : undefined
+                }),
                 attachments: z
                     .array(
                         z.object({
-                            order: z.number({ required_error: "order is required" }),
+                            order: z.number({
+                                error: (issue) => issue.input === undefined ? "order is required" : undefined
+                            }),
                             attachmentUrl: z.string({
-                                required_error: "attachmentUrl is required",
+                                error: (issue) => issue.input === undefined ? "attachmentUrl is required" : undefined
                             }),
                         })
                     )
                     .optional(),
             })
         ),
-        emails: z.array(z.string({ required_error: "emails is required" })).optional(),
+        emails: z.array(z.string({
+            error: (issue) => issue.input === undefined ? "emails is required" : undefined
+        })).optional(),
     })
     .strict()
 
@@ -52,8 +72,12 @@ export const KnowledgeApprovalSchema = z
                 KnowledgeActivityLogAction.REJECT,
                 KnowledgeActivityLogAction.REVISION,
             ],
-            { required_error: "action is required" }
+            {
+                error: (issue) => issue.input === undefined ? "action is required" : undefined
+            }
         ),
-        comment: z.string({ required_error: "comment is required" }).optional(),
+        comment: z.string({
+            error: (issue) => issue.input === undefined ? "comment is required" : undefined
+        }).optional(),
     })
     .strict()

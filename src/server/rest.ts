@@ -8,20 +8,34 @@ import { cors } from "hono/cors";
 import { prettyJSON } from 'hono/pretty-json';
 
 export default function createRestServer() {
-  let allowedOrigins: string[] = ["*"]
-  let corsOptions: any = {}
-  if (process.env.ALLOWED_ORIGINS == "*") {
-    corsOptions = {}
-  } else {
-    if (process.env.ALLOWED_ORIGINS) {
-      allowedOrigins = process.env.ALLOWED_ORIGINS!.split(",")
-      corsOptions.origin = allowedOrigins
-    }
-  }
-
   const app = new Hono();
-  app.use(cors(corsOptions));
-  app.use(httpLogger)
+
+  app.use(
+    cors({
+      origin: (origin) => {
+        const allowedOrigins = [
+          "http://localhost:3000",
+          "https://radikari.withsummon.com",
+          ...(process.env.ALLOWED_ORIGINS?.split(",") || []),
+        ];
+        console.log("CORS DEBUG:", { origin, allowedOrigins });
+        
+        // If origin is empty/undefined, it's likely not a CORS request or strict-origin policy hid it.
+        // Returning null prevents sending Access-Control-Allow-Origin header.
+        if (!origin) return null;
+
+        if (allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
+          return origin;
+        }
+        return null;
+      },
+      allowHeaders: ["Content-Type", "Authorization"],
+      allowMethods: ["POST", "GET", "PUT", "DELETE", "OPTIONS"],
+      credentials: true,
+    })
+  );
+
+  app.use(httpLogger);
 
   app.use(prettyJSON({ space: 4 }));
   app.route("/", routes);

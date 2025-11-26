@@ -51,6 +51,7 @@ export interface KnowledgeQueueDTO {
         knowledgeId: string
         type: KnowledgeType
         access: KnowledgeAccess
+        headline: string
         tenantId: string | null
         accessUserIds: string[]
     }

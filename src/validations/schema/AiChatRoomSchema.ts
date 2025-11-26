@@ -1,12 +1,16 @@
 import { z } from "zod"
 export const AiChatRoomSchema = z
     .strictObject({
-        title: z.string({ required_error: "title is required" }),
+        title: z.string({
+            error: (issue) => issue.input === undefined ? "title is required" : undefined
+        }),
     })
     .strict()
 
 export const AiChatRoomMessageSchema = z
     .strictObject({
-        question: z.string({ required_error: "question is required" }),
+        question: z.string({
+            error: (issue) => issue.input === undefined ? "question is required" : undefined
+        }),
     })
     .strict()
