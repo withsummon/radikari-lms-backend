@@ -1,9 +1,15 @@
-import { CreateUserDTO } from "$entities/UserManagement"
+import { CreateGoogleUserDTO, CreateUserDTO } from "$entities/UserManagement"
 import { exclude, UpdateUserDTO } from "$entities/User"
 import { prisma } from "$pkg/prisma"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 
 export async function create(data: CreateUserDTO) {
+    return await prisma.user.create({
+        data,
+    })
+}
+
+export async function createGoogleUser(data: CreateGoogleUserDTO) {
     return await prisma.user.create({
         data,
     })

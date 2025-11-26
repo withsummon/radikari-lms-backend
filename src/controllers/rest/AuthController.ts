@@ -6,6 +6,7 @@ import {
     response_success,
 } from "$utils/response.utils"
 import { Context, TypedResponse } from "hono"
+import { googleOAuth } from "$pkg/oauth/google"
 
 export async function login(c: Context): Promise<TypedResponse> {
     const data: UserLoginDTO = await c.req.json()
@@ -45,4 +46,34 @@ export async function changePassword(c: Context): Promise<TypedResponse> {
     }
 
     return response_success(c, serviceResponse.data, "Successfully changed password!")
+}
+
+export function googleLogin(c: Context) {
+    const authUrl = googleOAuth.generateAuthUrl({
+        access_type: "offline",
+        scope: [
+            "https://www.googleapis.com/auth/userinfo.email",
+            "https://www.googleapis.com/auth/userinfo.profile",
+        ],
+        include_granted_scopes: true,
+    })
+
+    return c.redirect(authUrl)
+}
+
+export async function googleCallback(c: Context): Promise<TypedResponse> {
+    const { code } = c.req.query()
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000"
+
+    const serviceResponse = await AuthService.googleCallback(code)
+
+    if (!serviceResponse.status) {
+        return handleServiceErrorWithResponse(c, serviceResponse)
+    }
+
+    const token = serviceResponse.data.token
+
+    return c.redirect(
+        `${frontendUrl}?token=${token}&user=${JSON.stringify(serviceResponse.data.user)}`
+    )
 }

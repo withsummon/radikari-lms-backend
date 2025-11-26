@@ -7,7 +7,10 @@ import { exclude, UserJWTDAO, UserLoginDTO } from "$entities/User"
 import Logger from "$pkg/logger"
 import * as UserRepository from "$repositories/UserRepository"
 import jwt from "jsonwebtoken"
-import { User } from "../../generated/prisma/client"
+import { Roles, User, UserType } from "../../generated/prisma/client"
+import { googleOAuth } from "$pkg/oauth/google"
+import { google } from "googleapis"
+import { ulid } from "ulid"
 
 function createToken(user: User) {
     const jwtPayload = exclude(user, "password") as UserJWTDAO
@@ -21,7 +24,7 @@ export async function logIn(data: UserLoginDTO): Promise<ServiceResponse<any>> {
 
         const user = await UserRepository.getByEmail(email)
 
-        if (!user) {
+        if (!user || user.type !== "INTERNAL") {
             return HandleServiceResponseCustomError("Invalid credential!", 404)
         }
 
@@ -98,6 +101,49 @@ export async function changePassword(
         return HandleServiceResponseSuccess({})
     } catch (err) {
         Logger.error(`AuthService.changePassword`, {
+            error: err,
+        })
+        return HandleServiceResponseCustomError("Internal Server Error", 500)
+    }
+}
+
+export async function googleCallback(code: string): Promise<ServiceResponse<any>> {
+    try {
+        const { tokens } = await googleOAuth.getToken(code)
+        googleOAuth.setCredentials(tokens)
+        const oauth2Client = google.oauth2({
+            auth: googleOAuth,
+            version: "v2",
+        })
+        const data = await oauth2Client.userinfo.get()
+
+        if (data.status != 200) {
+            return HandleServiceResponseCustomError("Invalid Google Token", 400)
+        }
+
+        let user = await UserRepository.getByEmail(data.data.email!)
+
+        if (!user) {
+            user = await UserRepository.createGoogleUser({
+                id: ulid(),
+                email: data.data.email!,
+                fullName: data.data.name!,
+                password: "",
+                phoneNumber: "",
+                role: Roles.USER,
+                type: UserType.GOOGLE,
+                profilePictureUrl: data.data.picture ?? "",
+            })
+        }
+
+        const token = createToken(user)
+
+        return HandleServiceResponseSuccess({
+            user: exclude(user, "password"),
+            token,
+        })
+    } catch (err) {
+        Logger.error(`AuthService.googleCallback`, {
             error: err,
         })
         return HandleServiceResponseCustomError("Internal Server Error", 500)

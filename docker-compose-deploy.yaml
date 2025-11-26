@@ -138,6 +138,9 @@ services:
       ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Jakarta}
+      GOOGLE_AUTH_CLIENT_ID: ${GOOGLE_AUTH_CLIENT_ID:-878919197106-qghh11sm5fva84uhkego9eqpdpuiama3.apps.googleusercontent.com}
+      GOOGLE_AUTH_CLIENT_SECRET: ${GOOGLE_AUTH_CLIENT_SECRET:-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}
+      GOOGLE_AUTH_REDIRECT_URI: ${GOOGLE_AUTH_REDIRECT_URI:-http://localhost:2324/google}
     ports:
       - "${REST_PORT:-3001}:${REST_PORT:-3001}"
     depends_on:
