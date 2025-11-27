@@ -12,6 +12,7 @@ import { prisma } from "$pkg/prisma";
 import { ulid } from "ulid";
 import { AiChatRoomMessageSender } from "../../../generated/prisma/client";
 import Logger from "$pkg/logger";
+import { getById } from "$repositories/KnowledgeRepository";
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 
 const google = createGoogleGenerativeAI({
@@ -93,8 +94,7 @@ export async function streamHybridChat({
           score_threshold: 0.5,
         });
 
-        // 5. Send Sources
-        const contextParts: string[] = [];
+        // 5. Send all 10 sources to the client for display
         for (const item of searchResult) {
           const payload = item.payload as any;
           if (!payload) continue;
@@ -105,15 +105,45 @@ export async function streamHybridChat({
             content: payload.content,
           };
 
-          // Use 'data-source' type which is compatible with AI SDK v5 DataUIMessageChunk
           writer.write({
             type: "data-source",
             data: sourceData,
           } as any);
+        }
 
-          contextParts.push(
-            `[${payload.headline || payload.knowledge_id}]: ${payload.content}`
-          );
+        // 5a. Build enriched context for the AI using only the top 3 results
+        const topThreeResults = searchResult.slice(0, 3);
+        const knowledgeIds = topThreeResults
+          .map((item) => (item.payload as any)?.knowledge_id)
+          .filter(Boolean);
+
+        const fullKnowledgeContexts = await Promise.all(
+          knowledgeIds.map(async (id) => {
+            try {
+              return await getById(id);
+            } catch (error) {
+              Logger.error("HybridChatService.getFullKnowledgeContext", {
+                message: `Failed to retrieve knowledge with ID: ${id}`,
+                error,
+              });
+              return null;
+            }
+          })
+        );
+
+        const contextParts: string[] = [];
+        for (const knowledge of fullKnowledgeContexts) {
+          if (!knowledge) continue;
+
+          let fullContent = knowledge.headline || "";
+          if (knowledge.knowledgeContent) {
+            fullContent +=
+              "\n" +
+              knowledge.knowledgeContent
+                .map((content) => `${content.title}\n${content.description}`)
+                .join("\n\n");
+          }
+          contextParts.push(`[${knowledge.headline}]: ${fullContent}`);
         }
 
         // 6. Stream Text
