@@ -8,6 +8,8 @@ import RoutesRegistry from "./registry"
 const router = new Hono()
 
 router.post("/login", AuthValidation.validateLoginDTO, AuthController.login)
+router.get("/google-login", AuthController.googleLogin)
+router.get("/google", AuthController.googleCallback)
 router.post("/verify-token", AuthController.verifyToken)
 router.put("/update-password", AuthMiddleware.checkJwt, AuthController.changePassword)
 

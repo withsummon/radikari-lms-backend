@@ -5,21 +5,20 @@ export const UserValidationCreateSchema = z
     .strictObject({
         fullName: z
             .string({
-                error: (issue) => issue.input === undefined ? undefined : undefined
+                error: (issue) => (issue.input === undefined ? undefined : undefined),
             })
             .min(5, ErrorMessages.user.fullName.min),
-        email: z
-                    .string({
-                        error: (issue) => issue.input === undefined ? undefined : undefined
-                    }),
+        email: z.string({
+            error: (issue) => (issue.input === undefined ? undefined : undefined),
+        }),
         password: z
             .string({
-                error: (issue) => issue.input === undefined ? undefined : undefined
+                error: (issue) => (issue.input === undefined ? undefined : undefined),
             })
             .min(5, ErrorMessages.user.password.min),
         phoneNumber: z
             .string({
-                error: (issue) => issue.input === undefined ? undefined : undefined
+                error: (issue) => (issue.input === undefined ? undefined : undefined),
             })
             .min(10, ErrorMessages.user.phoneNumber.min),
     })
@@ -29,16 +28,15 @@ export const UserValidationUpdateSchema = z
     .strictObject({
         fullName: z
             .string({
-                error: (issue) => issue.input === undefined ? undefined : undefined
+                error: (issue) => (issue.input === undefined ? undefined : undefined),
             })
             .min(5, ErrorMessages.user.fullName.min),
-        email: z
-                    .string({
-                        error: (issue) => issue.input === undefined ? undefined : undefined
-                    }),
+        email: z.string({
+            error: (issue) => (issue.input === undefined ? undefined : undefined),
+        }),
         phoneNumber: z
             .string({
-                error: (issue) => issue.input === undefined ? undefined : undefined
+                error: (issue) => (issue.input === undefined ? undefined : undefined),
             })
             .min(10, ErrorMessages.user.phoneNumber.min),
     })
@@ -46,13 +44,12 @@ export const UserValidationUpdateSchema = z
 
 export const UserValidationLoginSchema = z
     .strictObject({
-        email: z
-                    .string({
-                        error: (issue) => issue.input === undefined ? undefined : undefined
-                    }),
+        email: z.string({
+            error: (issue) => (issue.input === undefined ? undefined : undefined),
+        }),
         password: z
             .string({
-                error: (issue) => issue.input === undefined ? undefined : undefined
+                error: (issue) => (issue.input === undefined ? undefined : undefined),
             })
             .min(5, ErrorMessages.user.password.min),
     })
