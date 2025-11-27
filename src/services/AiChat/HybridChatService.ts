@@ -90,12 +90,24 @@ export async function streamHybridChat({
           filter: {
             must: [{ key: "tenantId", match: { value: tenantId } }],
           },
-          limit: 10,
+          limit: 15,
           score_threshold: 0.5,
         });
 
-        // 5. Send all 10 sources to the client for display
+        // 5. Filter out duplicate results by headline
+        const uniqueResults: typeof searchResult = [];
+        const seenHeadlines = new Set<string>();
         for (const item of searchResult) {
+          const headline = (item.payload as any)?.headline;
+          if (headline && !seenHeadlines.has(headline)) {
+            seenHeadlines.add(headline);
+            uniqueResults.push(item);
+          }
+        }
+
+        // 6. Send unique sources to the client for display (up to 10)
+        const resultsForClient = uniqueResults.slice(0, 10);
+        for (const item of resultsForClient) {
           const payload = item.payload as any;
           if (!payload) continue;
 
@@ -111,8 +123,8 @@ export async function streamHybridChat({
           } as any);
         }
 
-        // 5a. Build enriched context for the AI using only the top 3 results
-        const topThreeResults = searchResult.slice(0, 3);
+        // 7. Build enriched context for the AI using only the top 3 unique results
+        const topThreeResults = uniqueResults.slice(0, 3);
         const knowledgeIds = topThreeResults
           .map((item) => (item.payload as any)?.knowledge_id)
           .filter(Boolean);
