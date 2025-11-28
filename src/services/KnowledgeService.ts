@@ -398,6 +398,10 @@ export async function bulkCreateTypeCase(data: KnowledgeBulkCreateDTO, userId: s
             if (row["Tenant Name"] && row["Tenant Name"] !== "") {
                 let tenant = await TenantRepository.getByName(row["Tenant Name"])
 
+                if (row["Tenant Name"] === "DANA") {
+                    tenant = await TenantRepository.getById("01K9201Z97H20E4NKTEANCFVCP")
+                }
+
                 if (!tenant) {
                     const operation = await OperationRepository.findFirst()
 

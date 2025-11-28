@@ -12,6 +12,7 @@ import { prisma } from "$pkg/prisma";
 import { ulid } from "ulid";
 import { AiChatRoomMessageSender } from "../../../generated/prisma/client";
 import Logger from "$pkg/logger";
+import { getById } from "$repositories/KnowledgeRepository";
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 
 const google = createGoogleGenerativeAI({
@@ -89,13 +90,24 @@ export async function streamHybridChat({
           filter: {
             must: [{ key: "tenantId", match: { value: tenantId } }],
           },
-          limit: 10,
-          score_threshold: 0.6,
+          limit: 15,
+          score_threshold: 0.5,
         });
 
-        // 5. Send Sources
-        const contextParts: string[] = [];
+        // 5. Filter out duplicate results by headline
+        const uniqueResults: typeof searchResult = [];
+        const seenHeadlines = new Set<string>();
         for (const item of searchResult) {
+          const headline = (item.payload as any)?.headline;
+          if (headline && !seenHeadlines.has(headline)) {
+            seenHeadlines.add(headline);
+            uniqueResults.push(item);
+          }
+        }
+
+        // 6. Send unique sources to the client for display (up to 10)
+        const resultsForClient = uniqueResults.slice(0, 10);
+        for (const item of resultsForClient) {
           const payload = item.payload as any;
           if (!payload) continue;
 
@@ -105,23 +117,75 @@ export async function streamHybridChat({
             content: payload.content,
           };
 
-          // Use 'data-source' type which is compatible with AI SDK v5 DataUIMessageChunk
           writer.write({
             type: "data-source",
             data: sourceData,
           } as any);
+        }
 
-          contextParts.push(
-            `[${payload.headline || payload.knowledge_id}]: ${payload.content}`
-          );
+        // 7. Build enriched context for the AI using only the top 3 unique results
+        const topThreeResults = uniqueResults.slice(0, 3);
+        const knowledgeIds = topThreeResults
+          .map((item) => (item.payload as any)?.knowledge_id)
+          .filter(Boolean);
+
+        const fullKnowledgeContexts = await Promise.all(
+          knowledgeIds.map(async (id) => {
+            try {
+              return await getById(id);
+            } catch (error) {
+              Logger.error("HybridChatService.getFullKnowledgeContext", {
+                message: `Failed to retrieve knowledge with ID: ${id}`,
+                error,
+              });
+              return null;
+            }
+          })
+        );
+
+        const contextParts: string[] = [];
+        for (const knowledge of fullKnowledgeContexts) {
+          if (!knowledge) continue;
+
+          let fullContent = knowledge.headline || "";
+          if (knowledge.knowledgeContent) {
+            fullContent +=
+              "\n" +
+              knowledge.knowledgeContent
+                .map((content) => `${content.title}\n${content.description}`)
+                .join("\n\n");
+          }
+          contextParts.push(`[${knowledge.headline}]: ${fullContent}`);
         }
 
         // 6. Stream Text
-        const systemMessage = `You are a helpful assistant for the Radikari LMS.
-Use the following pieces of retrieved context to answer the user's question.
-If the answer is not in the context, say you don't know.
+        const systemMessage = `
+You are the Radikari Knowledge Assistant. Your role is to help users understand and apply information from Radikari documentation and contextual materials.
 
-Make sure to cite the sources properly by referring to their title or article, and avoid using markdown formatting especially using tables or alike, for simplicity sake you should focus on conciseness, recalling, and if needed use bullet lists.
+LANGUAGE:
+- Respond using the same language the user uses.
+- If the user mixes Indonesian and English, respond in Indonesian unless the content requires specific untranslated terminology.
+- Do not translate unless the user explicitly requests.
+
+ANSWERING STYLE (STRICT ORDER):
+1. Start with the most direct answer to the user's question in 1–3 concise sentences based only on the provided context.
+2. After answering, expand with additional relevant information from the retrieved context — including rules, requirements, limitations, timelines, definitions, steps, or related functionality that would logically matter to the user based on their question.
+3. If the retrieved documents contain structured elements (steps, rules, benefits, lists, timelines), present them cleanly in bullet points or numbered format.
+4. The tone must remain informative, neutral, and fluent — never overly formal, robotic, or conversational.
+
+INFERENCE RULES:
+- You may infer meaning ONLY if the inference is clearly supported by the retrieved context.
+- You may connect fragmented pieces of related information to present a clearer, unified explanation.
+- You may NOT add new facts, assumptions, or external knowledge not present in the retrieved sources.
+
+REFUSAL RULE:
+- If the requested information cannot be answered or reasonably inferred from the provided context, respond:
+  - English: "The available documents do not fully answer this question, but here is what is relevant from the context."
+  - Indonesian: "Dokumen yang tersedia tidak sepenuhnya menjawab pertanyaan ini, namun berikut informasi yang relevan dari konteks."
+
+FORMATTING:
+- Avoid greetings, apologies, and generic assistant phrasing.
+- Keep responses functional, readable, and consistent.
 
 Context:
 ${contextParts.join("\n\n")}`;
