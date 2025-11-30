@@ -64,4 +64,11 @@ ChatRoutes.post(
     AiChatController.streamMessage
 )
 
+ChatRoutes.post(
+    "/tenants/:tenantId/rooms/:chatRoomId/archive",
+    AuthMiddleware.checkJwt,
+    AuthMiddleware.checkRoleInTenant,
+    AiChatController.archiveOrUnarchiveAiChatRoom
+)
+
 export default ChatRoutes

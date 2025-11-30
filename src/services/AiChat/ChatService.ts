@@ -454,3 +454,23 @@ async function saveChatMessages(
         throw error
     }
 }
+
+export async function archiveOrUnarchiveAiChatRoom(
+    id: string,
+    userId: string
+): Promise<ServiceResponse<{}>> {
+    try {
+        const aiChatRoom = await AiChatRoomRepository.getByIdAndUserId(id, userId)
+
+        if (!aiChatRoom)
+            return HandleServiceResponseCustomError("Invalid ID", ResponseStatus.NOT_FOUND)
+
+        await AiChatRoomRepository.archiveOrUnarchiveAiChatRoom(id, userId, aiChatRoom.isArchived)
+        return HandleServiceResponseSuccess({})
+    } catch (error) {
+        Logger.error(`ChatService.archiveOrUnarchiveAiChatRoom`, {
+            error: error,
+        })
+        return HandleServiceResponseCustomError("Internal Server Error", 500)
+    }
+}

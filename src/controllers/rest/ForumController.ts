@@ -26,8 +26,9 @@ export async function create(c: Context): Promise<TypedResponse> {
 export async function getAll(c: Context): Promise<TypedResponse> {
     const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(c.req.query())
     const tenantId = c.req.param("tenantId")
+    const user: UserJWTDAO = c.get("jwtPayload")
 
-    const serviceResponse = await ForumService.getAll(filters, tenantId)
+    const serviceResponse = await ForumService.getAll(filters, tenantId, user.id)
 
     if (!serviceResponse.status) {
         return handleServiceErrorWithResponse(c, serviceResponse)
@@ -159,4 +160,18 @@ export async function likeOrUnlikeForumComment(c: Context): Promise<TypedRespons
     }
 
     return response_success(c, serviceResponse.data, "Successfully liked or unliked Forum comment!")
+}
+
+export async function pinOrUnpinForum(c: Context): Promise<TypedResponse> {
+    const id = c.req.param("id")
+    const user: UserJWTDAO = c.get("jwtPayload")
+    const tenantId = c.req.param("tenantId")
+
+    const serviceResponse = await ForumService.pinOrUnpinForum(id, tenantId, user.id)
+
+    if (!serviceResponse.status) {
+        return handleServiceErrorWithResponse(c, serviceResponse)
+    }
+
+    return response_success(c, serviceResponse.data, "Successfully pinned or unpinned Forum!")
 }

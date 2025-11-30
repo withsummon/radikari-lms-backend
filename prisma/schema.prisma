@@ -56,6 +56,7 @@ model User {
   forumComments                        ForumComment[]
   forumLikes                           ForumLike[]
   forumCommentLikes                    ForumCommentLike[]
+  forumPinneds                         ForumPinned[]
 }
 
 model Operation {
@@ -274,12 +275,13 @@ model KnowledgeActivityLog {
 }
 
 model AiChatRoom {
-  id        String   @id @unique
-  tenantId  String
-  userId    String
-  title     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @unique
+  tenantId   String
+  userId     String
+  title      String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  isArchived Boolean  @default(false)
 
   tenant   Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   user     User                @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -529,6 +531,7 @@ model Forum {
   forumComments    ForumComment[]
   forumAttachments ForumAttachment[]
   forumLikes       ForumLike[]
+  forumPinneds     ForumPinned[]
 }
 
 model ForumAttachment {
@@ -581,4 +584,16 @@ model ForumCommentLike {
   forumComment ForumComment @relation(fields: [forumCommentId], references: [id], onDelete: Cascade)
 
   @@unique([userId, forumCommentId])
+}
+
+model ForumPinned {
+  id        String   @id @unique
+  forumId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  forum Forum @relation(fields: [forumId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([forumId, userId])
 }

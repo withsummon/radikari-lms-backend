@@ -184,3 +184,23 @@ export async function streamMessage(c: Context): Promise<Response> {
         userId: user.id,
     })
 }
+
+export async function archiveOrUnarchiveAiChatRoom(c: Context): Promise<TypedResponse> {
+    const chatRoomId = c.req.param("chatRoomId")
+    const user: UserJWTDAO = c.get("jwtPayload")
+
+    const serviceResponse = await AiChatService.Chat.archiveOrUnarchiveAiChatRoom(
+        chatRoomId,
+        user.id
+    )
+
+    if (!serviceResponse.status) {
+        return handleServiceErrorWithResponse(c, serviceResponse)
+    }
+
+    return response_success(
+        c,
+        serviceResponse.data,
+        "Successfully archived or unarchived AiChatRoom!"
+    )
+}

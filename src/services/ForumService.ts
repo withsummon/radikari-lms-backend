@@ -31,10 +31,11 @@ export async function create(
 
 export async function getAll(
     filters: EzFilter.FilteringQuery,
-    tenantId: string
+    tenantId: string,
+    userId: string
 ): Promise<ServiceResponse<EzFilter.PaginatedResult<Forum[]> | {}>> {
     try {
-        const data = await ForumRepository.getAll(filters, tenantId)
+        const data = await ForumRepository.getAll(filters, tenantId, userId)
         return HandleServiceResponseSuccess(data)
     } catch (err) {
         Logger.error(`ForumService.getAll`, {
@@ -50,7 +51,7 @@ export async function getById(
     userId: string
 ): Promise<ServiceResponse<Forum | {}>> {
     try {
-        let forum: any = await ForumRepository.getById(id, tenantId)
+        let forum: any = await ForumRepository.getById(id, tenantId, userId)
 
         if (!forum) return HandleServiceResponseCustomError("Invalid ID", ResponseStatus.NOT_FOUND)
 
@@ -61,6 +62,8 @@ export async function getById(
         } else {
             forum.isLiked = false
         }
+
+        forum.isPinned = forum.forumPinneds.length > 0
 
         const countComments = await ForumRepository.getCountForumComments(id)
         forum.countComments = countComments
@@ -82,7 +85,7 @@ export async function update(
     userId: string
 ): Promise<ServiceResponse<UpdateResponse>> {
     try {
-        let forum = await ForumRepository.getById(id, tenantId)
+        let forum = await ForumRepository.getById(id, tenantId, userId)
 
         if (!forum) return HandleServiceResponseCustomError("Invalid ID", ResponseStatus.NOT_FOUND)
 
@@ -106,7 +109,7 @@ export async function deleteById(
     userId: string
 ): Promise<ServiceResponse<{}>> {
     try {
-        let forum = await ForumRepository.getById(id, tenantId)
+        let forum = await ForumRepository.getById(id, tenantId, userId)
 
         if (!forum) return HandleServiceResponseCustomError("Invalid ID", ResponseStatus.NOT_FOUND)
 
@@ -129,7 +132,7 @@ export async function likeForum(
     userId: string
 ): Promise<ServiceResponse<{}>> {
     try {
-        let forum = await ForumRepository.getById(id, tenantId)
+        let forum = await ForumRepository.getById(id, tenantId, userId)
 
         if (!forum) return HandleServiceResponseCustomError("Invalid ID", ResponseStatus.NOT_FOUND)
 
@@ -150,7 +153,7 @@ export async function commentForum(
     tenantId: string
 ): Promise<ServiceResponse<{}>> {
     try {
-        const forum = await ForumRepository.getById(id, tenantId)
+        const forum = await ForumRepository.getById(id, tenantId, userId)
         if (!forum) return HandleServiceResponseCustomError("Invalid ID", ResponseStatus.NOT_FOUND)
 
         data.createdByUserId = userId
@@ -231,6 +234,26 @@ export async function likeOrUnlikeForumComment(
         return HandleServiceResponseSuccess({})
     } catch (error) {
         Logger.error(`ForumService.likeOrUnlikeForumComment`, {
+            error: error,
+        })
+        return HandleServiceResponseCustomError("Internal Server Error", 500)
+    }
+}
+
+export async function pinOrUnpinForum(
+    forumId: string,
+    tenantId: string,
+    userId: string
+): Promise<ServiceResponse<{}>> {
+    try {
+        const forum = await ForumRepository.getById(forumId, tenantId, userId)
+
+        if (!forum) return HandleServiceResponseCustomError("Invalid ID", ResponseStatus.NOT_FOUND)
+
+        await ForumRepository.pinOrUnpinForum(forumId, userId)
+        return HandleServiceResponseSuccess({})
+    } catch (error) {
+        Logger.error(`ForumService.pinOrUnpinForum`, {
             error: error,
         })
         return HandleServiceResponseCustomError("Internal Server Error", 500)

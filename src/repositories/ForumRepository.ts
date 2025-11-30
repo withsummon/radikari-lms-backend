@@ -23,7 +23,7 @@ export async function create(data: ForumDTO) {
     })
 }
 
-export async function getAll(filters: EzFilter.FilteringQuery, tenantId: string) {
+export async function getAll(filters: EzFilter.FilteringQuery, tenantId: string, userId: string) {
     const queryBuilder = new EzFilter.BuildQueryFilter()
     const usedFilters = queryBuilder.build(filters)
 
@@ -38,26 +38,38 @@ export async function getAll(filters: EzFilter.FilteringQuery, tenantId: string)
                 fullName: true,
             },
         },
+        forumPinneds: {
+            where: {
+                userId,
+            },
+        },
     }
-    const [forum, totalData] = await Promise.all([
+    const [forum, totalData]: any = await Promise.all([
         prisma.forum.findMany(usedFilters.query as any),
         prisma.forum.count({
             where: usedFilters.query.where,
         }),
     ])
 
+    const mappedForums = forum.map((forum: any) => {
+        return {
+            ...forum,
+            isPinned: forum.forumPinneds.length > 0,
+        }
+    })
+
     let totalPage = 1
     if (totalData > usedFilters.query.take)
         totalPage = Math.ceil(totalData / usedFilters.query.take)
 
     return {
-        entries: forum,
+        entries: mappedForums,
         totalData,
         totalPage,
     }
 }
 
-export async function getById(id: string, tenantId: string) {
+export async function getById(id: string, tenantId: string, userId: string) {
     return await prisma.forum.findUnique({
         where: {
             id,
@@ -72,6 +84,11 @@ export async function getById(id: string, tenantId: string) {
             },
             forumComments: true,
             forumAttachments: true,
+            forumPinneds: {
+                where: {
+                    userId,
+                },
+            },
         },
     })
 }
@@ -379,5 +396,34 @@ export async function getUserForumCommentLike(commentId: string, userId: string)
                 forumCommentId: commentId,
             },
         },
+    })
+}
+
+export async function pinOrUnpinForum(forumId: string, userId: string) {
+    return await prisma.$transaction(async (tx) => {
+        const forumPinned = await tx.forumPinned.findUnique({
+            where: {
+                forumId_userId: {
+                    userId,
+                    forumId,
+                },
+            },
+        })
+
+        if (forumPinned) {
+            await tx.forumPinned.delete({
+                where: {
+                    id: forumPinned.id,
+                },
+            })
+        } else {
+            await tx.forumPinned.create({
+                data: {
+                    id: ulid(),
+                    userId,
+                    forumId,
+                },
+            })
+        }
     })
 }

@@ -2,13 +2,13 @@ import { z } from "zod"
 export const OperationSchema = z
     .strictObject({
         name: z.string({
-            error: (issue) => issue.input === undefined ? "name is required" : undefined
+            error: "name is required",
         }),
         description: z.string({
-            error: (issue) => issue.input === undefined ? "description is required" : undefined
+            error: "description is required",
         }),
         headOfOperationUserId: z.string({
-            error: (issue) => issue.input === undefined ? "headOfOperationUserId is required" : undefined
+            error: "headOfOperationUserId is required",
         }),
     })
     .strict()

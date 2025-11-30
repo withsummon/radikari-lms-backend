@@ -1,16 +1,57 @@
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { prisma } from "$pkg/prisma"
-import { TenantDTO } from "$entities/Tenant"
+import { TenantCreateUpdateDTO } from "$entities/Tenant"
+import { ulid } from "ulid"
+import { exclude } from "$entities/User"
 
-export async function create(data: TenantDTO) {
-    return await prisma.tenant.create({
-        data,
+export async function create(data: TenantCreateUpdateDTO) {
+    return await prisma.$transaction(async (tx) => {
+        const { headOfTenantUserId, ...rest } = data
+        const tenant = await tx.tenant.create({
+            data: rest,
+        })
+
+        const headOfOfficeRole = await tx.tenantRole.findUnique({
+            where: {
+                identifier: "HEAD_OF_OFFICE",
+            },
+        })
+
+        if (!headOfOfficeRole) {
+            throw new Error("Head of Office role not found")
+        }
+
+        if (headOfTenantUserId) {
+            await tx.tenantUser.create({
+                data: {
+                    id: ulid(),
+                    tenantId: tenant.id,
+                    userId: headOfTenantUserId,
+                    tenantRoleId: headOfOfficeRole.id,
+                },
+            })
+        }
+        return tenant
     })
 }
 
 export async function getAll(filters: EzFilter.FilteringQuery) {
     const queryBuilder = new EzFilter.BuildQueryFilter()
     const usedFilters = queryBuilder.build(filters)
+
+    usedFilters.query.include = {
+        tenantUser: {
+            where: {
+                tenantRole: {
+                    identifier: "HEAD_OF_OFFICE",
+                },
+            },
+            include: {
+                tenantRole: true,
+                user: true,
+            },
+        },
+    }
 
     const [tenant, totalData] = await Promise.all([
         prisma.tenant.findMany(usedFilters.query as any),
@@ -19,12 +60,25 @@ export async function getAll(filters: EzFilter.FilteringQuery) {
         }),
     ])
 
+    const tenantWithHeadOfOffice = tenant.map((tenant: any) => ({
+        id: tenant.id,
+        name: tenant.name,
+        description: tenant.description,
+        headOfOffice: exclude(
+            tenant.tenantUser.find(
+                (tenantUser: any) => tenantUser.tenantRole.identifier === "HEAD_OF_OFFICE"
+            )?.user ?? {},
+            "password"
+        ),
+        operation: tenant.operation,
+    }))
+
     let totalPage = 1
     if (totalData > usedFilters.query.take)
         totalPage = Math.ceil(totalData / usedFilters.query.take)
 
     return {
-        entries: tenant,
+        entries: tenantWithHeadOfOffice,
         totalData,
         totalPage,
     }
@@ -95,12 +149,45 @@ export async function getByName(name: string) {
     })
 }
 
-export async function update(id: string, data: TenantDTO) {
-    return await prisma.tenant.update({
-        where: {
-            id,
-        },
-        data,
+export async function update(id: string, data: TenantCreateUpdateDTO) {
+    return await prisma.$transaction(async (tx) => {
+        const { headOfTenantUserId, ...rest } = data
+        const tenant = await tx.tenant.update({
+            where: {
+                id,
+            },
+            data: rest,
+        })
+
+        const headOfOfficeRole = await tx.tenantRole.findUnique({
+            where: {
+                identifier: "HEAD_OF_OFFICE",
+            },
+        })
+
+        if (!headOfOfficeRole) {
+            throw new Error("Head of Office role not found")
+        }
+
+        await tx.tenantUser.deleteMany({
+            where: {
+                tenantId: id,
+                tenantRole: {
+                    identifier: "HEAD_OF_OFFICE",
+                },
+            },
+        })
+
+        await tx.tenantUser.create({
+            data: {
+                id: ulid(),
+                userId: headOfTenantUserId,
+                tenantRoleId: headOfOfficeRole.id,
+                tenantId: id,
+            },
+        })
+
+        return tenant
     })
 }
 

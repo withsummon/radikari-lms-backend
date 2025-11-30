@@ -85,4 +85,11 @@ ForumRoutes.post(
     ForumController.likeOrUnlikeForumComment
 )
 
+ForumRoutes.post(
+    "/:id/pin",
+    AuthMiddleware.checkJwt,
+    AuthMiddleware.checkRoleInTenant,
+    ForumController.pinOrUnpinForum
+)
+
 export default ForumRoutes

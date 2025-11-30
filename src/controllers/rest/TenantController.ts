@@ -5,7 +5,7 @@ import {
     response_created,
     response_success,
 } from "$utils/response.utils"
-import { TenantDTO } from "$entities/Tenant"
+import { TenantCreateUpdateDTO } from "$entities/Tenant"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { TenantUserUpdateDTO } from "$entities/TenantUser"
 import * as TenanUserService from "$services/TenanUserService"
@@ -13,7 +13,7 @@ import { UserJWTDAO } from "$entities/User"
 import * as TenantRoleService from "$services/TenantRoleService"
 
 export async function create(c: Context): Promise<TypedResponse> {
-    const data: TenantDTO = await c.req.json()
+    const data: TenantCreateUpdateDTO = await c.req.json()
 
     const serviceResponse = await TenantService.create(data)
 
@@ -48,7 +48,7 @@ export async function getById(c: Context): Promise<TypedResponse> {
 }
 
 export async function update(c: Context): Promise<TypedResponse> {
-    const data: TenantDTO = await c.req.json()
+    const data: TenantCreateUpdateDTO = await c.req.json()
     const id = c.req.param("id")
 
     const serviceResponse = await TenantService.update(id, data)

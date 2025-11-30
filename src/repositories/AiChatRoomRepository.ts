@@ -149,3 +149,19 @@ export async function buildRequestBody(
         },
     }
 }
+
+export async function archiveOrUnarchiveAiChatRoom(
+    id: string,
+    userId: string,
+    isArchived: boolean
+) {
+    return await prisma.aiChatRoom.update({
+        where: {
+            id,
+            userId,
+        },
+        data: {
+            isArchived: !isArchived,
+        },
+    })
+}

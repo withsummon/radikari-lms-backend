@@ -71,8 +71,6 @@ export async function googleCallback(c: Context): Promise<TypedResponse> {
         return handleServiceErrorWithResponse(c, serviceResponse)
     }
 
-    console.log(serviceResponse.data)
-
     const token = serviceResponse.data.token
 
     return c.redirect(

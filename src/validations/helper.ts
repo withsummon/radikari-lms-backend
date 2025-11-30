@@ -8,22 +8,25 @@ export interface ErrorStructure {
 export function generateErrorStructure(field: string, message: string): ErrorStructure {
     return {
         field,
-        message
+        message,
     }
 }
-
 
 export function validateSchema(schema: any, data: any): ErrorStructure[] {
     const schemaValidationResult = schema.safeParse(data)
     if (schemaValidationResult.error) {
-        const errorFieldsEntry = z.treeifyError(schemaValidationResult.error) as Record<string, string[]>
-        const errorFields = Object.keys(errorFieldsEntry)
+        const errorFieldsEntry = z.treeifyError(schemaValidationResult.error) as Record<
+            string,
+            string[]
+        >
+        const errorFields = Object.keys(errorFieldsEntry.properties)
         const invalidFields: ErrorStructure[] = []
-        
+
         for (const field of errorFields) {
-            const fieldError = errorFieldsEntry[field]
+            const fieldError = errorFieldsEntry.properties[field as any] as any
+
             if (fieldError) {
-                invalidFields.push({ field, message: fieldError.join(", ") })
+                invalidFields.push({ field, message: fieldError.errors.join(", ") })
             }
         }
 

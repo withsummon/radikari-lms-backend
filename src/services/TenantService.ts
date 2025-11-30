@@ -1,5 +1,5 @@
 import { Tenant } from "../../generated/prisma/client"
-import { TenantDTO } from "$entities/Tenant"
+import { TenantCreateUpdateDTO } from "$entities/Tenant"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import * as TenantRepository from "$repositories/TenantRepository"
 import {
@@ -10,7 +10,7 @@ import {
 } from "$entities/Service"
 import Logger from "$pkg/logger"
 
-export async function create(data: TenantDTO): Promise<ServiceResponse<Tenant | {}>> {
+export async function create(data: TenantCreateUpdateDTO): Promise<ServiceResponse<Tenant | {}>> {
     try {
         const createdData = await TenantRepository.create(data)
 
@@ -55,7 +55,7 @@ export async function getById(id: string): Promise<ServiceResponse<Tenant | {}>>
 export type UpdateResponse = Tenant | {}
 export async function update(
     id: string,
-    data: TenantDTO
+    data: TenantCreateUpdateDTO
 ): Promise<ServiceResponse<UpdateResponse>> {
     try {
         const tenant = await TenantRepository.getById(id)

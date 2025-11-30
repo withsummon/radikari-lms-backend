@@ -198,20 +198,17 @@ export async function approveById(
             Logger.info("KnowledgeService.approveById: Preparing to send message to queue.", {
                 knowledgeId: knowledge.id,
                 headline: knowledge.headline, // DEBUG: Log the headline from the DB object
-            });
+            })
 
-            const payload = generateKnowledgeQueueDTO(knowledge as any);
-            
+            const payload = generateKnowledgeQueueDTO(knowledge as any)
+
             Logger.info("KnowledgeService.approveById: Generated payload for queue.", {
                 payload: payload, // DEBUG: Log the entire payload
-            });
+            })
 
             const pubsub = GlobalPubSub.getInstance().getPubSub()
 
-            await pubsub.sendToQueue(
-                PUBSUB_TOPICS.KNOWLEDGE_CREATE,
-                payload
-            )
+            await pubsub.sendToQueue(PUBSUB_TOPICS.KNOWLEDGE_CREATE, payload)
         }
 
         return HandleServiceResponseSuccess({})
@@ -302,7 +299,7 @@ export async function bulkCreate(data: KnowledgeBulkCreateDTO, userId: string) {
                 if (row["Tenant Name"] === "DANA") {
                     tenant = await TenantRepository.getById("01K9201Z97H20E4NKTEANCFVCP")
                 }
-                console.log("Tenant fetched or created:", tenant); // DEBUG LOG
+                console.log("Tenant fetched or created:", tenant) // DEBUG LOG
 
                 if (!tenant) {
                     const operation = await OperationRepository.findFirst()
@@ -312,6 +309,7 @@ export async function bulkCreate(data: KnowledgeBulkCreateDTO, userId: string) {
                         name: row["Tenant Name"],
                         description: row["Tenant Name"],
                         operationId: operation!.id,
+                        headOfTenantUserId: userId,
                     })
                 }
 
@@ -410,6 +408,7 @@ export async function bulkCreateTypeCase(data: KnowledgeBulkCreateDTO, userId: s
                         name: row["Tenant Name"],
                         description: row["Tenant Name"],
                         operationId: operation!.id,
+                        headOfTenantUserId: userId,
                     })
                 }
 

@@ -4,3 +4,7 @@ export interface TenantDTO {
     description: string
     operationId: string
 }
+
+export interface TenantCreateUpdateDTO extends TenantDTO {
+    headOfTenantUserId: string
+}

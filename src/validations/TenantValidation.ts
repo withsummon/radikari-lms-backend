@@ -1,6 +1,6 @@
 import { Context, Next } from "hono"
 import { response_bad_request } from "$utils/response.utils"
-import { TenantDTO } from "$entities/Tenant"
+import { TenantCreateUpdateDTO } from "$entities/Tenant"
 import * as Helpers from "./helper"
 import { TenantSchema } from "./schema/TenantSchema"
 import { TenantUserUpdateDTO } from "$entities/TenantUser"
@@ -8,11 +8,25 @@ import { TenantUserUpdateSchema } from "./schema/TenantUserSchema"
 import { prisma } from "$pkg/prisma"
 
 export async function validateTenantSchema(c: Context, next: Next) {
-    const data: TenantDTO = await c.req.json()
+    const data: TenantCreateUpdateDTO = await c.req.json()
     let invalidFields: Helpers.ErrorStructure[] = Helpers.validateSchema(TenantSchema, data)
 
     if (invalidFields.length > 0) {
         return response_bad_request(c, "Validation Error", invalidFields)
+    }
+
+    if (data.headOfTenantUserId) {
+        const headOfTenantUser = await prisma.user.findUnique({
+            where: {
+                id: data.headOfTenantUserId,
+            },
+        })
+        if (!headOfTenantUser) {
+            invalidFields.push({
+                field: "headOfTenantUserId",
+                message: "headOfTenantUser not found",
+            })
+        }
     }
 
     const operation = await prisma.operation.findUnique({
@@ -20,8 +34,16 @@ export async function validateTenantSchema(c: Context, next: Next) {
             id: data.operationId,
         },
     })
+
     if (!operation) {
-        invalidFields.push(Helpers.generateErrorStructure("operationId", "operation not found"))
+        invalidFields.push({
+            field: "operationId",
+            message: "operation not found",
+        })
+    }
+
+    if (invalidFields.length > 0) {
+        return response_bad_request(c, "Validation Error", invalidFields)
     }
 
     await next()
