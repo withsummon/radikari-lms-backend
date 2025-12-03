@@ -18,7 +18,7 @@ export async function seedAccessControlList(prisma: PrismaClient) {
         },
         {
             featureName: "KNOWLEDGE",
-            actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL"],
+            actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"],
         },
         {
             featureName: "OPERATION",
@@ -362,7 +362,7 @@ export async function seedAccessControlList(prisma: PrismaClient) {
         const qualityAssuranceAndTrainerFeature = [
             {
                 featureName: "KNOWLEDGE",
-                actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL"],
+                actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"],
             },
             {
                 featureName: "OPERATION",

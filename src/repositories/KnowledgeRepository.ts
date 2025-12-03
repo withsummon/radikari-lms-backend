@@ -84,6 +84,72 @@ export async function getAll(user: UserJWTDAO, tenantId: string, filters: EzFilt
     }
 
     usedFilters.query.where.AND.push({
+        isArchived: false,
+    })
+
+    usedFilters.query.where.AND.push({
+        OR: [
+            {
+                access: KnowledgeAccess.PUBLIC,
+            },
+            {
+                access: KnowledgeAccess.TENANT,
+                tenantId,
+            },
+            {
+                access: KnowledgeAccess.EMAIL,
+                userKnowledge: {
+                    some: {
+                        userId: user.id,
+                    },
+                },
+            },
+            {
+                createdByUserId: user.id,
+            },
+        ],
+    })
+
+    const [knowledge, totalData] = await Promise.all([
+        prisma.knowledge.findMany(usedFilters.query as any),
+        prisma.knowledge.count({
+            where: usedFilters.query.where,
+        }),
+    ])
+
+    let totalPage = 1
+    if (totalData > usedFilters.query.take)
+        totalPage = Math.ceil(totalData / usedFilters.query.take)
+
+    return {
+        entries: knowledge,
+        totalData,
+        totalPage,
+    }
+}
+export async function getAllArchived(
+    user: UserJWTDAO,
+    tenantId: string,
+    filters: EzFilter.FilteringQuery
+) {
+    const queryBuilder = new EzFilter.BuildQueryFilter()
+    let usedFilters = queryBuilder.build(filters)
+    // usedFilters = await TenantRoleHelpers.buildFilterTenantRole(usedFilters, user, tenantId)
+
+    usedFilters.query.include = {
+        createdByUser: {
+            select: {
+                id: true,
+                fullName: true,
+            },
+        },
+    }
+
+    usedFilters.query.where.AND.push({
+        isArchived: true,
+    })
+
+    usedFilters.query.where.AND.push({
         OR: [
             {
                 access: KnowledgeAccess.PUBLIC,
@@ -219,6 +285,7 @@ export async function getById(id: string) {
             status: true,
             createdAt: true,
             updatedAt: true,
+            isArchived: true,
             userKnowledge: {
                 select: {
                     user: {
@@ -423,5 +490,12 @@ export async function incrementTotalViews(id: string) {
     return await prisma.knowledge.update({
         where: { id },
         data: { totalViews: { increment: 1 } },
+    })
+}
+
+export async function archiveOrUnarchiveKnowledge(id: string, isArchived: boolean) {
+    return await prisma.knowledge.update({
+        where: { id },
+        data: { isArchived: isArchived },
     })
 }

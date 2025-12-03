@@ -38,6 +38,20 @@ export async function getAll(c: Context): Promise<TypedResponse> {
     return response_success(c, serviceResponse.data, "Successfully fetched all Knowledge!")
 }
 
+export async function getAllArchived(c: Context): Promise<TypedResponse> {
+    const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(c.req.query())
+    const tenantId = c.req.param("tenantId")
+    const user: UserJWTDAO = c.get("jwtPayload")
+
+    const serviceResponse = await KnowledgeService.getAllArchived(user, tenantId, filters)
+
+    if (!serviceResponse.status) {
+        return handleServiceErrorWithResponse(c, serviceResponse)
+    }
+
+    return response_success(c, serviceResponse.data, "Successfully fetched all Archived Knowledge!")
+}
+
 export async function getSummary(c: Context): Promise<TypedResponse> {
     const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(c.req.query())
     const tenantId = c.req.param("tenantId")
@@ -131,4 +145,20 @@ export async function bulkCreateTypeCase(c: Context): Promise<TypedResponse> {
     }
 
     return response_success(c, serviceResponse.data, "Successfully bulk created Knowledge!")
+}
+
+export async function archiveOrUnarchiveKnowledge(c: Context): Promise<TypedResponse> {
+    const id = c.req.param("id")
+
+    const serviceResponse = await KnowledgeService.archiveOrUnarchiveKnowledge(id)
+
+    if (!serviceResponse.status) {
+        return handleServiceErrorWithResponse(c, serviceResponse)
+    }
+
+    return response_success(
+        c,
+        serviceResponse.data,
+        "Successfully archived or unarchived Knowledge!"
+    )
 }

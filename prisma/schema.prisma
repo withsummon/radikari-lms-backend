@@ -191,6 +191,7 @@ model Knowledge {
   status          KnowledgeStatus @default(PENDING)
   createdByUserId String
   totalViews      Int             @default(0)
+  isArchived      Boolean         @default(false)
 
   tenant        Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   createdByUser User    @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)

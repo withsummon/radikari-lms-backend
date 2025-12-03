@@ -13,6 +13,13 @@ KnowledgeRoutes.get(
 )
 
 KnowledgeRoutes.get(
+    "/archived",
+    AuthMiddleware.checkJwt,
+    AuthMiddleware.checkRoleInTenant,
+    KnowledgeController.getAllArchived
+)
+
+KnowledgeRoutes.get(
     "/summary",
     AuthMiddleware.checkJwt,
     AuthMiddleware.checkRoleInTenant,
@@ -54,6 +61,13 @@ KnowledgeRoutes.put(
     AuthMiddleware.checkJwt,
     AuthMiddleware.checkRoleInTenant,
     KnowledgeController.approveById
+)
+
+KnowledgeRoutes.put(
+    "/:id/archive",
+    AuthMiddleware.checkJwt,
+    AuthMiddleware.checkRoleInTenant,
+    KnowledgeController.archiveOrUnarchiveKnowledge
 )
 
 KnowledgeRoutes.delete(

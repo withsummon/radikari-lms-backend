@@ -65,6 +65,22 @@ export async function getAll(
     }
 }
 
+export async function getAllArchived(
+    user: UserJWTDAO,
+    tenantId: string,
+    filters: EzFilter.FilteringQuery
+): Promise<ServiceResponse<EzFilter.PaginatedResult<Knowledge[]> | {}>> {
+    try {
+        const data = await KnowledgeRepository.getAllArchived(user, tenantId, filters)
+        return HandleServiceResponseSuccess(data)
+    } catch (err) {
+        Logger.error(`KnowledgeService.getAll`, {
+            error: err,
+        })
+        return HandleServiceResponseCustomError("Internal Server Error", 500)
+    }
+}
+
 export async function getSummary(
     user: UserJWTDAO,
     tenantId: string,
@@ -550,6 +566,23 @@ export async function bulkCreateTypeCase(data: KnowledgeBulkCreateDTO, userId: s
         return HandleServiceResponseSuccess({})
     } catch (error) {
         Logger.error(`KnowledgeService.bulkCreateTypeCase`, {
+            error: error,
+        })
+        return HandleServiceResponseCustomError("Internal Server Error", 500)
+    }
+}
+
+export async function archiveOrUnarchiveKnowledge(id: string) {
+    try {
+        const knowledge = await KnowledgeRepository.getById(id)
+
+        if (!knowledge)
+            return HandleServiceResponseCustomError("Invalid ID", ResponseStatus.NOT_FOUND)
+
+        await KnowledgeRepository.archiveOrUnarchiveKnowledge(id, !knowledge.isArchived)
+        return HandleServiceResponseSuccess({})
+    } catch (error) {
+        Logger.error(`KnowledgeService.archiveOrUnarchiveKnowledge`, {
             error: error,
         })
         return HandleServiceResponseCustomError("Internal Server Error", 500)
