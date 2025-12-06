@@ -7,40 +7,40 @@ import { Roles } from "../../generated/prisma/client"
 const UserRoutes = new Hono()
 
 UserRoutes.get(
-    "/",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRole([Roles.ADMIN]),
-    UserController.getAll
+	"/",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRole([Roles.ADMIN]),
+	UserController.getAll,
 )
 
 UserRoutes.get(
-    "/:id",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRole([Roles.ADMIN]),
-    UserController.getById
+	"/:id",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRole([Roles.ADMIN]),
+	UserController.getById,
 )
 
 UserRoutes.post(
-    "/",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRole([Roles.ADMIN]),
-    Validations.validateCreateDTO,
-    UserController.create
+	"/",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRole([Roles.ADMIN]),
+	Validations.validateCreateDTO,
+	UserController.create,
 )
 
 UserRoutes.put(
-    "/:id",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRole([Roles.ADMIN]),
-    Validations.validateUpdateDTO,
-    UserController.update
+	"/:id",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRole([Roles.ADMIN]),
+	Validations.validateUpdateDTO,
+	UserController.update,
 )
 
 UserRoutes.delete(
-    "/:id",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRole([Roles.ADMIN]),
-    UserController.deleteById
+	"/:id",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRole([Roles.ADMIN]),
+	UserController.deleteById,
 )
 
 export default UserRoutes

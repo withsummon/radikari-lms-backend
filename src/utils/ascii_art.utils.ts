@@ -8,8 +8,5 @@ _|"""""|_|"""""|_|"""""|_|"""""|_|"""""|_|"""""|_|"""""|_|"""""|
                                              
 `
 export function displayAsciiArt(ascii_art: string) {
-    console.log('\x1b[32m%s\x1b[0m', ascii_art);
+	console.log("\x1b[32m%s\x1b[0m", ascii_art)
 }
-
-
-

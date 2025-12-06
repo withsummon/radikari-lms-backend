@@ -7,60 +7,72 @@ import { Roles } from "../../generated/prisma/client"
 const TenantRoutes = new Hono()
 
 TenantRoutes.get(
-    "/",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRole([Roles.ADMIN]),
-    TenantController.getAll
+	"/",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRole([Roles.ADMIN]),
+	TenantController.getAll,
 )
-
-TenantRoutes.get("/users", AuthMiddleware.checkJwt, TenantController.getAllByUser)
-TenantRoutes.get("/roles", AuthMiddleware.checkJwt, TenantController.getAllRoles)
 
 TenantRoutes.get(
-    "/:id",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRole([Roles.ADMIN]),
-    TenantController.getById
+	"/users",
+	AuthMiddleware.checkJwt,
+	TenantController.getAllByUser,
+)
+TenantRoutes.get(
+	"/roles",
+	AuthMiddleware.checkJwt,
+	TenantController.getAllRoles,
+)
+
+TenantRoutes.get(
+	"/:id",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRole([Roles.ADMIN]),
+	TenantController.getById,
 )
 
 TenantRoutes.post(
-    "/",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRole([Roles.ADMIN]),
-    Validations.validateTenantSchema,
-    TenantController.create
+	"/",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRole([Roles.ADMIN]),
+	Validations.validateTenantSchema,
+	TenantController.create,
 )
 
 TenantRoutes.put(
-    "/:id",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRole([Roles.ADMIN]),
-    Validations.validateTenantSchema,
-    TenantController.update
+	"/:id",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRole([Roles.ADMIN]),
+	Validations.validateTenantSchema,
+	TenantController.update,
 )
 
-TenantRoutes.get("/:id/users", AuthMiddleware.checkJwt, TenantController.getUserInTenant)
+TenantRoutes.get(
+	"/:id/users",
+	AuthMiddleware.checkJwt,
+	TenantController.getUserInTenant,
+)
 
 TenantRoutes.post(
-    "/:id/users",
-    AuthMiddleware.checkJwt,
-    Validations.validateTenantUserCreateSchema,
-    TenantController.createTenantUser
+	"/:id/users",
+	AuthMiddleware.checkJwt,
+	Validations.validateTenantUserCreateSchema,
+	TenantController.createTenantUser,
 )
 
 TenantRoutes.put(
-    "/:id/users",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRole([Roles.ADMIN]),
-    Validations.validateTenantUserUpdateSchema,
-    TenantController.assignUserToTenant
+	"/:id/users",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRole([Roles.ADMIN]),
+	Validations.validateTenantUserUpdateSchema,
+	TenantController.assignUserToTenant,
 )
 
 TenantRoutes.delete(
-    "/:id",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRole([Roles.ADMIN]),
-    TenantController.deleteById
+	"/:id",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRole([Roles.ADMIN]),
+	TenantController.deleteById,
 )
 
 export default TenantRoutes

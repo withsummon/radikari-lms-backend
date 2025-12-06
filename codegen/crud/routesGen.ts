@@ -1,7 +1,7 @@
 import fs from "fs"
 
 export function generateRoutes(entityName: string) {
-    const result = `
+	const result = `
 import {Hono} from "hono"
 import * as ${entityName}Controller from "$controllers/rest/${entityName}Controller"
 import * as AuthMiddleware from "$middlewares/authMiddleware"
@@ -39,16 +39,16 @@ ${entityName}Routes.delete("/:id",
 
 export default ${entityName}Routes
 `
-    const destination = `src/routes/${entityName}.ts`
-    const filePath = `${__dirname}/../../${destination}`
-    // Use writeFile to write the content to the file
-    fs.writeFile(filePath, result, (err) => {
-        if (err) {
-            console.error("An error occurred:", err)
-            return
-        }
-        console.log(`Routes has been written successfully to : ${destination}.ts`)
-    })
+	const destination = `src/routes/${entityName}.ts`
+	const filePath = `${__dirname}/../../${destination}`
+	// Use writeFile to write the content to the file
+	fs.writeFile(filePath, result, (err) => {
+		if (err) {
+			console.error("An error occurred:", err)
+			return
+		}
+		console.log(`Routes has been written successfully to : ${destination}.ts`)
+	})
 
-    return destination
+	return destination
 }

@@ -5,46 +5,46 @@ import { Roles } from "../../../generated/prisma/client"
 import { TenantRoleIdentifier } from "$entities/TenantRole"
 
 export async function generatedFilterForAssignment(
-    usedFilters: EzFilter.BuildQueryResult,
-    user: UserJWTDAO,
-    tenantId: string
+	usedFilters: EzFilter.BuildQueryResult,
+	user: UserJWTDAO,
+	tenantId: string,
 ) {
-    if (user.role == Roles.ADMIN) {
-        return usedFilters
-    }
+	if (user.role == Roles.ADMIN) {
+		return usedFilters
+	}
 
-    const tenantRoles = await TenantRoleRepository.getByUserId(user.id, tenantId)
+	const tenantRoles = await TenantRoleRepository.getByUserId(user.id, tenantId)
 
-    if (
-        tenantRoles.find(
-            (tenantRole) =>
-                tenantRole.identifier == TenantRoleIdentifier.QUALITY_ASSURANCE ||
-                tenantRole.identifier == TenantRoleIdentifier.TRAINER
-        )
-    ) {
-        return usedFilters
-    }
+	if (
+		tenantRoles.find(
+			(tenantRole) =>
+				tenantRole.identifier == TenantRoleIdentifier.QUALITY_ASSURANCE ||
+				tenantRole.identifier == TenantRoleIdentifier.TRAINER,
+		)
+	) {
+		return usedFilters
+	}
 
-    usedFilters.query.where.AND.push({
-        OR: [
-            {
-                assignmentTenantRoleAccesses: {
-                    some: {
-                        tenantRoleId: {
-                            in: tenantRoles.map((tenantRole) => tenantRole.id),
-                        },
-                    },
-                },
-            },
-            {
-                assignmentUserAccesses: {
-                    some: {
-                        userId: user.id,
-                    },
-                },
-            },
-        ],
-    })
+	usedFilters.query.where.AND.push({
+		OR: [
+			{
+				assignmentTenantRoleAccesses: {
+					some: {
+						tenantRoleId: {
+							in: tenantRoles.map((tenantRole) => tenantRole.id),
+						},
+					},
+				},
+			},
+			{
+				assignmentUserAccesses: {
+					some: {
+						userId: user.id,
+					},
+				},
+			},
+		],
+	})
 
-    return usedFilters
+	return usedFilters
 }

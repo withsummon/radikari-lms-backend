@@ -1,4 +1,4 @@
 export type BufferData = {
-    buffer: Buffer;
-    fileName: string;
+	buffer: Buffer
+	fileName: string
 }

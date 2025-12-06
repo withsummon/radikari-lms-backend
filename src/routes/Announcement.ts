@@ -6,40 +6,40 @@ import * as AnnouncementValidation from "$validations/AnnouncementValidation"
 const AnnouncementRoutes = new Hono()
 
 AnnouncementRoutes.get(
-    "/",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRoleInTenant,
-    AnnouncementController.getAll
+	"/",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRoleInTenant,
+	AnnouncementController.getAll,
 )
 
 AnnouncementRoutes.get(
-    "/:id",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRoleInTenant,
-    AnnouncementController.getById
+	"/:id",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRoleInTenant,
+	AnnouncementController.getById,
 )
 
 AnnouncementRoutes.post(
-    "/",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRoleInTenant,
-    AnnouncementValidation.validateAnnouncementSchema,
-    AnnouncementController.create
+	"/",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRoleInTenant,
+	AnnouncementValidation.validateAnnouncementSchema,
+	AnnouncementController.create,
 )
 
 AnnouncementRoutes.put(
-    "/:id",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRoleInTenant,
-    AnnouncementValidation.validateAnnouncementSchema,
-    AnnouncementController.update
+	"/:id",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRoleInTenant,
+	AnnouncementValidation.validateAnnouncementSchema,
+	AnnouncementController.update,
 )
 
 AnnouncementRoutes.delete(
-    "/:id",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRoleInTenant,
-    AnnouncementController.deleteById
+	"/:id",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRoleInTenant,
+	AnnouncementController.deleteById,
 )
 
 export default AnnouncementRoutes

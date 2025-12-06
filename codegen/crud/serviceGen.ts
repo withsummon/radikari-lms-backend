@@ -1,7 +1,7 @@
-import fs from "fs";
+import fs from "fs"
 
 export function generateService(entityName: string, schemaName: string) {
-    const result = `
+	const result = `
 import { ${entityName} } from '../../generated/prisma/client';
 import { ${entityName}DTO } from '$entities/${entityName}';
 import * as EzFilter from "@nodewave/prisma-ezfilter";
@@ -85,18 +85,16 @@ export async function deleteById(id: string): Promise<ServiceResponse<{}>> {
 }
     `
 
-    const destination = `src/services/${entityName}Service.ts`
-    const filePath = `${__dirname}/../../${destination}`
-    // Use writeFile to write the content to the file
-    fs.writeFile(filePath, result, (err) => {
-        if (err) {
-            console.error('An error occurred:', err);
-            return;
-        }
-        console.log(`Service has been written successfully to : ${destination}.ts`);
+	const destination = `src/services/${entityName}Service.ts`
+	const filePath = `${__dirname}/../../${destination}`
+	// Use writeFile to write the content to the file
+	fs.writeFile(filePath, result, (err) => {
+		if (err) {
+			console.error("An error occurred:", err)
+			return
+		}
+		console.log(`Service has been written successfully to : ${destination}.ts`)
+	})
 
-    });
-
-
-    return destination
+	return destination
 }
