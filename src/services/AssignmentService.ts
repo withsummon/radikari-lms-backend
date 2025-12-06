@@ -415,6 +415,7 @@ export async function getDetailUserAssignmentByUserIdAndTenantId(
 				assignmentAttempt: {
 					id: submittedAttempt.id,
 					score: submittedAttempt.score,
+					percentageScore: submittedAttempt.percentageScore,
 					isSubmitted: submittedAttempt.isSubmitted,
 					submittedAt: submittedAttempt.submittedAt,
 					createdAt: submittedAttempt.createdAt,

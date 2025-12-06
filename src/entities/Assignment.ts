@@ -61,6 +61,7 @@ export interface AssignmentAttemptDTO {
 	assignmentId: string
 	userId: string
 	score: number
+	percentageScore: number
 	isSubmitted: boolean
 	submittedAt: Date
 }

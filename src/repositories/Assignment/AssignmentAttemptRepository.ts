@@ -191,6 +191,7 @@ export async function getAllUserAttemptAnswers(
 export async function submitAssignment(
 	assignmentUserAttemptId: string,
 	score: number,
+	percentageScore?: number,
 ) {
 	return await prisma.assignmentUserAttempt.update({
 		where: {
@@ -199,6 +200,7 @@ export async function submitAssignment(
 		data: {
 			isSubmitted: true,
 			score: score,
+			percentageScore: percentageScore,
 			submittedAt: new Date(),
 		},
 	})

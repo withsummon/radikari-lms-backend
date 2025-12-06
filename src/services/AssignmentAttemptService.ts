@@ -16,6 +16,7 @@ import {
 } from "../../generated/prisma/client"
 import * as AssignmentQuestionRepository from "$repositories/Assignment/AssignmentQuestionRepository"
 import * as AssignmentRepository from "$repositories/Assignment"
+import { evaluateEssayAnswers } from "./AiEssayScoringService"
 
 export async function create(
 	assignmentId: string,
@@ -229,7 +230,30 @@ export async function calculateAssignmentScore(
 
 		let score = 0
 
+		// Separate essay questions for AI scoring
+		const essayQuestions = []
+		const nonEssayQuestions = []
+
 		for (const userAttemptAnswer of assignmentUserAttemptAnswers) {
+			if (userAttemptAnswer.type === AssignmentQuestionType.ESSAY) {
+				const question = correctAnswers.find(
+					(answer) => answer.id === userAttemptAnswer.assignmentQuestionId,
+				)
+				essayQuestions.push({
+					id: userAttemptAnswer.assignmentQuestionId,
+					question: question?.content || "",
+					userAnswer: userAttemptAnswer.essayAnswer || "",
+					expectedAnswer:
+						question?.assignmentQuestionEssayReferenceAnswer?.content,
+					context: question?.assignmentQuestionEssayReferenceAnswer?.content,
+				})
+			} else {
+				nonEssayQuestions.push(userAttemptAnswer)
+			}
+		}
+
+		// Process non-essay questions with traditional scoring
+		for (const userAttemptAnswer of nonEssayQuestions) {
 			let isCorrect = false
 			switch (userAttemptAnswer.type) {
 				case AssignmentQuestionType.MULTIPLE_CHOICE:
@@ -270,10 +294,56 @@ export async function calculateAssignmentScore(
 			)
 		}
 
+		// Process essay questions with AI scoring
+		if (essayQuestions.length > 0) {
+			Logger.info(`AssignmentAttemptService.calculateAssignmentScore`, {
+				message: `Scoring ${essayQuestions.length} essay questions with AI`,
+			})
+
+			const essayResults = await evaluateEssayAnswers(essayQuestions)
+
+			for (const { questionId, result } of essayResults) {
+				const isCorrect = result.isCorrect
+				if (isCorrect) {
+					score += 1
+				}
+
+				Logger.info(`AssignmentAttemptService.calculateAssignmentScore`, {
+					message: `AI scored essay question ${questionId}, Is correct: ${isCorrect}, Score: ${result.score}, Confidence: ${result.confidence}`,
+					aiScore: result.score,
+					aiFeedback: result.feedback,
+					aiConfidence: result.confidence,
+				})
+
+				await AssignmentAttemptRepository.setCorrectAnswer(
+					assignmentUserAttemptId,
+					questionId,
+					isCorrect,
+				)
+			}
+		}
+
+		// Calculate percentage score
+		const totalQuestions = assignmentUserAttemptAnswers.length
+		const percentageScore =
+			totalQuestions > 0
+				? Number(((score / totalQuestions) * 100).toFixed(2))
+				: 0
+
 		await AssignmentAttemptRepository.submitAssignment(
 			assignmentUserAttemptId,
 			score,
+			percentageScore,
 		)
+
+		Logger.info(`AssignmentAttemptService.calculateAssignmentScore`, {
+			message: `Assignment scored successfully. Total score: ${score}/${totalQuestions} (${percentageScore}%)`,
+			totalScore: score,
+			totalQuestions: totalQuestions,
+			percentageScore: percentageScore,
+			essayQuestionsCount: essayQuestions.length,
+			nonEssayQuestionsCount: nonEssayQuestions.length,
+		})
 	} catch (err) {
 		Logger.error(`AssignmentAttemptService.calculateAssignmentScore`, {
 			error: err,
@@ -449,6 +519,7 @@ export async function getHistoryUserAssignmentAttempts(
 			assignmentAttempt: {
 				id: assignmentAttempt.id,
 				score: assignmentAttempt.score,
+				percentageScore: assignmentAttempt.percentageScore,
 				isSubmitted: assignmentAttempt.isSubmitted,
 				submittedAt: assignmentAttempt.submittedAt,
 				createdAt: assignmentAttempt.createdAt,
