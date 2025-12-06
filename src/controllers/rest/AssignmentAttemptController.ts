@@ -2,107 +2,139 @@ import { UserJWTDAO } from "$entities/User"
 import { Context, TypedResponse } from "hono"
 import * as AssignmentAttemptService from "$services/AssignmentAttemptService"
 import {
-    handleServiceErrorWithResponse,
-    response_created,
-    response_success,
+	handleServiceErrorWithResponse,
+	response_created,
+	response_success,
 } from "$utils/response.utils"
 import { AssignmentUserAttemptAnswerDTO } from "$entities/Assignment"
 
 export async function create(c: Context): Promise<TypedResponse> {
-    const assignmentId = c.req.param("assignmentId")
-    const user: UserJWTDAO = c.get("jwtPayload")
-    const tenantId = c.get("tenantId")
+	const assignmentId = c.req.param("assignmentId")
+	const user: UserJWTDAO = c.get("jwtPayload")
+	const tenantId = c.get("tenantId")
 
-    const serviceResponse = await AssignmentAttemptService.create(assignmentId, user.id, tenantId)
+	const serviceResponse = await AssignmentAttemptService.create(
+		assignmentId,
+		user.id,
+		tenantId,
+	)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_created(c, serviceResponse.data, "Successfully created new Assignment Attempt!")
+	return response_created(
+		c,
+		serviceResponse.data,
+		"Successfully created new Assignment Attempt!",
+	)
 }
 
-export async function getCurrentUserAssignmentAttempt(c: Context): Promise<TypedResponse> {
-    const user: UserJWTDAO = c.get("jwtPayload")
+export async function getCurrentUserAssignmentAttempt(
+	c: Context,
+): Promise<TypedResponse> {
+	const user: UserJWTDAO = c.get("jwtPayload")
 
-    const serviceResponse = await AssignmentAttemptService.getCurrentUserAssignmentAttemptByUserId(
-        user.id
-    )
+	const serviceResponse =
+		await AssignmentAttemptService.getCurrentUserAssignmentAttemptByUserId(
+			user.id,
+		)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(
-        c,
-        serviceResponse.data,
-        "Successfully fetched current user assignment attempt!"
-    )
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully fetched current user assignment attempt!",
+	)
 }
 
-export async function getAllQuestionsAndAnswers(c: Context): Promise<TypedResponse> {
-    const assignmentId = c.req.param("assignmentId")
-    const user: UserJWTDAO = c.get("jwtPayload")
+export async function getAllQuestionsAndAnswers(
+	c: Context,
+): Promise<TypedResponse> {
+	const assignmentId = c.req.param("assignmentId")
+	const user: UserJWTDAO = c.get("jwtPayload")
 
-    const serviceResponse = await AssignmentAttemptService.getAllQuestionsAndAnswers(
-        user.id,
-        assignmentId
-    )
+	const serviceResponse =
+		await AssignmentAttemptService.getAllQuestionsAndAnswers(
+			user.id,
+			assignmentId,
+		)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(
-        c,
-        serviceResponse.data,
-        "Successfully fetched all questions and answers!"
-    )
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully fetched all questions and answers!",
+	)
 }
 
 export async function updateAnswer(c: Context): Promise<TypedResponse> {
-    const data: AssignmentUserAttemptAnswerDTO = await c.req.json()
-    const assignmentId = c.req.param("assignmentId")
-    const user: UserJWTDAO = c.get("jwtPayload")
+	const data: AssignmentUserAttemptAnswerDTO = await c.req.json()
+	const assignmentId = c.req.param("assignmentId")
+	const user: UserJWTDAO = c.get("jwtPayload")
 
-    const serviceResponse = await AssignmentAttemptService.updateAnswer(user.id, assignmentId, data)
+	const serviceResponse = await AssignmentAttemptService.updateAnswer(
+		user.id,
+		assignmentId,
+		data,
+	)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(c, serviceResponse.data, "Successfully updated answer!")
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully updated answer!",
+	)
 }
 
 export async function submitAssignment(c: Context): Promise<TypedResponse> {
-    const assignmentId = c.req.param("assignmentId")
-    const user: UserJWTDAO = c.get("jwtPayload")
+	const assignmentId = c.req.param("assignmentId")
+	const user: UserJWTDAO = c.get("jwtPayload")
 
-    const serviceResponse = await AssignmentAttemptService.submitAssignment(user.id, assignmentId)
+	const serviceResponse = await AssignmentAttemptService.submitAssignment(
+		user.id,
+		assignmentId,
+	)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(c, serviceResponse.data, "Successfully submitted assignment!")
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully submitted assignment!",
+	)
 }
 
-export async function getHistoryUserAssignmentAttempts(c: Context): Promise<TypedResponse> {
-    const assignmentId = c.req.param("assignmentId")
-    const user: UserJWTDAO = c.get("jwtPayload")
+export async function getHistoryUserAssignmentAttempts(
+	c: Context,
+): Promise<TypedResponse> {
+	const assignmentId = c.req.param("assignmentId")
+	const user: UserJWTDAO = c.get("jwtPayload")
 
-    const serviceResponse = await AssignmentAttemptService.getHistoryUserAssignmentAttempts(
-        user.id,
-        assignmentId
-    )
+	const serviceResponse =
+		await AssignmentAttemptService.getHistoryUserAssignmentAttempts(
+			user.id,
+			assignmentId,
+		)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(
-        c,
-        serviceResponse.data,
-        "Successfully fetched history user assignment attempts!"
-    )
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully fetched history user assignment attempts!",
+	)
 }

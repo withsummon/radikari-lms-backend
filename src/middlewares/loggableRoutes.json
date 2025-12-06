@@ -1,5 +1,3 @@
 {
-    "loggableRoutes": [
-        "^/users(?:/.*)?(?:\\?.*)?$"
-    ]
+	"loggableRoutes": ["^/users(?:/.*)?(?:\\?.*)?$"]
 }

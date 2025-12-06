@@ -1,7 +1,7 @@
-import fs from "fs";
+import fs from "fs"
 
 export function generateController(entityName: string) {
-    const result = `import {Context, TypedResponse} from "hono"
+	const result = `import {Context, TypedResponse} from "hono"
 import * as ${entityName}Service from "$services/${entityName}Service"
 import { handleServiceErrorWithResponse, response_created, response_success } from "$utils/response.utils"
 import { ${entityName}DTO } from "$entities/${entityName}"
@@ -69,16 +69,18 @@ export async function deleteById(c:Context): Promise<TypedResponse> {
 }
     `
 
-    const destination = `src/controllers/rest/${entityName}Controller.ts`
-    const filePath = `${__dirname}/../../${destination}`
-    // Use writeFile to write the content to the file
-    fs.writeFile(filePath, result, (err) => {
-        if (err) {
-            console.error('An error occurred:', err);
-            return;
-        }
-        console.log(`Controllers has been written successfully to : ${destination}.ts`);
-    });
+	const destination = `src/controllers/rest/${entityName}Controller.ts`
+	const filePath = `${__dirname}/../../${destination}`
+	// Use writeFile to write the content to the file
+	fs.writeFile(filePath, result, (err) => {
+		if (err) {
+			console.error("An error occurred:", err)
+			return
+		}
+		console.log(
+			`Controllers has been written successfully to : ${destination}.ts`,
+		)
+	})
 
-    return destination
+	return destination
 }

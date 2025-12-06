@@ -1,6 +1,6 @@
 export interface OperationDTO {
-    id: string;
-    name: string;
-    description: string;
-    headOfOperationUserId: string;
+	id: string
+	name: string
+	description: string
+	headOfOperationUserId: string
 }

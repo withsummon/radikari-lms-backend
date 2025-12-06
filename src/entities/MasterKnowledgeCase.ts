@@ -1,4 +1,4 @@
 export interface MasterKnowledgeCaseDTO {
-    id: string;
-    name: string;
+	id: string
+	name: string
 }

@@ -1,9 +1,9 @@
-import { cronServer } from './cron';
-import createRestServer from './rest';
+import { cronServer } from "./cron"
+import createRestServer from "./rest"
 
 const server = {
-  restServer: createRestServer,
-  cronServer: cronServer
+	restServer: createRestServer,
+	cronServer: cronServer,
 }
 
 export default server

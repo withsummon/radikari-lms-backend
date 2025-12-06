@@ -1,6 +1,6 @@
 export interface AiChatRoomDTO {
-    id: string;
-    tenantId: string;
-    userId: string;
-    title: string;
+	id: string
+	tenantId: string
+	userId: string
+	title: string
 }

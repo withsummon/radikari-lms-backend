@@ -1,7 +1,7 @@
 import fs from "fs"
 
 export function generateRepository(entityName: string, schemaName: string) {
-    const result = `import * as EzFilter from "@nodewave/prisma-ezfilter";
+	const result = `import * as EzFilter from "@nodewave/prisma-ezfilter";
 import { prisma } from '$pkg/prisma';
 import { ${entityName}DTO } from '$entities/${entityName}';
 
@@ -62,16 +62,18 @@ export async function deleteById(id: string) {
 
     `
 
-    const destination = `src/repositories/${entityName}Repository.ts`
-    const filePath = `${__dirname}/../../${destination}`
-    // Use writeFile to write the content to the file
-    fs.writeFile(filePath, result, (err) => {
-        if (err) {
-            console.error("An error occurred:", err)
-            return
-        }
-        console.log(`Repository has been written successfully to : ${destination}.ts`)
-    })
+	const destination = `src/repositories/${entityName}Repository.ts`
+	const filePath = `${__dirname}/../../${destination}`
+	// Use writeFile to write the content to the file
+	fs.writeFile(filePath, result, (err) => {
+		if (err) {
+			console.error("An error occurred:", err)
+			return
+		}
+		console.log(
+			`Repository has been written successfully to : ${destination}.ts`,
+		)
+	})
 
-    return destination
+	return destination
 }

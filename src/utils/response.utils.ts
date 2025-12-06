@@ -5,13 +5,13 @@ import { TypedResponse } from "hono/types"
 import { StatusCode } from "hono/utils/http-status"
 
 export const MIME_TYPE = {
-    PDF: "application/pdf",
-    XLSX: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+	PDF: "application/pdf",
+	XLSX: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 }
 
 const MIME_TYPE_EXTENSION: Record<string, string> = {
-    "application/pdf": "pdf",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+	"application/pdf": "pdf",
+	"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
 }
 /**
  * Base of response handler
@@ -24,14 +24,14 @@ const MIME_TYPE_EXTENSION: Record<string, string> = {
  * @returns response
  */
 export const response_handler = (
-    c: Context,
-    status: StatusCode,
-    content: unknown = null,
-    message = "",
-    errors: Array<string> = []
+	c: Context,
+	status: StatusCode,
+	content: unknown = null,
+	message = "",
+	errors: Array<string> = [],
 ): TypedResponse => {
-    c.status(status)
-    return c.json({ content, message, errors })
+	c.status(status)
+	return c.json({ content, message, errors })
 }
 
 /**
@@ -42,11 +42,11 @@ export const response_handler = (
  * @param errors list of errors
  */
 export const response_bad_request = (
-    c: Context,
-    message = "Bad Request",
-    errors: Array<any> = []
+	c: Context,
+	message = "Bad Request",
+	errors: Array<any> = [],
 ): TypedResponse => {
-    return response_handler(c, 400, undefined, message, errors)
+	return response_handler(c, 400, undefined, message, errors)
 }
 
 /**
@@ -57,11 +57,11 @@ export const response_bad_request = (
  * @param errors list of errors
  */
 export const response_unauthorized = (
-    c: Context,
-    message = "Unauthorized",
-    errors: Array<string> = []
+	c: Context,
+	message = "Unauthorized",
+	errors: Array<string> = [],
 ): TypedResponse => {
-    return response_handler(c, 401, undefined, message, errors)
+	return response_handler(c, 401, undefined, message, errors)
 }
 
 /**
@@ -72,11 +72,11 @@ export const response_unauthorized = (
  * @param errors list of errors
  */
 export const response_forbidden = (
-    c: Context,
-    message = "Forbidden",
-    errors: Array<string> = []
+	c: Context,
+	message = "Forbidden",
+	errors: Array<string> = [],
 ): TypedResponse => {
-    return response_handler(c, 403, undefined, message, errors)
+	return response_handler(c, 403, undefined, message, errors)
 }
 
 /**
@@ -87,11 +87,11 @@ export const response_forbidden = (
  * @param errors list of errors
  */
 export const response_not_found = (
-    c: Context,
-    message = "Not Found",
-    errors: Array<string> = []
+	c: Context,
+	message = "Not Found",
+	errors: Array<string> = [],
 ): TypedResponse => {
-    return response_handler(c, 404, undefined, message, errors)
+	return response_handler(c, 404, undefined, message, errors)
 }
 
 /**
@@ -102,11 +102,11 @@ export const response_not_found = (
  * @param errors list of errors
  */
 export const response_conflict = (
-    c: Context,
-    message = "Conflict",
-    errors: Array<string> = []
+	c: Context,
+	message = "Conflict",
+	errors: Array<string> = [],
 ): TypedResponse => {
-    return response_handler(c, 409, undefined, message, errors)
+	return response_handler(c, 409, undefined, message, errors)
 }
 
 /**
@@ -117,11 +117,11 @@ export const response_conflict = (
  * @param errors list of errors
  */
 export const response_unprocessable_entity = (
-    c: Context,
-    message = "Unprocessable Entity",
-    errors: Array<string> = []
+	c: Context,
+	message = "Unprocessable Entity",
+	errors: Array<string> = [],
 ): TypedResponse => {
-    return response_handler(c, 422, undefined, message, errors)
+	return response_handler(c, 422, undefined, message, errors)
 }
 
 /**
@@ -132,11 +132,11 @@ export const response_unprocessable_entity = (
  * @param errors list of errors
  */
 export const response_internal_server_error = (
-    c: Context,
-    message = "Internal Server Error",
-    errors: Array<string> = []
+	c: Context,
+	message = "Internal Server Error",
+	errors: Array<string> = [],
 ): TypedResponse => {
-    return response_handler(c, 500, undefined, message, errors)
+	return response_handler(c, 500, undefined, message, errors)
 }
 
 /**
@@ -147,11 +147,11 @@ export const response_internal_server_error = (
  * @param message description
  */
 export const response_success = (
-    c: Context,
-    content: unknown = null,
-    message = "Success"
+	c: Context,
+	content: unknown = null,
+	message = "Success",
 ): TypedResponse => {
-    return response_handler(c, 200, content, message, undefined)
+	return response_handler(c, 200, content, message, undefined)
 }
 
 /**
@@ -162,11 +162,11 @@ export const response_success = (
  * @param message description
  */
 export const response_created = (
-    c: Context,
-    content: unknown = null,
-    message = "Created"
+	c: Context,
+	content: unknown = null,
+	message = "Created",
 ): TypedResponse => {
-    return response_handler(c, 201, content, message, undefined)
+	return response_handler(c, 201, content, message, undefined)
 }
 
 /**
@@ -178,18 +178,21 @@ export const response_created = (
  * @param buffer Buffer that will sent to client-side
  */
 export const response_buffer = (
-    c: Context,
-    fileName: string,
-    mimeType: string,
-    buffer: Buffer
+	c: Context,
+	fileName: string,
+	mimeType: string,
+	buffer: Buffer,
 ): Response => {
-    const extension = MIME_TYPE_EXTENSION[mimeType]
-    c.header("Access-Control-Expose-Headers", "content-disposition")
-    c.header("content-disposition", `attachment; filename=${fileName}.${extension}`)
-    c.header("Content-Type", mimeType)
+	const extension = MIME_TYPE_EXTENSION[mimeType]
+	c.header("Access-Control-Expose-Headers", "content-disposition")
+	c.header(
+		"content-disposition",
+		`attachment; filename=${fileName}.${extension}`,
+	)
+	c.header("Content-Type", mimeType)
 
-    // Convert Buffer to ArrayBuffer or Uint8Array which Hono can handle
-    return c.body(new Uint8Array(buffer), HttpStatusCode.Ok)
+	// Convert Buffer to ArrayBuffer or Uint8Array which Hono can handle
+	return c.body(new Uint8Array(buffer), HttpStatusCode.Ok)
 }
 
 /**
@@ -199,19 +202,19 @@ export const response_buffer = (
  * @returns response
  */
 export const handleServiceErrorWithResponse = (
-    c: Context,
-    serviceResponse: ServiceResponse<any>
+	c: Context,
+	serviceResponse: ServiceResponse<any>,
 ): TypedResponse => {
-    switch (serviceResponse.err?.code) {
-        case 400:
-            return response_bad_request(c, serviceResponse.err?.message)
-        case 404:
-            return response_not_found(c, serviceResponse.err?.message)
-        case 401:
-            return response_unauthorized(c, serviceResponse.err?.message)
-        default:
-            return response_internal_server_error(c, serviceResponse.err?.message)
-    }
+	switch (serviceResponse.err?.code) {
+		case 400:
+			return response_bad_request(c, serviceResponse.err?.message)
+		case 404:
+			return response_not_found(c, serviceResponse.err?.message)
+		case 401:
+			return response_unauthorized(c, serviceResponse.err?.message)
+		default:
+			return response_internal_server_error(c, serviceResponse.err?.message)
+	}
 }
 
 /**
@@ -221,8 +224,8 @@ export const handleServiceErrorWithResponse = (
  * @returns
  */
 export const response_stream = (c: Context, data: ReadableStream): Response => {
-    c.header("Content-Type", "text/event-stream")
-    c.header("Cache-Control", "no-cache")
-    c.header("Connection", "keep-alive")
-    return c.body(data)
+	c.header("Content-Type", "text/event-stream")
+	c.header("Cache-Control", "no-cache")
+	c.header("Connection", "keep-alive")
+	return c.body(data)
 }

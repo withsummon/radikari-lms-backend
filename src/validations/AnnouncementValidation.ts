@@ -6,30 +6,36 @@ import * as Helpers from "./helper"
 import { prisma } from "$pkg/prisma"
 
 export async function validateAnnouncementSchema(c: Context, next: Next) {
-    const data: AnnouncementCreateDTO = await c.req.json()
-    let invalidFields: Helpers.ErrorStructure[] = Helpers.validateSchema(AnnouncementSchema, data)
+	const data: AnnouncementCreateDTO = await c.req.json()
+	let invalidFields: Helpers.ErrorStructure[] = Helpers.validateSchema(
+		AnnouncementSchema,
+		data,
+	)
 
-    if (invalidFields.length > 0) {
-        return response_bad_request(c, "Validation Error", invalidFields)
-    }
+	if (invalidFields.length > 0) {
+		return response_bad_request(c, "Validation Error", invalidFields)
+	}
 
-    for (const tenantRoleId of data.tenantRoleIds) {
-        const tenantRole = await prisma.tenantRole.findUnique({
-            where: {
-                id: tenantRoleId,
-            },
-        })
-        if (!tenantRole) {
-            invalidFields.push(
-                Helpers.generateErrorStructure("tenantRoleIds", "tenant role not found")
-            )
-            break
-        }
-    }
+	for (const tenantRoleId of data.tenantRoleIds) {
+		const tenantRole = await prisma.tenantRole.findUnique({
+			where: {
+				id: tenantRoleId,
+			},
+		})
+		if (!tenantRole) {
+			invalidFields.push(
+				Helpers.generateErrorStructure(
+					"tenantRoleIds",
+					"tenant role not found",
+				),
+			)
+			break
+		}
+	}
 
-    if (invalidFields.length > 0) {
-        return response_bad_request(c, "Validation Error", invalidFields)
-    }
+	if (invalidFields.length > 0) {
+		return response_bad_request(c, "Validation Error", invalidFields)
+	}
 
-    await next()
+	await next()
 }

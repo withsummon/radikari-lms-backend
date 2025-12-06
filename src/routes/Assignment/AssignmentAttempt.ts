@@ -6,40 +6,40 @@ import * as AssignmentValidation from "$validations/AssignmentValidation"
 const AssignmentAttemptRoutes = new Hono()
 
 AssignmentAttemptRoutes.get(
-    "/attempts/current",
-    AuthMiddleware.checkJwt,
-    AssignmentAttemptController.getCurrentUserAssignmentAttempt
+	"/attempts/current",
+	AuthMiddleware.checkJwt,
+	AssignmentAttemptController.getCurrentUserAssignmentAttempt,
 )
 
 AssignmentAttemptRoutes.post(
-    "/:assignmentId/attempts",
-    AuthMiddleware.checkJwt,
-    AssignmentAttemptController.create
+	"/:assignmentId/attempts",
+	AuthMiddleware.checkJwt,
+	AssignmentAttemptController.create,
 )
 
 AssignmentAttemptRoutes.get(
-    "/:assignmentId/attempts/questions",
-    AuthMiddleware.checkJwt,
-    AssignmentAttemptController.getAllQuestionsAndAnswers
+	"/:assignmentId/attempts/questions",
+	AuthMiddleware.checkJwt,
+	AssignmentAttemptController.getAllQuestionsAndAnswers,
 )
 
-AssignmentAttemptRoutes.put(
-    "/:assignmentId/attempts/answer",
-    AuthMiddleware.checkJwt,
-    AssignmentValidation.validateAssignmentUserAttemptAnswerSchema,
-    AssignmentAttemptController.updateAnswer
+AssignmentAttemptRoutes.post(
+	"/:assignmentId/attempts/answer",
+	AuthMiddleware.checkJwt,
+	AssignmentValidation.validateAssignmentUserAttemptAnswerSchema,
+	AssignmentAttemptController.updateAnswer,
 )
 
-AssignmentAttemptRoutes.put(
-    "/:assignmentId/attempts/submit",
-    AuthMiddleware.checkJwt,
-    AssignmentAttemptController.submitAssignment
+AssignmentAttemptRoutes.post(
+	"/:assignmentId/attempts/submit",
+	AuthMiddleware.checkJwt,
+	AssignmentAttemptController.submitAssignment,
 )
 
 AssignmentAttemptRoutes.get(
-    "/:assignmentId/attempts/history",
-    AuthMiddleware.checkJwt,
-    AssignmentAttemptController.getHistoryUserAssignmentAttempts
+	"/:assignmentId/attempts/history",
+	AuthMiddleware.checkJwt,
+	AssignmentAttemptController.getHistoryUserAssignmentAttempts,
 )
 
 export default AssignmentAttemptRoutes

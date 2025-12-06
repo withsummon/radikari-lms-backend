@@ -7,40 +7,40 @@ import * as Validations from "$validations/OperationValidation"
 const OperationRoutes = new Hono()
 
 OperationRoutes.get(
-    "/",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRole([Roles.ADMIN]),
-    OperationController.getAll
+	"/",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRole([Roles.ADMIN]),
+	OperationController.getAll,
 )
 
 OperationRoutes.get(
-    "/:id",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRole([Roles.ADMIN]),
-    OperationController.getById
+	"/:id",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRole([Roles.ADMIN]),
+	OperationController.getById,
 )
 
 OperationRoutes.post(
-    "/",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRole([Roles.ADMIN]),
-    Validations.validateOperationSchema,
-    OperationController.create
+	"/",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRole([Roles.ADMIN]),
+	Validations.validateOperationSchema,
+	OperationController.create,
 )
 
 OperationRoutes.put(
-    "/:id",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRole([Roles.ADMIN]),
-    Validations.validateOperationSchema,
-    OperationController.update
+	"/:id",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRole([Roles.ADMIN]),
+	Validations.validateOperationSchema,
+	OperationController.update,
 )
 
 OperationRoutes.delete(
-    "/:id",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRole([Roles.ADMIN]),
-    OperationController.deleteById
+	"/:id",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRole([Roles.ADMIN]),
+	OperationController.deleteById,
 )
 
 export default OperationRoutes
