@@ -57,6 +57,7 @@ model User {
   forumLikes                           ForumLike[]
   forumCommentLikes                    ForumCommentLike[]
   forumPinneds                         ForumPinned[]
+  userActivityLogs                     UserActivityLog[]
 }
 
 model Operation {
@@ -458,15 +459,15 @@ model AssignmentQuestionEssayReferenceAnswer {
 }
 
 model AssignmentUserAttempt {
-  id             String    @id @unique
-  userId         String
-  assignmentId   String
-  score          Int?
+  id              String    @id @unique
+  userId          String
+  assignmentId    String
+  score           Int?
   percentageScore Float?
-  isSubmitted    Boolean   @default(false)
-  submittedAt    DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  isSubmitted     Boolean   @default(false)
+  submittedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   user                                 User                                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   assignment                           Assignment                            @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
@@ -598,4 +599,13 @@ model ForumPinned {
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([forumId, userId])
+}
+
+model UserActivityLog {
+  id        String   @id @unique
+  userId    String
+  action    String   @db.Text
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
