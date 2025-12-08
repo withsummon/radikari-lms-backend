@@ -103,7 +103,7 @@ export async function getAllByUser(c: Context): Promise<TypedResponse> {
     const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(c.req.query())
     const user: UserJWTDAO = c.get("jwtPayload")
 
-    const serviceResponse = await TenantService.getAllByUserId(filters, user.id)
+    const serviceResponse = await TenantService.getAllByUserId(filters, user)
 
     if (!serviceResponse.status) {
         return handleServiceErrorWithResponse(c, serviceResponse)

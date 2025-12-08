@@ -10,6 +10,7 @@ import {
 } from "$entities/Service"
 import Logger from "$pkg/logger"
 import * as UserActivityLogService from "$services/UserActivityLogService"
+import { UserJWTDAO } from "$entities/User"
 
 export async function create(
     data: TenantCreateUpdateDTO,
@@ -117,10 +118,10 @@ export async function deleteById(id: string, userId: string): Promise<ServiceRes
 
 export async function getAllByUserId(
     filters: EzFilter.FilteringQuery,
-    userId: string
+    user: UserJWTDAO
 ): Promise<ServiceResponse<EzFilter.PaginatedResult<Tenant[]> | {}>> {
     try {
-        const tenants = await TenantRepository.getAllByUserId(filters, userId)
+        const tenants = await TenantRepository.getAllByUserId(filters, user)
         return HandleServiceResponseSuccess(tenants)
     } catch (err) {
         Logger.error(`TenantService.getAllByUserId`, {

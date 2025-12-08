@@ -108,13 +108,18 @@ export async function getSummary(
 
 export async function getById(
     id: string,
-    tenantId: string
+    tenantId: string,
+    userId: string
 ): Promise<ServiceResponse<Knowledge | {}>> {
     try {
         let knowledge = await KnowledgeRepository.getById(id)
 
         if (!knowledge)
             return HandleServiceResponseCustomError("Invalid ID", ResponseStatus.NOT_FOUND)
+
+        if (knowledge.createdByUserId !== userId) {
+            await KnowledgeRepository.incrementTotalViews(id)
+        }
 
         return HandleServiceResponseSuccess(knowledge)
     } catch (err) {
@@ -236,7 +241,7 @@ export async function approveById(
         }
 
         // Todo handle comment when action is REVISION
-        await KnowledgeRepository.updateStatus(id, userId, status, data.action)
+        await KnowledgeRepository.updateStatus(id, userId, status, data.action, data.comment)
 
         if (data.action == KnowledgeActivityLogAction.APPROVE) {
             Logger.info("KnowledgeService.approveById: Preparing to send message to queue.", {
@@ -378,7 +383,7 @@ export async function bulkCreate(data: KnowledgeBulkCreateDTO, userId: string) {
                 subCategory: row["Sub Category"],
                 case: row.Case,
                 headline: row.Headline,
-                status: KnowledgeStatus.APPROVED,
+                status: KnowledgeStatus.PENDING,
             })
 
             if (row.Attachments && row.Attachments !== "") {
@@ -404,18 +409,6 @@ export async function bulkCreate(data: KnowledgeBulkCreateDTO, userId: string) {
         await KnowledgeRepository.createMany(knowledgeCreateManyInput)
         await KnowledgeRepository.createManyAttachments(knwoledgeAttachmentCreateManyInput)
         await KnowledgeRepository.createManyContent(knwoledgeContentCreateManyInput)
-
-        const pubsub = GlobalPubSub.getInstance().getPubSub()
-
-        for (const knowledge of knowledgeCreateManyInput) {
-            const knowledgeWithUserKnowledgeAndKnowledgeAttachment =
-                await KnowledgeRepository.getById(knowledge.id)
-
-            await pubsub.sendToQueue(
-                PUBSUB_TOPICS.KNOWLEDGE_CREATE,
-                generateKnowledgeQueueDTO(knowledgeWithUserKnowledgeAndKnowledgeAttachment as any)
-            )
-        }
 
         return HandleServiceResponseSuccess({})
     } catch (err) {
@@ -477,7 +470,7 @@ export async function bulkCreateTypeCase(data: KnowledgeBulkCreateDTO, userId: s
                 case: row["Case"],
                 category: row["Category"],
                 subCategory: row["Sub Category"],
-                status: KnowledgeStatus.APPROVED,
+                status: KnowledgeStatus.PENDING,
             })
 
             let order = 1
@@ -585,18 +578,6 @@ export async function bulkCreateTypeCase(data: KnowledgeBulkCreateDTO, userId: s
 
         await KnowledgeRepository.createMany(knowledgeCreateManyInput)
         await KnowledgeRepository.createManyContent(knwoledgeContentCreateManyInput)
-
-        const pubsub = GlobalPubSub.getInstance().getPubSub()
-
-        for (const knowledge of knowledgeCreateManyInput) {
-            const knowledgeWithUserKnowledgeAndKnowledgeAttachment =
-                await KnowledgeRepository.getById(knowledge.id)
-
-            await pubsub.sendToQueue(
-                PUBSUB_TOPICS.KNOWLEDGE_CREATE,
-                generateKnowledgeQueueDTO(knowledgeWithUserKnowledgeAndKnowledgeAttachment as any)
-            )
-        }
 
         return HandleServiceResponseSuccess({})
     } catch (error) {
