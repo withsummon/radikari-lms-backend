@@ -6,17 +6,17 @@ import { Roles } from "../../generated/prisma/client"
 const UserActivityLogRoutes = new Hono()
 
 UserActivityLogRoutes.get(
-    "/",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRole([Roles.ADMIN]),
-    UserActivityLogController.getAll
+	"/",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRole([Roles.ADMIN]),
+	UserActivityLogController.getAll,
 )
 
 UserActivityLogRoutes.get(
-    "/:id",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRole([Roles.ADMIN]),
-    UserActivityLogController.getById
+	"/:id",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRole([Roles.ADMIN]),
+	UserActivityLogController.getById,
 )
 
 export default UserActivityLogRoutes

@@ -7,43 +7,43 @@ import * as AccessControlListValidation from "$validations/AccessControlListVali
 const AccessControlListRoutes = new Hono()
 
 AccessControlListRoutes.post(
-    "/tenant-roles",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRole([Roles.ADMIN]),
-    AccessControlListValidation.validateAccessControlListCreateRoleSchema,
-    AccessControlListController.createRole
+	"/tenant-roles",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRole([Roles.ADMIN]),
+	AccessControlListValidation.validateAccessControlListCreateRoleSchema,
+	AccessControlListController.createRole,
 )
 
 AccessControlListRoutes.put(
-    "/tenant-roles/:tenantRoleId/access",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRole([Roles.ADMIN]),
-    AccessControlListValidation.validateAccessControlListUpdateAccessSchema,
-    AccessControlListController.updateRoleAccess
+	"/tenant-roles/:tenantRoleId/access",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRole([Roles.ADMIN]),
+	AccessControlListValidation.validateAccessControlListUpdateAccessSchema,
+	AccessControlListController.updateRoleAccess,
 )
 
 AccessControlListRoutes.get(
-    "/tenant-roles",
-    AuthMiddleware.checkJwt,
-    AccessControlListController.getAllRoles
+	"/tenant-roles",
+	AuthMiddleware.checkJwt,
+	AccessControlListController.getAllRoles,
 )
 
 AccessControlListRoutes.get(
-    "/features",
-    AuthMiddleware.checkJwt,
-    AccessControlListController.getAllFeatures
+	"/features",
+	AuthMiddleware.checkJwt,
+	AccessControlListController.getAllFeatures,
 )
 
 AccessControlListRoutes.get(
-    "tenant-roles/:tenantRoleId/features",
-    AuthMiddleware.checkJwt,
-    AccessControlListController.getEnabledFeaturesByTenantRoleId
+	"tenant-roles/:tenantRoleId/features",
+	AuthMiddleware.checkJwt,
+	AccessControlListController.getEnabledFeaturesByTenantRoleId,
 )
 
 AccessControlListRoutes.get(
-    "/check-access",
-    AuthMiddleware.checkJwt,
-    AccessControlListController.checkAccess
+	"/check-access",
+	AuthMiddleware.checkJwt,
+	AccessControlListController.checkAccess,
 )
 
 export default AccessControlListRoutes

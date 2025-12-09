@@ -1,72 +1,94 @@
 import { Context, TypedResponse } from "hono"
 import * as OperationService from "$services/OperationService"
 import {
-    handleServiceErrorWithResponse,
-    response_created,
-    response_success,
+	handleServiceErrorWithResponse,
+	response_created,
+	response_success,
 } from "$utils/response.utils"
 import { OperationDTO } from "$entities/Operation"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { UserJWTDAO } from "$entities/User"
 
 export async function create(c: Context): Promise<TypedResponse> {
-    const data: OperationDTO = await c.req.json()
-    const user: UserJWTDAO = c.get("jwtPayload")
+	const data: OperationDTO = await c.req.json()
+	const user: UserJWTDAO = c.get("jwtPayload")
 
-    const serviceResponse = await OperationService.create(data, user.id)
+	const serviceResponse = await OperationService.create(data, user.id)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_created(c, serviceResponse.data, "Successfully created new Operation!")
+	return response_created(
+		c,
+		serviceResponse.data,
+		"Successfully created new Operation!",
+	)
 }
 
 export async function getAll(c: Context): Promise<TypedResponse> {
-    const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(c.req.query())
-    const serviceResponse = await OperationService.getAll(filters)
+	const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(
+		c.req.query(),
+	)
+	const serviceResponse = await OperationService.getAll(filters)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(c, serviceResponse.data, "Successfully fetched all Operation!")
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully fetched all Operation!",
+	)
 }
 
 export async function getById(c: Context): Promise<TypedResponse> {
-    const id = c.req.param("id")
+	const id = c.req.param("id")
 
-    const serviceResponse = await OperationService.getById(id)
+	const serviceResponse = await OperationService.getById(id)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(c, serviceResponse.data, "Successfully fetched Operation by id!")
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully fetched Operation by id!",
+	)
 }
 
 export async function update(c: Context): Promise<TypedResponse> {
-    const data: OperationDTO = await c.req.json()
-    const id = c.req.param("id")
-    const user: UserJWTDAO = c.get("jwtPayload")
+	const data: OperationDTO = await c.req.json()
+	const id = c.req.param("id")
+	const user: UserJWTDAO = c.get("jwtPayload")
 
-    const serviceResponse = await OperationService.update(id, data, user.id)
+	const serviceResponse = await OperationService.update(id, data, user.id)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(c, serviceResponse.data, "Successfully updated Operation!")
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully updated Operation!",
+	)
 }
 
 export async function deleteById(c: Context): Promise<TypedResponse> {
-    const id = c.req.param("id")
-    const user: UserJWTDAO = c.get("jwtPayload")
-    const serviceResponse = await OperationService.deleteById(id, user.id)
+	const id = c.req.param("id")
+	const user: UserJWTDAO = c.get("jwtPayload")
+	const serviceResponse = await OperationService.deleteById(id, user.id)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(c, serviceResponse.data, "Successfully deleted Operation!")
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully deleted Operation!",
+	)
 }

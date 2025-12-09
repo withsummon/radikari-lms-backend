@@ -11,19 +11,35 @@ router.post("/login", AuthValidation.validateLoginDTO, AuthController.login)
 router.get("/google-login", AuthController.googleLogin)
 router.get("/google", AuthController.googleCallback)
 router.post("/verify-token", AuthController.verifyToken)
-router.put("/update-password", AuthMiddleware.checkJwt, AuthController.changePassword)
+router.put(
+	"/update-password",
+	AuthMiddleware.checkJwt,
+	AuthController.changePassword,
+)
 
 router.route("/users", RoutesRegistry.UserRoutes)
 router.route("/operations", RoutesRegistry.OperationRoutes)
 router.route("/tenants", RoutesRegistry.TenantRoutes)
-router.route("/master-knowledge-categories", RoutesRegistry.MasterKnowledgeCategoryRoutes)
-router.route("/master-knowledge-sub-categories", RoutesRegistry.MasterKnowledgeSubCategoryRoutes)
-router.route("/master-knowledge-cases", RoutesRegistry.MasterKnowledgeCaseRoutes)
+router.route(
+	"/master-knowledge-categories",
+	RoutesRegistry.MasterKnowledgeCategoryRoutes,
+)
+router.route(
+	"/master-knowledge-sub-categories",
+	RoutesRegistry.MasterKnowledgeSubCategoryRoutes,
+)
+router.route(
+	"/master-knowledge-cases",
+	RoutesRegistry.MasterKnowledgeCaseRoutes,
+)
 router.route("/tenants/:tenantId/knowledges", RoutesRegistry.KnowledgeRoutes)
 router.route("/bulk", RoutesRegistry.BulkKnowledgeRoutes)
 router.route("/access-control-lists", RoutesRegistry.AccessControlListRoutes)
 router.route("/tenants/:tenantId/assignments", RoutesRegistry.AssignmentRoutes)
-router.route("/tenants/:tenantId/announcements", RoutesRegistry.AnnouncementRoutes)
+router.route(
+	"/tenants/:tenantId/announcements",
+	RoutesRegistry.AnnouncementRoutes,
+)
 router.route("/tenants/:tenantId/forums", RoutesRegistry.ForumRoutes)
 router.route("/user-activity-logs", RoutesRegistry.UserActivityLogRoutes)
 router.route("/notifications", RoutesRegistry.NotificationRoutes)
@@ -32,19 +48,19 @@ router.route("/notifications", RoutesRegistry.NotificationRoutes)
 router.route("/ai-chat", RoutesRegistry.ChatRoutes)
 
 router.get("/", (c: Context) => {
-    return response_success(c, "main routes!")
+	return response_success(c, "main routes!")
 })
 
 router.get("/robots.txt", (c: Context) => {
-    return c.text(`User-agent: *\nAllow: /`)
+	return c.text(`User-agent: *\nAllow: /`)
 })
 
 router.get("/ping", (c: Context) => {
-    return response_success(c, "pong!")
+	return response_success(c, "pong!")
 })
 
 router.all("*", (c: Context) => {
-    return response_not_found(c)
+	return response_not_found(c)
 })
 
 export default router

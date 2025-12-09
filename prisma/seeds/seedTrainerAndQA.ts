@@ -79,9 +79,9 @@ export async function seedTrainerAndQA(prisma: PrismaClient) {
 	}
 
 	// Create trainer if needed
-	if (countTrainer === 0) {
+	if (countTrainer === 1) {
 		try {
-			const hashedPassword = await Bun.password.hash("trainer123", "argon2id")
+			const hashedPassword = await Bun.password.hash("trainer1234", "argon2id")
 			console.log("Creating trainer user...")
 
 			const trainerUser = await prisma.user.create({
@@ -89,7 +89,7 @@ export async function seedTrainerAndQA(prisma: PrismaClient) {
 					id: ulid(),
 					fullName: "Trainer",
 					password: hashedPassword,
-					email: "trainer@test.com",
+					email: "trainer2@test.com",
 					role: Roles.USER,
 					phoneNumber: "08224567891",
 				},
@@ -113,9 +113,9 @@ export async function seedTrainerAndQA(prisma: PrismaClient) {
 	}
 
 	// Create quality assurance if needed
-	if (countQualityAssurance === 0) {
+	if (countQualityAssurance === 1) {
 		try {
-			const hashedPassword = await Bun.password.hash("qa123", "argon2id")
+			const hashedPassword = await Bun.password.hash("qa1234", "argon2id")
 			console.log("Creating quality assurance user...")
 
 			const qaUser = await prisma.user.create({
@@ -123,7 +123,7 @@ export async function seedTrainerAndQA(prisma: PrismaClient) {
 					id: ulid(),
 					fullName: "Quality Assurance",
 					password: hashedPassword,
-					email: "qa@test.com",
+					email: "qa2@test.com",
 					role: Roles.USER,
 					phoneNumber: "08224567892",
 				},

@@ -1,34 +1,37 @@
 import { Roles } from "../../generated/prisma/client"
 
 export interface UserJWTDAO {
-    id: string
-    email: string
-    fullName: string
-    role: Roles
-    phoneNumber: string
+	id: string
+	email: string
+	fullName: string
+	role: Roles
+	phoneNumber: string
 }
 
 export interface UserLoginDTO {
-    email: string
-    password: string
+	email: string
+	password: string
 }
 
 export interface CreateUserDTO {
-    id: string
-    fullName: string
-    email: string
-    password: string
-    phoneNumber: string
-    lastLoginAt?: Date
-    profilePictureUrl?: string
+	id: string
+	fullName: string
+	email: string
+	password: string
+	phoneNumber: string
+	lastLoginAt?: Date
+	profilePictureUrl?: string
 }
 
 export interface UpdateUserDTO extends Omit<CreateUserDTO, "id, password"> {}
 
 // Exclude keys from user
-export function exclude<User, Key extends keyof User>(user: User, ...keys: Key[]): Omit<User, Key> {
-    for (let key of keys) {
-        delete user[key]
-    }
-    return user
+export function exclude<User, Key extends keyof User>(
+	user: User,
+	...keys: Key[]
+): Omit<User, Key> {
+	for (let key of keys) {
+		delete user[key]
+	}
+	return user
 }

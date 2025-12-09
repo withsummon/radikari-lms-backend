@@ -8,221 +8,235 @@ import * as AssignmentHelpers from "./helpers"
 import { UserJWTDAO } from "$entities/User"
 
 export async function create(data: AssignmentCreateDTO) {
-    return await prisma.$transaction(
-        async (tx) => {
-            const { questions, roleAccesses, userEmails, ...rest } = data
-            const assignmentUserAccesses: Prisma.AssignmentUserAccessCreateManyInput[] = []
-            const assignmentTenantRoleAccesses: Prisma.AssignmentTenantRoleAccessCreateManyInput[] =
-                []
+	return await prisma.$transaction(
+		async (tx) => {
+			const { questions, roleAccesses, userEmails, ...rest } = data
+			const assignmentUserAccesses: Prisma.AssignmentUserAccessCreateManyInput[] =
+				[]
+			const assignmentTenantRoleAccesses: Prisma.AssignmentTenantRoleAccessCreateManyInput[] =
+				[]
 
-            const assignment = await tx.assignment.create({
-                data: {
-                    ...rest,
-                },
-            })
+			const assignment = await tx.assignment.create({
+				data: {
+					...rest,
+				},
+			})
 
-            switch (data.access) {
-                case AssignmentAccess.TENANT_ROLE:
-                    assignmentTenantRoleAccesses.push(
-                        ...roleAccesses.map((roleAccess) => ({
-                            tenantRoleId: roleAccess,
-                            assignmentId: assignment.id,
-                            id: ulid(),
-                        }))
-                    )
-                    break
-                case AssignmentAccess.USER:
-                    for (const email of userEmails) {
-                        const user = await tx.user.findUnique({
-                            where: {
-                                email,
-                            },
-                        })
-                        if (user) {
-                            assignmentUserAccesses.push({
-                                id: ulid(),
-                                assignmentId: assignment.id,
-                                userId: user.id,
-                            })
-                        }
-                    }
-                    break
+			switch (data.access) {
+				case AssignmentAccess.TENANT_ROLE:
+					assignmentTenantRoleAccesses.push(
+						...roleAccesses.map((roleAccess) => ({
+							tenantRoleId: roleAccess,
+							assignmentId: assignment.id,
+							id: ulid(),
+						})),
+					)
+					break
+				case AssignmentAccess.USER:
+					for (const email of userEmails) {
+						const user = await tx.user.findUnique({
+							where: {
+								email,
+							},
+						})
+						if (user) {
+							assignmentUserAccesses.push({
+								id: ulid(),
+								assignmentId: assignment.id,
+								userId: user.id,
+							})
+						}
+					}
+					break
 
-                default:
-                    break
-            }
+				default:
+					break
+			}
 
-            await tx.assignmentTenantRoleAccess.createMany({
-                data: assignmentTenantRoleAccesses,
-            })
-            await tx.assignmentUserAccess.createMany({
-                data: assignmentUserAccesses,
-            })
+			await tx.assignmentTenantRoleAccess.createMany({
+				data: assignmentTenantRoleAccesses,
+			})
+			await tx.assignmentUserAccess.createMany({
+				data: assignmentUserAccesses,
+			})
 
-            await AssignmentQuestionRepository.createMany(tx, data.questions, assignment.id)
-            return assignment
-        },
-        { timeout: 120000 }
-    )
+			await AssignmentQuestionRepository.createMany(
+				tx,
+				data.questions,
+				assignment.id,
+			)
+			return assignment
+		},
+		{ timeout: 120000 },
+	)
 }
 
-export async function getAll(filters: EzFilter.FilteringQuery, user: UserJWTDAO, tenantId: string) {
-    const queryBuilder = new EzFilter.BuildQueryFilter()
-    let usedFilters = queryBuilder.build(filters)
+export async function getAll(
+	filters: EzFilter.FilteringQuery,
+	user: UserJWTDAO,
+	tenantId: string,
+) {
+	const queryBuilder = new EzFilter.BuildQueryFilter()
+	let usedFilters = queryBuilder.build(filters)
 
-    usedFilters.query.include = {
-        createdByUser: {
-            select: {
-                id: true,
-                fullName: true,
-            },
-        },
-        assignmentUserAttempts: {
-            where: {
-                userId: user.id,
-            },
-        },
-    }
+	usedFilters.query.include = {
+		createdByUser: {
+			select: {
+				id: true,
+				fullName: true,
+			},
+		},
+		assignmentUserAttempts: {
+			where: {
+				userId: user.id,
+			},
+		},
+	}
 
-    usedFilters.query.where.AND.push({
-        tenantId,
-    })
+	usedFilters.query.where.AND.push({
+		tenantId,
+	})
 
-    usedFilters = await AssignmentHelpers.generatedFilterForAssignment(usedFilters, user, tenantId)
+	usedFilters = await AssignmentHelpers.generatedFilterForAssignment(
+		usedFilters,
+		user,
+		tenantId,
+	)
 
-    const [assignment, totalData] = await Promise.all([
-        prisma.assignment.findMany(usedFilters.query as any),
-        prisma.assignment.count({
-            where: usedFilters.query.where,
-        }),
-    ])
+	const [assignment, totalData] = await Promise.all([
+		prisma.assignment.findMany(usedFilters.query as any),
+		prisma.assignment.count({
+			where: usedFilters.query.where,
+		}),
+	])
 
-    let totalPage = 1
-    if (totalData > usedFilters.query.take)
-        totalPage = Math.ceil(totalData / usedFilters.query.take)
+	let totalPage = 1
+	if (totalData > usedFilters.query.take)
+		totalPage = Math.ceil(totalData / usedFilters.query.take)
 
-    return {
-        entries: assignment,
-        totalData,
-        totalPage,
-    }
+	return {
+		entries: assignment,
+		totalData,
+		totalPage,
+	}
 }
 
 export async function getById(id: string, tenantId: string) {
-    return await prisma.assignment.findUnique({
-        where: {
-            id,
-            tenantId,
-        },
-        include: {
-            assignmentQuestions: {
-                include: {
-                    assignmentQuestionOptions: true,
-                    assignmentQuestionEssayReferenceAnswer: true,
-                    assignmentQuestionTrueFalseAnswer: true,
-                },
-            },
-            assignmentTenantRoleAccesses: true,
-            assignmentUserAccesses: true,
-        },
-    })
+	return await prisma.assignment.findUnique({
+		where: {
+			id,
+			tenantId,
+		},
+		include: {
+			assignmentQuestions: {
+				include: {
+					assignmentQuestionOptions: true,
+					assignmentQuestionEssayReferenceAnswer: true,
+					assignmentQuestionTrueFalseAnswer: true,
+				},
+			},
+			assignmentTenantRoleAccesses: true,
+			assignmentUserAccesses: true,
+		},
+	})
 }
 
 export async function update(id: string, data: AssignmentCreateDTO) {
-    return await prisma.$transaction(
-        async (tx) => {
-            const { questions, roleAccesses, userEmails, ...rest } = data
-            const assignmentUserAccesses: Prisma.AssignmentUserAccessCreateManyInput[] = []
-            const assignmentTenantRoleAccesses: Prisma.AssignmentTenantRoleAccessCreateManyInput[] =
-                []
+	return await prisma.$transaction(
+		async (tx) => {
+			const { questions, roleAccesses, userEmails, ...rest } = data
+			const assignmentUserAccesses: Prisma.AssignmentUserAccessCreateManyInput[] =
+				[]
+			const assignmentTenantRoleAccesses: Prisma.AssignmentTenantRoleAccessCreateManyInput[] =
+				[]
 
-            const assignment = await tx.assignment.update({
-                where: {
-                    id,
-                },
-                data: {
-                    ...rest,
-                },
-            })
+			const assignment = await tx.assignment.update({
+				where: {
+					id,
+				},
+				data: {
+					...rest,
+				},
+			})
 
-            await tx.assignmentTenantRoleAccess.deleteMany({
-                where: {
-                    assignmentId: id,
-                },
-            })
-            await tx.assignmentUserAccess.deleteMany({
-                where: {
-                    assignmentId: id,
-                },
-            })
+			await tx.assignmentTenantRoleAccess.deleteMany({
+				where: {
+					assignmentId: id,
+				},
+			})
+			await tx.assignmentUserAccess.deleteMany({
+				where: {
+					assignmentId: id,
+				},
+			})
 
-            switch (data.access) {
-                case AssignmentAccess.TENANT_ROLE:
-                    assignmentTenantRoleAccesses.push(
-                        ...roleAccesses.map((roleAccess) => ({
-                            tenantRoleId: roleAccess,
-                            assignmentId: assignment.id,
-                            id: ulid(),
-                        }))
-                    )
-                    break
-                case AssignmentAccess.USER:
-                    for (const email of userEmails) {
-                        const user = await tx.user.findUnique({
-                            where: {
-                                email,
-                            },
-                        })
-                        if (user) {
-                            assignmentUserAccesses.push({
-                                id: ulid(),
-                                assignmentId: assignment.id,
-                                userId: user.id,
-                            })
-                        }
-                    }
-                    break
+			switch (data.access) {
+				case AssignmentAccess.TENANT_ROLE:
+					assignmentTenantRoleAccesses.push(
+						...roleAccesses.map((roleAccess) => ({
+							tenantRoleId: roleAccess,
+							assignmentId: assignment.id,
+							id: ulid(),
+						})),
+					)
+					break
+				case AssignmentAccess.USER:
+					for (const email of userEmails) {
+						const user = await tx.user.findUnique({
+							where: {
+								email,
+							},
+						})
+						if (user) {
+							assignmentUserAccesses.push({
+								id: ulid(),
+								assignmentId: assignment.id,
+								userId: user.id,
+							})
+						}
+					}
+					break
 
-                default:
-                    break
-            }
+				default:
+					break
+			}
 
-            await tx.assignmentTenantRoleAccess.createMany({
-                data: assignmentTenantRoleAccesses,
-            })
-            await tx.assignmentUserAccess.createMany({
-                data: assignmentUserAccesses,
-            })
+			await tx.assignmentTenantRoleAccess.createMany({
+				data: assignmentTenantRoleAccesses,
+			})
+			await tx.assignmentUserAccess.createMany({
+				data: assignmentUserAccesses,
+			})
 
-            await AssignmentQuestionRepository.updateMany(tx, questions, id)
+			await AssignmentQuestionRepository.updateMany(tx, questions, id)
 
-            return assignment
-        },
-        { timeout: 120000 }
-    )
+			return assignment
+		},
+		{ timeout: 120000 },
+	)
 }
 
 export async function deleteById(id: string, tenantId: string) {
-    return await prisma.assignment.delete({
-        where: {
-            id,
-            tenantId,
-        },
-    })
+	return await prisma.assignment.delete({
+		where: {
+			id,
+			tenantId,
+		},
+	})
 }
 
 export async function countAvailableAssignmentByUserIdAndTenantId(
-    userId: string,
-    tenantId: string,
-    tenantRoleIds: string[]
+	userId: string,
+	tenantId: string,
+	tenantRoleIds: string[],
 ) {
-    if (tenantRoleIds.length === 0) {
-        return [{ count: BigInt(0) }]
-    }
+	if (tenantRoleIds.length === 0) {
+		return [{ count: BigInt(0) }]
+	}
 
-    const roleIdPlaceholders = tenantRoleIds.map((id) => Prisma.sql`${id}`)
+	const roleIdPlaceholders = tenantRoleIds.map((id) => Prisma.sql`${id}`)
 
-    return await prisma.$queryRaw`
+	return await prisma.$queryRaw`
         SELECT
             COUNT(*)
         FROM "Assignment" a
@@ -246,10 +260,10 @@ export async function countAvailableAssignmentByUserIdAndTenantId(
 }
 
 export async function countSubmittedAssignmentByUserIdAndTenantId(
-    userId: string,
-    tenantId: string
+	userId: string,
+	tenantId: string,
 ) {
-    return await prisma.$queryRaw`
+	return await prisma.$queryRaw`
         SELECT
             COUNT(*)
         FROM "AssignmentUserAttempt" aua
@@ -261,7 +275,7 @@ export async function countSubmittedAssignmentByUserIdAndTenantId(
 }
 
 export async function getTotalAssignmentByTenantId(tenantId: string) {
-    return prisma.$queryRaw`
+	return prisma.$queryRaw`
         SELECT
             COUNT(*)
         FROM "Assignment" a
@@ -270,7 +284,7 @@ export async function getTotalAssignmentByTenantId(tenantId: string) {
 }
 
 export async function getTotalCompletedAssignmentByTenantId(tenantId: string) {
-    return prisma.$queryRaw`
+	return prisma.$queryRaw`
         WITH assignment_user_count AS (
             -- For USER access: count AssignmentUserAccess per assignment
             SELECT 
@@ -325,8 +339,10 @@ export async function getTotalCompletedAssignmentByTenantId(tenantId: string) {
     `
 }
 
-export async function getUserListWithAssignmentSummaryByTenantId(tenantId: string) {
-    return prisma.$queryRaw`
+export async function getUserListWithAssignmentSummaryByTenantId(
+	tenantId: string,
+) {
+	return prisma.$queryRaw`
         WITH user_total_assignment AS (
             -- Combine both access types (using UNION to avoid duplicates)
             SELECT 
@@ -383,7 +399,7 @@ export async function getUserListWithAssignmentSummaryByTenantId(tenantId: strin
 }
 
 export async function getAssginmentWithUserSummaryByTenantId(tenantId: string) {
-    return prisma.$queryRaw`
+	return prisma.$queryRaw`
         WITH assignment_total_user AS (
             -- Combine both access types (using UNION to avoid duplicates)
             SELECT 
@@ -437,78 +453,78 @@ export async function getAssginmentWithUserSummaryByTenantId(tenantId: string) {
 }
 
 export async function getAssignmentListByUserIdAndTenantIdAndTenantRoleId(
-    userId: string,
-    tenantId: string,
-    tenantRoleId: string
+	userId: string,
+	tenantId: string,
+	tenantRoleId: string,
 ) {
-    // Get all assignments accessible by user
-    return await prisma.assignment.findMany({
-        where: {
-            tenantId,
-            OR: [
-                // USER access: user is in AssignmentUserAccess
-                {
-                    access: AssignmentAccess.USER,
-                    assignmentUserAccesses: {
-                        some: {
-                            userId,
-                        },
-                    },
-                },
-                // TENANT_ROLE access: user's role is in AssignmentTenantRoleAccess
-                {
-                    access: AssignmentAccess.TENANT_ROLE,
-                    assignmentTenantRoleAccesses: {
-                        some: {
-                            tenantRoleId,
-                        },
-                    },
-                },
-            ],
-        },
-        include: {
-            assignmentUserAttempts: {
-                where: {
-                    userId,
-                    isSubmitted: true,
-                },
-            },
-        },
-        orderBy: {
-            createdAt: "desc",
-        },
-    })
+	// Get all assignments accessible by user
+	return await prisma.assignment.findMany({
+		where: {
+			tenantId,
+			OR: [
+				// USER access: user is in AssignmentUserAccess
+				{
+					access: AssignmentAccess.USER,
+					assignmentUserAccesses: {
+						some: {
+							userId,
+						},
+					},
+				},
+				// TENANT_ROLE access: user's role is in AssignmentTenantRoleAccess
+				{
+					access: AssignmentAccess.TENANT_ROLE,
+					assignmentTenantRoleAccesses: {
+						some: {
+							tenantRoleId,
+						},
+					},
+				},
+			],
+		},
+		include: {
+			assignmentUserAttempts: {
+				where: {
+					userId,
+					isSubmitted: true,
+				},
+			},
+		},
+		orderBy: {
+			createdAt: "desc",
+		},
+	})
 }
 
 export async function getDetailUserAssignmentByUserIdAndTenantId(
-    userId: string,
-    assignmentId: string
+	userId: string,
+	assignmentId: string,
 ) {
-    // Get all assignments accessible by user
-    return await prisma.assignment.findUnique({
-        where: {
-            id: assignmentId,
-        },
-        include: {
-            assignmentQuestions: {
-                include: {
-                    assignmentQuestionOptions: true,
-                    assignmentQuestionEssayReferenceAnswer: true,
-                    assignmentQuestionTrueFalseAnswer: true,
-                },
-                orderBy: {
-                    order: "asc",
-                },
-            },
-            assignmentUserAttempts: {
-                where: {
-                    userId,
-                    isSubmitted: true,
-                },
-                include: {
-                    assignmentUserAttemptQuestionAnswers: true,
-                },
-            },
-        },
-    })
+	// Get all assignments accessible by user
+	return await prisma.assignment.findUnique({
+		where: {
+			id: assignmentId,
+		},
+		include: {
+			assignmentQuestions: {
+				include: {
+					assignmentQuestionOptions: true,
+					assignmentQuestionEssayReferenceAnswer: true,
+					assignmentQuestionTrueFalseAnswer: true,
+				},
+				orderBy: {
+					order: "asc",
+				},
+			},
+			assignmentUserAttempts: {
+				where: {
+					userId,
+					isSubmitted: true,
+				},
+				include: {
+					assignmentUserAttemptQuestionAnswers: true,
+				},
+			},
+		},
+	})
 }

@@ -1,5 +1,5 @@
 export interface UserActivityLogDTO {
-    id: string;
-    userId: string;
-    action: string;
+	id: string
+	userId: string
+	action: string
 }

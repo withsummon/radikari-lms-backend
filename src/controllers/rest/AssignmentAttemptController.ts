@@ -138,3 +138,26 @@ export async function getHistoryUserAssignmentAttempts(
 		"Successfully fetched history user assignment attempts!",
 	)
 }
+
+export async function getMemberAssignmentAttemptHistory(
+	c: Context,
+): Promise<TypedResponse> {
+	const assignmentId = c.req.param("assignmentId")
+	const userId = c.req.param("userId")
+
+	const serviceResponse =
+		await AssignmentAttemptService.getHistoryUserAssignmentAttempts(
+			userId,
+			assignmentId,
+		)
+
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
+
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully fetched member assignment attempt history!",
+	)
+}
