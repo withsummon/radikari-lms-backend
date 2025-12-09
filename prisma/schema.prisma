@@ -59,6 +59,7 @@ model User {
   forumCommentLikes                    ForumCommentLike[]
   forumPinneds                         ForumPinned[]
   userActivityLogs                     UserActivityLog[]
+  notifications                        Notification[]
 }
 
 model Operation {
@@ -610,4 +611,28 @@ model UserActivityLog {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum NotificationType {
+  KNOWLEDGE_APPROVED
+  ANNOUNCEMENT
+  ASSIGNMENT
+  FORUM
+}
+
+model Notification {
+  id          String           @id @unique
+  userId      String
+  tenantId    String?
+  type        NotificationType
+  title       String
+  message     String           @db.Text
+  referenceId String?
+  isRead      Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
 }

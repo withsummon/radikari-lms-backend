@@ -26,6 +26,7 @@ router.route("/tenants/:tenantId/assignments", RoutesRegistry.AssignmentRoutes)
 router.route("/tenants/:tenantId/announcements", RoutesRegistry.AnnouncementRoutes)
 router.route("/tenants/:tenantId/forums", RoutesRegistry.ForumRoutes)
 router.route("/user-activity-logs", RoutesRegistry.UserActivityLogRoutes)
+router.route("/notifications", RoutesRegistry.NotificationRoutes)
 
 // AI Chat
 router.route("/ai-chat", RoutesRegistry.ChatRoutes)

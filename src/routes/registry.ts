@@ -13,6 +13,7 @@ import AssignmentRoutes from "./Assignment"
 import AnnouncementRoutes from "./Announcement"
 import ForumRoutes from "./Forum"
 import UserActivityLogRoutes from "./UserActivityLog"
+import NotificationRoutes from "./Notification"
 
 const RoutesRegistry = {
     UserRoutes,
@@ -30,6 +31,7 @@ const RoutesRegistry = {
     AnnouncementRoutes,
     ForumRoutes,
     UserActivityLogRoutes,
+    NotificationRoutes,
 }
 
 export default RoutesRegistry

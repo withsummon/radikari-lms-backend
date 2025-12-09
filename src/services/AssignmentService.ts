@@ -1,4 +1,4 @@
-import { Assignment } from "../../generated/prisma/client"
+import { Assignment, AssignmentAccess, NotificationType } from "../../generated/prisma/client"
 import { AssignmentCreateDTO } from "$entities/Assignment"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import * as AssignmentRepository from "$repositories/Assignment"
@@ -14,6 +14,9 @@ import * as TenantRoleRepository from "$repositories/TenantRoleRepository"
 import * as AssignmentAttemptRepository from "$repositories/Assignment/AssignmentAttemptRepository"
 import * as TenantUserRepository from "$repositories/TenantUserRepository"
 import * as UserActivityLogService from "$services/UserActivityLogService"
+import pubsub from "$pkg/pubsub"
+import { PUBSUB_TOPICS } from "$entities/PubSub"
+import * as NotificationService from "$services/NotificationService"
 
 export async function create(
     data: AssignmentCreateDTO,
@@ -31,6 +34,12 @@ export async function create(
             tenantId,
             `dengan judul "${createdData.title}"`
         )
+
+        await pubsub.sendToQueue(PUBSUB_TOPICS.ASSIGNMENT_ASSIGNED_NOTIFICATION, {
+            assignmentId: createdData.id,
+            tenantId: tenantId,
+        })
+
         return HandleServiceResponseSuccess(createdData)
     } catch (err) {
         Logger.error(`AssignmentService.create : `, {
@@ -410,5 +419,66 @@ export async function getDetailUserAssignmentByUserIdAndTenantId(
     } catch (error) {
         Logger.error(`AssignmentService.getDetailUserAssignmentByUserIdAndTenantId`, { error })
         return HandleServiceResponseCustomError("Internal Server Error", 500)
+    }
+}
+
+export async function sendAssignmentAssignedNotification(assignmentId: string, tenantId: string) {
+    try {
+        const assginment = await AssignmentRepository.getById(assignmentId, tenantId)
+
+        if (!assginment) {
+            return
+        }
+
+        const notificationTitle = "Tugas Baru Tersedia"
+        const notificationMessage = `Tugas baru "${assginment.title}" telah tersedia untuk dikerjakan.`
+
+        switch (assginment.access) {
+            case AssignmentAccess.TENANT_ROLE:
+                // Notify all users in the tenant
+                for (const tenantRoleAccess of assginment.assignmentTenantRoleAccesses) {
+                    await NotificationService.notifyTenantRoleUsers(
+                        tenantId,
+                        tenantRoleAccess.tenantRoleId,
+                        NotificationType.ASSIGNMENT,
+                        notificationTitle,
+                        notificationMessage,
+                        assginment.id
+                    )
+                }
+                break
+
+            case AssignmentAccess.USER:
+                // Notify specific users who have access via email
+                const userIds = assginment.assignmentUserAccesses.map(
+                    (userAccess) => userAccess.userId
+                )
+                await NotificationService.notifySpecificUsers(
+                    userIds,
+                    tenantId,
+                    NotificationType.ASSIGNMENT,
+                    notificationTitle,
+                    notificationMessage,
+                    assginment.id
+                )
+                break
+
+            default:
+                break
+        }
+
+        Logger.info("AssignmentService.sendAssignmentAssignedNotification: Notifications sent", {
+            assignmentId: assginment.id,
+            access: assginment.access,
+        })
+    } catch (err) {
+        Logger.error(
+            "AssignmentService.sendAssignmentAssignedNotification: Failed to send notifications",
+            {
+                error: err,
+                assignmentId: assignmentId,
+            }
+        )
+        // Don't throw - notification failure shouldn't fail the approval
     }
 }

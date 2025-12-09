@@ -90,13 +90,17 @@ export class RabbitMQConnection {
 			Logger.info(`[CONSUMER] Successfully declared queue: ${queue}`, {})
 		} catch (error: any) {
 			if (
-				error.message.includes("PRECONDITION_FAILED") &&
-				error.message.includes("x-message-ttl")
+				error.message.includes("PRECONDITION_FAILED") ||
+				error.message.includes("Channel closed")
 			) {
 				Logger.info(
-					`[CONSUMER] Queue ${queue} has incompatible TTL configuration. Attempting to delete and recreate...`,
+					`[CONSUMER] Queue ${queue} has incompatible configuration. Creating new channel to fix...`,
 					{},
 				)
+
+				// Create a new channel since the old one was closed by RabbitMQ
+				this.channel = await this.connection.createChannel()
+				Logger.info(`[CONSUMER] Created new channel`, {})
 
 				// Delete the existing queue with incompatible configuration
 				await this.channel.deleteQueue(queue)

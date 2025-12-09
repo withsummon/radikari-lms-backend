@@ -1,8 +1,10 @@
 import {
     Knowledge,
+    KnowledgeAccess,
     KnowledgeActivityLogAction,
     KnowledgeAttachment,
     KnowledgeStatus,
+    NotificationType,
     Prisma,
     UserKnowledge,
 } from "../../generated/prisma/client"
@@ -32,6 +34,7 @@ import { ulid } from "ulid"
 import * as TenantRepository from "$repositories/TenantRepository"
 import * as OperationRepository from "$repositories/OperationRepository"
 import * as UserActivityLogService from "$services/UserActivityLogService"
+import * as NotificationService from "$services/NotificationService"
 
 export async function create(
     userId: string,
@@ -258,6 +261,10 @@ export async function approveById(
             const pubsub = GlobalPubSub.getInstance().getPubSub()
 
             await pubsub.sendToQueue(PUBSUB_TOPICS.KNOWLEDGE_CREATE, payload)
+            await pubsub.sendToQueue(PUBSUB_TOPICS.KNOWLEDGE_APPROVAL_NOTIFICATION, {
+                knowledgeId: knowledge.id,
+                excludeUserId: userId,
+            })
         }
 
         await UserActivityLogService.create(
@@ -328,6 +335,83 @@ function generateContentKnowledge(knowledge: any) {
                 )
                 .join("\n")}
     `
+}
+
+export async function sendKnowledgeApprovalNotification(
+    knowledgeId: string,
+    excludeUserId: string
+) {
+    try {
+        const knowledge = await KnowledgeRepository.getById(knowledgeId)
+
+        if (!knowledge) {
+            return
+        }
+        const notificationTitle = "Pengetahuan Baru Tersedia"
+        const notificationMessage = `Pengetahuan baru "${knowledge.headline}" telah tersedia untuk dibaca.`
+
+        switch (knowledge.access) {
+            case KnowledgeAccess.TENANT:
+                // Notify all users in the tenant
+                if (knowledge.tenantId) {
+                    await NotificationService.notifyTenantUsers(
+                        knowledge.tenantId,
+                        NotificationType.KNOWLEDGE_APPROVED,
+                        notificationTitle,
+                        notificationMessage,
+                        knowledge.id,
+                        excludeUserId // Exclude the approver from notifications
+                    )
+                }
+                break
+
+            case KnowledgeAccess.EMAIL:
+                // Notify specific users who have access via email
+                const userIds = knowledge.userKnowledge
+                    .map((uk) => uk.user.id)
+                    .filter((id) => id !== excludeUserId)
+
+                if (userIds.length > 0) {
+                    await NotificationService.notifySpecificUsers(
+                        userIds,
+                        knowledge.tenantId ?? undefined,
+                        NotificationType.KNOWLEDGE_APPROVED,
+                        notificationTitle,
+                        notificationMessage,
+                        knowledge.id
+                    )
+                }
+                break
+
+            case KnowledgeAccess.PUBLIC:
+                // For PUBLIC access, notify users in the creator's tenant
+                if (knowledge.tenantId) {
+                    await NotificationService.notifyTenantUsers(
+                        knowledge.tenantId,
+                        NotificationType.KNOWLEDGE_APPROVED,
+                        notificationTitle,
+                        notificationMessage,
+                        knowledge.id,
+                        excludeUserId
+                    )
+                }
+                break
+        }
+
+        Logger.info("KnowledgeService.sendKnowledgeApprovalNotification: Notifications sent", {
+            knowledgeId: knowledge.id,
+            access: knowledge.access,
+        })
+    } catch (err) {
+        Logger.error(
+            "KnowledgeService.sendKnowledgeApprovalNotification: Failed to send notifications",
+            {
+                error: err,
+                knowledgeId: knowledgeId,
+            }
+        )
+        // Don't throw - notification failure shouldn't fail the approval
+    }
 }
 
 export async function bulkCreate(data: KnowledgeBulkCreateDTO, userId: string) {
