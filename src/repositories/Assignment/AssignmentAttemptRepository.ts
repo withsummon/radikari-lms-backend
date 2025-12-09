@@ -314,3 +314,11 @@ export async function getUserTotalPointAssignment(
         AND aua."isSubmitted" = true
     `
 }
+export async function getSubmittedAttemptsByAssignmentId(assignmentId: string) {
+	return await prisma.assignmentUserAttempt.findMany({
+		where: {
+			assignmentId,
+			isSubmitted: true,
+		},
+	})
+}

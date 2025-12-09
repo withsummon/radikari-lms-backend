@@ -62,6 +62,13 @@ AssignmentRoutes.get(
 	AssignmentController.getById,
 )
 
+AssignmentRoutes.get(
+	"/:id/statistics",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRoleInTenant,
+	AssignmentController.getStatistics,
+)
+
 AssignmentRoutes.post(
 	"/",
 	AuthMiddleware.checkJwt,

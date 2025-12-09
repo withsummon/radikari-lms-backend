@@ -246,7 +246,9 @@ export async function countAvailableAssignmentByUserIdAndTenantId(
                     SELECT 1
                     FROM "AssignmentTenantRoleAccess" atra
                     WHERE atra."assignmentId" = a.id
-                    AND atra."tenantRoleId" IN (${Prisma.join(roleIdPlaceholders)})
+                    AND atra."tenantRoleId" IN (${Prisma.join(
+											roleIdPlaceholders,
+										)})
                 )
                 OR EXISTS (
                     SELECT 1
@@ -527,4 +529,105 @@ export async function getDetailUserAssignmentByUserIdAndTenantId(
 			},
 		},
 	})
+}
+export async function getTotalAssignedUsers(assignmentId: string) {
+	const result: any[] = await prisma.$queryRaw`
+        WITH assignment_total_user AS (
+            SELECT
+                assignment_id,
+                COUNT(DISTINCT user_id) as total_user
+            FROM (
+                SELECT a.id as assignment_id, aua."userId" as user_id
+                FROM "Assignment" a
+                INNER JOIN "AssignmentUserAccess" aua ON aua."assignmentId" = a.id
+                WHERE a.id = ${assignmentId} AND a."access" = 'USER'
+                
+                UNION
+                
+                SELECT a.id as assignment_id, tu."userId" as user_id
+                FROM "Assignment" a
+                INNER JOIN "AssignmentTenantRoleAccess" atra ON atra."assignmentId" = a.id
+                INNER JOIN "TenantUser" tu ON tu."tenantRoleId" = atra."tenantRoleId" AND tu."tenantId" = a."tenantId"
+                WHERE a.id = ${assignmentId} AND a."access" = 'TENANT_ROLE'
+            ) combined_users
+            GROUP BY assignment_id
+        )
+        SELECT total_user FROM assignment_total_user;
+    `
+
+	if (result.length > 0 && result[0].total_user) {
+		return Number(result[0].total_user)
+	}
+
+	return 0
+}
+
+export async function getQuestionAnalytics(assignmentId: string) {
+	const questions = await prisma.assignmentQuestion.findMany({
+		where: { assignmentId },
+		include: {
+			assignmentQuestionOptions: true,
+			assignmentQuestionEssayReferenceAnswer: true,
+			assignmentQuestionTrueFalseAnswer: true,
+			_count: {
+				select: {
+					assignmentUserAttemptQuestionAnswers: true,
+				},
+			},
+		},
+		orderBy: { order: "asc" },
+	})
+
+	const analyticsPromises = questions.map(async (q) => {
+		const totalResponses = q._count.assignmentUserAttemptQuestionAnswers
+
+		let answerAnalytics = null
+		if (q.type === "MULTIPLE_CHOICE") {
+			const optionCounts =
+				await prisma.assignmentUserAttemptQuestionAnswer.groupBy({
+					by: ["assignmentQuestionOptionId"],
+					where: { assignmentQuestionId: q.id },
+					_count: {
+						assignmentQuestionOptionId: true,
+					},
+				})
+
+			answerAnalytics = q.assignmentQuestionOptions.map((opt) => {
+				const countResult = optionCounts.find(
+					(c) => c.assignmentQuestionOptionId === opt.id,
+				)
+				const selectionCount = countResult
+					? countResult._count.assignmentQuestionOptionId
+					: 0
+				return {
+					optionId: opt.id,
+					content: opt.content,
+					selectionCount,
+					totalResponses,
+					selectionPercentage:
+						totalResponses > 0 ? (selectionCount / totalResponses) * 100 : 0,
+					isCorrectAnswer: opt.isCorrectAnswer,
+				}
+			})
+		}
+
+		return {
+			id: q.id,
+			order: q.order,
+			content: q.content,
+			type: q.type,
+			options:
+				q.assignmentQuestionOptions.map((o) => ({
+					id: o.id,
+					content: o.content,
+					isCorrectAnswer: o.isCorrectAnswer,
+				})) || [],
+			correctAnswer: q.assignmentQuestionTrueFalseAnswer?.correctAnswer ?? null,
+			referenceAnswer:
+				q.assignmentQuestionEssayReferenceAnswer?.content ?? null,
+			answerAnalytics,
+		}
+	})
+
+	return Promise.all(analyticsPromises)
 }
