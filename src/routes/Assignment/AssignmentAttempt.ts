@@ -42,4 +42,10 @@ AssignmentAttemptRoutes.get(
 	AssignmentAttemptController.getHistoryUserAssignmentAttempts,
 )
 
+AssignmentAttemptRoutes.get(
+	"/:assignmentId/attempts/history/:userId",
+	AuthMiddleware.checkJwt,
+	AssignmentAttemptController.getMemberAssignmentAttemptHistory,
+)
+
 export default AssignmentAttemptRoutes

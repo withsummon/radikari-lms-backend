@@ -15,21 +15,21 @@ import ForumRoutes from "./Forum"
 import UserActivityLogRoutes from "./UserActivityLog"
 
 const RoutesRegistry = {
-    UserRoutes,
-    ExampleBufferRoutes,
-    OperationRoutes,
-    TenantRoutes,
-    MasterKnowledgeCategoryRoutes,
-    MasterKnowledgeSubCategoryRoutes,
-    MasterKnowledgeCaseRoutes,
-    KnowledgeRoutes,
-    ChatRoutes,
-    BulkKnowledgeRoutes,
-    AccessControlListRoutes,
-    AssignmentRoutes,
-    AnnouncementRoutes,
-    ForumRoutes,
-    UserActivityLogRoutes,
+	UserRoutes,
+	ExampleBufferRoutes,
+	OperationRoutes,
+	TenantRoutes,
+	MasterKnowledgeCategoryRoutes,
+	MasterKnowledgeSubCategoryRoutes,
+	MasterKnowledgeCaseRoutes,
+	KnowledgeRoutes,
+	ChatRoutes,
+	BulkKnowledgeRoutes,
+	AccessControlListRoutes,
+	AssignmentRoutes,
+	AnnouncementRoutes,
+	ForumRoutes,
+	UserActivityLogRoutes,
 }
 
 export default RoutesRegistry

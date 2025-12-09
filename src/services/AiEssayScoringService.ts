@@ -5,35 +5,41 @@ import Logger from "$pkg/logger"
 
 // Define the Zod schema for AI essay scoring response
 const essayScoreSchema = z.object({
-    isCorrect: z.boolean().describe("Whether the answer is correct (score >= 70)"),
-    score: z.number().min(0).max(100).describe("The score for the essay (0-100)"),
-    feedback: z.string().describe("Brief constructive feedback for the student"),
-    confidence: z.number().min(0).max(1).describe("AI's confidence level in the evaluation (0-1)"),
+	isCorrect: z
+		.boolean()
+		.describe("Whether the answer is correct (score >= 70)"),
+	score: z.number().min(0).max(100).describe("The score for the essay (0-100)"),
+	feedback: z.string().describe("Brief constructive feedback for the student"),
+	confidence: z
+		.number()
+		.min(0)
+		.max(1)
+		.describe("AI's confidence level in the evaluation (0-1)"),
 })
 
 export type EssayScoringResult = z.infer<typeof essayScoreSchema>
 
 interface EssayScoringRequest {
-    question: string
-    userAnswer: string
-    expectedAnswer?: string
-    context?: string
+	question: string
+	userAnswer: string
+	expectedAnswer?: string
+	context?: string
 }
 
 export async function scoreEssayAnswer({
-    question,
-    userAnswer,
-    expectedAnswer,
-    context,
+	question,
+	userAnswer,
+	expectedAnswer,
+	context,
 }: EssayScoringRequest): Promise<EssayScoringResult> {
-    try {
-        Logger.info("AiEssayScoringService.scoreEssayAnswer", {
-            question: question.substring(0, 100) + "...",
-            userAnswer: userAnswer.substring(0, 100) + "...",
-        })
+	try {
+		Logger.info("AiEssayScoringService.scoreEssayAnswer", {
+			question: question.substring(0, 100) + "...",
+			userAnswer: userAnswer.substring(0, 100) + "...",
+		})
 
-        // Build the system prompt for essay scoring
-        const systemPrompt = `
+		// Build the system prompt for essay scoring
+		const systemPrompt = `
 You are an expert essay evaluator for educational assessments. Your task is to evaluate student answers to essay questions.
 
 EVALUATION CRITERIA:
@@ -53,9 +59,9 @@ SCORING SYSTEM:
 CONTEXT INFORMATION:
 ${context ? `Additional context: ${context}` : "No additional context provided."}
 ${
-    expectedAnswer
-        ? `Expected answer key points: ${expectedAnswer}`
-        : "No specific expected answer provided."
+	expectedAnswer
+		? `Expected answer key points: ${expectedAnswer}`
+		: "No specific expected answer provided."
 }
 
 IMPORTANT:
@@ -65,56 +71,56 @@ IMPORTANT:
 - Provide constructive feedback that helps the student learn
 `
 
-        const userPrompt = `Question: ${question}\n\nStudent Answer: ${userAnswer}`
+		const userPrompt = `Question: ${question}\n\nStudent Answer: ${userAnswer}`
 
-        const { object } = await generateObject({
-            model: openai("gpt-4.1-mini"),
-            schema: essayScoreSchema,
-            system: systemPrompt,
-            prompt: userPrompt,
-            temperature: 0.3, // Lower temperature for more consistent scoring
-        })
+		const { object } = await generateObject({
+			model: openai("gpt-4.1-mini"),
+			schema: essayScoreSchema,
+			system: systemPrompt,
+			prompt: userPrompt,
+			temperature: 0.3, // Lower temperature for more consistent scoring
+		})
 
-        Logger.info("AiEssayScoringService.scoreEssayAnswer", {
-            score: object.score,
-            isCorrect: object.isCorrect,
-            confidence: object.confidence,
-        })
+		Logger.info("AiEssayScoringService.scoreEssayAnswer", {
+			score: object.score,
+			isCorrect: object.isCorrect,
+			confidence: object.confidence,
+		})
 
-        return object
-    } catch (error) {
-        Logger.error("AiEssayScoringService.scoreEssayAnswer", {
-            error: error instanceof Error ? error.message : String(error),
-        })
+		return object
+	} catch (error) {
+		Logger.error("AiEssayScoringService.scoreEssayAnswer", {
+			error: error instanceof Error ? error.message : String(error),
+		})
 
-        // Return a default result on error
-        return {
-            isCorrect: false,
-            score: 0,
-            feedback: "Error occurred during evaluation. Manual review required.",
-            confidence: 0,
-        }
-    }
+		// Return a default result on error
+		return {
+			isCorrect: false,
+			score: 0,
+			feedback: "Error occurred during evaluation. Manual review required.",
+			confidence: 0,
+		}
+	}
 }
 
 export async function evaluateEssayAnswers(
-    essayQuestions: Array<{
-        id: string
-        question: string
-        userAnswer: string
-        expectedAnswer?: string
-        context?: string
-    }>
+	essayQuestions: Array<{
+		id: string
+		question: string
+		userAnswer: string
+		expectedAnswer?: string
+		context?: string
+	}>,
 ): Promise<Array<{ questionId: string; result: EssayScoringResult }>> {
-    const results = []
+	const results = []
 
-    for (const essayQuestion of essayQuestions) {
-        const result = await scoreEssayAnswer(essayQuestion)
-        results.push({
-            questionId: essayQuestion.id,
-            result,
-        })
-    }
+	for (const essayQuestion of essayQuestions) {
+		const result = await scoreEssayAnswer(essayQuestion)
+		results.push({
+			questionId: essayQuestion.id,
+			result,
+		})
+	}
 
-    return results
+	return results
 }
