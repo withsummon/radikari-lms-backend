@@ -2,6 +2,7 @@ import { prisma } from "$pkg/prisma"
 import { Prisma, TenantRole } from "../../generated/prisma/client"
 import { ulid } from "ulid"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
+import { TenantRoleDTO } from "$entities/TenantRole"
 
 export async function findAllFeatures() {
 	const aclFeatures = await prisma.aclFeature.findMany({
@@ -65,49 +66,33 @@ export async function findFeatures() {
 }
 
 export async function findAccessMapping(
-	tenantRoleIds: string[],
+	tenantRoleId: string,
 	featureName: string,
 	actionName: string,
 ) {
-	return prisma.accessControlList.findMany({
+	return prisma.accessControlList.findUnique({
 		where: {
-			tenantRoleId: {
-				in: tenantRoleIds,
+			featureName_actionName_tenantRoleId: {
+				featureName,
+				actionName,
+				tenantRoleId,
 			},
-			featureName,
-			actionName,
 		},
 	})
 }
 
-export async function createRole(
-	roleData: {
-		identifier: string
-		level: number
-		description: string
-		name: string
-	},
-	mappings: Prisma.AccessControlListCreateManyInput[],
-) {
+export async function createRole(data: TenantRoleDTO) {
 	const tenantRoleId = ulid()
 
-	return await prisma.$transaction([
-		prisma.tenantRole.create({
-			data: {
-				id: tenantRoleId,
-				identifier: roleData.identifier,
-				level: roleData.level,
-				name: roleData.name,
-				description: roleData.description,
-			},
-		}),
-		prisma.accessControlList.createMany({
-			data: mappings.map((mapping) => ({
-				...mapping,
-				tenantRoleId,
-			})),
-		}),
-	])
+	return await prisma.tenantRole.create({
+		data: {
+			id: tenantRoleId,
+			identifier: data.identifier,
+			level: data.level,
+			name: data.name,
+			description: data.description,
+		},
+	})
 }
 
 export async function findActionByFeatureAndName(
@@ -124,12 +109,7 @@ export async function findActionByFeatureAndName(
 	})
 }
 
-export async function updateRole(
-	tenantRoleId: string,
-	roleData: {
-		name: string
-		updatedBy: string
-	},
+export async function updateRoleAccess(
 	createMappings: Prisma.AccessControlListCreateManyInput[],
 	deleteMappings: Array<{
 		featureName: string
@@ -137,24 +117,41 @@ export async function updateRole(
 		tenantRoleId: string
 	}>,
 ) {
-	const deletePromises = deleteMappings.map((mapping) =>
-		prisma.accessControlList.delete({
-			where: {
-				featureName_actionName_tenantRoleId: mapping,
-			},
-		}),
-	)
+	return await prisma.$transaction(async (tx) => {
+		const deleteIds: string[] = []
 
-	return await prisma.$transaction([
-		prisma.accessControlList.createMany({
-			data: createMappings,
-		}),
-		prisma.tenantRole.update({
-			where: { id: tenantRoleId },
-			data: roleData,
-		}),
-		...deletePromises,
-	])
+		for (const mapping of deleteMappings) {
+			const mappingExist = await tx.accessControlList.findUnique({
+				where: {
+					featureName_actionName_tenantRoleId: {
+						featureName: mapping.featureName,
+						actionName: mapping.actionName,
+						tenantRoleId: mapping.tenantRoleId,
+					},
+				},
+			})
+
+			if (mappingExist) {
+				deleteIds.push(mappingExist.id)
+			}
+		}
+
+		if (deleteIds.length > 0) {
+			await tx.accessControlList.deleteMany({
+				where: {
+					id: {
+						in: deleteIds,
+					},
+				},
+			})
+		}
+
+		if (createMappings.length > 0) {
+			await tx.accessControlList.createMany({
+				data: createMappings,
+			})
+		}
+	})
 }
 
 export async function deleteRoles(ids: string[]) {

@@ -1,5 +1,4 @@
 export interface AccessControlListDTO {
-	name: string
 	enabledFeatures: Record<string, boolean>
 }
 

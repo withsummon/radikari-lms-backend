@@ -145,6 +145,17 @@ export async function googleCallback(
 				role: Roles.USER,
 				type: UserType.GOOGLE,
 				profilePictureUrl: data.data.picture ?? "",
+				lastLoginAt: new Date(),
+			})
+		} else {
+			user = await UserRepository.update(user.id, {
+				lastLoginAt: new Date(),
+				email: data.data.email!,
+				fullName: data.data.name!,
+				phoneNumber: "",
+				profilePictureUrl: data.data.picture ?? "",
+				id: user.id,
+				password: "",
 			})
 		}
 

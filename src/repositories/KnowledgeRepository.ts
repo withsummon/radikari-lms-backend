@@ -397,11 +397,12 @@ export async function updateStatus(
 	userId: string,
 	status: KnowledgeStatus,
 	action: KnowledgeActivityLogAction,
+	comment?: string,
 ) {
 	return await prisma.$transaction(async (tx) => {
 		const knowledge = await tx.knowledge.update({
 			where: { id },
-			data: { status },
+			data: { status, rejectionComment: comment },
 		})
 
 		await tx.knowledgeActivityLog.create({

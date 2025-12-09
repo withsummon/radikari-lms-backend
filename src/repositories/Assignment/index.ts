@@ -254,6 +254,7 @@ export async function countAvailableAssignmentByUserIdAndTenantId(
                     WHERE aua."assignmentId" = a.id
                     AND aua."userId" = ${userId}
                 )
+				OR a."createdByUserId" = ${userId}
             )
     `
 }
@@ -385,10 +386,12 @@ export async function getUserListWithAssignmentSummaryByTenantId(
             u."updatedAt",
             u.role,
             u.type,
+			tr."identifier" as "tenantRoleIdentifier",
             COALESCE(uta.total_assignment, 0)::bigint as "totalAssignment",
             COALESCE(usa.total_submitted_assignment, 0)::bigint as "totalSubmittedAssignment"
         FROM "User" u
         INNER JOIN "TenantUser" tu ON tu."userId" = u.id AND tu."tenantId" = ${tenantId}
+		INNER JOIN "TenantRole" tr ON tr."id" = tu."tenantRoleId"
         LEFT JOIN user_total_assignment uta ON uta.user_id = u.id
         LEFT JOIN user_submitted_assignment usa ON usa.user_id = u.id
         ORDER BY u."createdAt" DESC

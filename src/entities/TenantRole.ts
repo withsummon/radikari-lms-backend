@@ -4,7 +4,6 @@ export interface TenantRoleDTO {
 	level: number
 	name: string
 	description: string
-	tenantId: string
 }
 
 export const TenantRoleIdentifier = {

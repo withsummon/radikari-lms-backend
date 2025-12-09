@@ -103,8 +103,9 @@ export async function getSummary(c: Context): Promise<TypedResponse> {
 export async function getById(c: Context): Promise<TypedResponse> {
 	const id = c.req.param("id")
 	const tenantId = c.req.param("tenantId")
+	const user: UserJWTDAO = c.get("jwtPayload")
 
-	const serviceResponse = await KnowledgeService.getById(id, tenantId)
+	const serviceResponse = await KnowledgeService.getById(id, tenantId, user.id)
 
 	if (!serviceResponse.status) {
 		return handleServiceErrorWithResponse(c, serviceResponse)

@@ -17,4 +17,5 @@ export interface CreateGoogleUserDTO {
 	role: Roles
 	type: UserType
 	profilePictureUrl: string
+	lastLoginAt: Date
 }

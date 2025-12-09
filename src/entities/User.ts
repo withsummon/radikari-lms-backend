@@ -19,6 +19,8 @@ export interface CreateUserDTO {
 	email: string
 	password: string
 	phoneNumber: string
+	lastLoginAt?: Date
+	profilePictureUrl?: string
 }
 
 export interface UpdateUserDTO extends Omit<CreateUserDTO, "id, password"> {}

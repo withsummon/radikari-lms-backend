@@ -3,19 +3,59 @@ import * as AccessControlListService from "$services/AccessListControlListServic
 import {
 	handleServiceErrorWithResponse,
 	response_bad_request,
+	response_created,
 	response_success,
 } from "$utils/response.utils"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { UserJWTDAO } from "$entities/User"
+import { AccessControlListDTO } from "$entities/AccessControlList"
+import { TenantRoleDTO } from "$entities/TenantRole"
+
+export async function createRole(c: Context): Promise<TypedResponse> {
+	const data: TenantRoleDTO = await c.req.json()
+
+	const serviceResponse = await AccessControlListService.createRole(data)
+
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
+
+	return response_created(
+		c,
+		serviceResponse.data,
+		"Successfully created new Tenant Role!",
+	)
+}
+
+export async function updateRoleAccess(c: Context): Promise<TypedResponse> {
+	const data: AccessControlListDTO = await c.req.json()
+	const tenantRoleId = c.req.param("tenantRoleId")
+	const user: UserJWTDAO = c.get("jwtPayload")
+
+	const serviceResponse = await AccessControlListService.updateRoleAccess(
+		tenantRoleId,
+		data,
+		user.id,
+	)
+
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
+
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully updated Tenant Role Access!",
+	)
+}
 
 export async function getEnabledFeaturesByTenantRoleId(
 	c: Context,
 ): Promise<TypedResponse> {
 	const id = c.req.param("tenantRoleId")
-	const user: UserJWTDAO = c.get("jwtPayload")
 
 	const serviceResponse =
-		await AccessControlListService.getEnabledFeaturesByRoleId(id, user)
+		await AccessControlListService.getEnabledFeaturesByRoleId(id)
 	if (!serviceResponse.status) {
 		return handleServiceErrorWithResponse(c, serviceResponse)
 	}

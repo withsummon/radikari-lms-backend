@@ -2,7 +2,8 @@ import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { prisma } from "$pkg/prisma"
 import { TenantCreateUpdateDTO } from "$entities/Tenant"
 import { ulid } from "ulid"
-import { exclude } from "$entities/User"
+import { exclude, UserJWTDAO } from "$entities/User"
+import { Roles } from "../../generated/prisma/client"
 
 export async function create(data: TenantCreateUpdateDTO) {
 	return await prisma.$transaction(async (tx) => {
@@ -87,23 +88,25 @@ export async function getAll(filters: EzFilter.FilteringQuery) {
 
 export async function getAllByUserId(
 	filters: EzFilter.FilteringQuery,
-	userId: string,
+	user: UserJWTDAO,
 ) {
 	const queryBuilder = new EzFilter.BuildQueryFilter()
 	const usedFilters = queryBuilder.build(filters)
 
-	usedFilters.query.where.AND.push({
-		tenantUser: {
-			some: {
-				userId,
+	if (user.role !== Roles.ADMIN) {
+		usedFilters.query.where.AND.push({
+			tenantUser: {
+				some: {
+					userId: user.id,
+				},
 			},
-		},
-	})
+		})
+	}
 
 	usedFilters.query.include = {
 		tenantUser: {
 			where: {
-				userId,
+				userId: user.id,
 			},
 			select: {
 				tenantRole: true,
