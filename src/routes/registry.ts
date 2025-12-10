@@ -14,6 +14,8 @@ import AnnouncementRoutes from "./Announcement"
 import ForumRoutes from "./Forum"
 import UserActivityLogRoutes from "./UserActivityLog"
 import NotificationRoutes from "./Notification"
+import BroadcastRoutes from "./Broadcast"
+import AiPromptRoutes from "./AiPrompt"
 
 const RoutesRegistry = {
     UserRoutes,
@@ -32,6 +34,8 @@ const RoutesRegistry = {
     ForumRoutes,
     UserActivityLogRoutes,
     NotificationRoutes,
+    BroadcastRoutes,
+    AiPromptRoutes,
 }
 
 export default RoutesRegistry

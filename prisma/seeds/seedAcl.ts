@@ -48,6 +48,14 @@ export async function seedAccessControlList(prisma: PrismaClient) {
             featureName: "NOTIFICATION",
             actions: ["VIEW", "UPDATE", "DELETE"],
         },
+        {
+            featureName: "AI_PROMPT",
+            actions: ["VIEW", "UPDATE"],
+        },
+        {
+            featureName: "BROADCAST",
+            actions: ["VIEW", "UPDATE"],
+        },
         // Add More Features
     ]
 
@@ -189,6 +197,14 @@ export async function seedAccessControlList(prisma: PrismaClient) {
                 featureName: "NOTIFICATION",
                 actions: ["VIEW", "UPDATE", "DELETE"],
             },
+            {
+                featureName: "AI_PROMPT",
+                actions: ["VIEW"],
+            },
+            {
+                featureName: "BROADCAST",
+                actions: ["VIEW"],
+            },
         ]
         for (const action of allAction) {
             if (
@@ -255,6 +271,14 @@ export async function seedAccessControlList(prisma: PrismaClient) {
             {
                 featureName: "NOTIFICATION",
                 actions: ["VIEW", "UPDATE", "DELETE"],
+            },
+            {
+                featureName: "AI_PROMPT",
+                actions: ["VIEW"],
+            },
+            {
+                featureName: "BROADCAST",
+                actions: ["VIEW"],
             },
         ]
         for (const action of allAction) {
@@ -344,6 +368,14 @@ export async function seedAccessControlList(prisma: PrismaClient) {
                 featureName: "NOTIFICATION",
                 actions: ["VIEW", "UPDATE", "DELETE"],
             },
+            {
+                featureName: "AI_PROMPT",
+                actions: ["VIEW"],
+            },
+            {
+                featureName: "BROADCAST",
+                actions: ["VIEW"],
+            },
         ]
 
         for (const action of allAction) {
@@ -407,6 +439,14 @@ export async function seedAccessControlList(prisma: PrismaClient) {
             {
                 featureName: "NOTIFICATION",
                 actions: ["VIEW", "UPDATE", "DELETE"],
+            },
+            {
+                featureName: "AI_PROMPT",
+                actions: ["VIEW", "UPDATE"],
+            },
+            {
+                featureName: "BROADCAST",
+                actions: ["VIEW", "UPDATE"],
             },
         ]
 
@@ -496,6 +536,14 @@ export async function seedAccessControlList(prisma: PrismaClient) {
             {
                 featureName: "NOTIFICATION",
                 actions: ["VIEW", "UPDATE", "DELETE"],
+            },
+            {
+                featureName: "AI_PROMPT",
+                actions: ["VIEW"],
+            },
+            {
+                featureName: "BROADCAST",
+                actions: ["VIEW"],
             },
         ]
 

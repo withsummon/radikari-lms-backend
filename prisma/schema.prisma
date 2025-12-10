@@ -60,6 +60,10 @@ model User {
   forumPinneds                         ForumPinned[]
   userActivityLogs                     UserActivityLog[]
   notifications                        Notification[]
+  aiPromptCreator                      AiPrompt[]                            @relation("AiPromptCreator")
+  aiPromptUpdater                      AiPrompt[]                            @relation("AiPromptUpdater")
+  broadcastCreator                     Broadcast[]                           @relation("BroadcastCreator")
+  broadcastUpdater                     Broadcast[]                           @relation("BroadcastUpdater")
 }
 
 model Operation {
@@ -90,6 +94,8 @@ model Tenant {
   aiChatRooms   AiChatRoom[]
   announcements Announcement[]
   forums        Forum[]
+  aiPrompt      AiPrompt?
+  broadcast     Broadcast?
 }
 
 model TenantRole {
@@ -635,4 +641,32 @@ model Notification {
 
   @@index([userId, isRead])
   @@index([userId, createdAt])
+}
+
+model AiPrompt {
+  id              String   @id @unique
+  tenantId        String   @unique
+  prompt          String   @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdByUserId String?
+  updatedByUserId String?
+
+  tenant        Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdByUser User?  @relation("AiPromptCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  updatedByUser User?  @relation("AiPromptUpdater", fields: [updatedByUserId], references: [id], onDelete: Cascade)
+}
+
+model Broadcast {
+  id              String   @id @unique
+  tenantId        String   @unique
+  content         String   @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdByUserId String?
+  updatedByUserId String?
+
+  tenant        Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdByUser User?  @relation(name: "BroadcastCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  updatedByUser User?  @relation(name: "BroadcastUpdater", fields: [updatedByUserId], references: [id], onDelete: Cascade)
 }
