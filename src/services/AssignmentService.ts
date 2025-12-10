@@ -482,3 +482,64 @@ export async function sendAssignmentAssignedNotification(assignmentId: string, t
         // Don't throw - notification failure shouldn't fail the approval
     }
 }
+export async function getStatistics(assignmentId: string, tenantId: string) {
+	try {
+		const assignment = await AssignmentRepository.getById(
+			assignmentId,
+			tenantId,
+		)
+		if (!assignment) {
+			return HandleServiceResponseCustomError(
+				"Assignment not found",
+				ResponseStatus.NOT_FOUND,
+			)
+		}
+
+		const attempts =
+			await AssignmentAttemptRepository.getSubmittedAttemptsByAssignmentId(
+				assignmentId,
+			)
+		const totalAssignedUsers =
+			await AssignmentRepository.getTotalAssignedUsers(assignmentId)
+
+		const totalSubmitted = attempts.length
+		const averageScore =
+			totalSubmitted > 0
+				? attempts.reduce((sum, a) => sum + (a.percentageScore || 0), 0) /
+					totalSubmitted
+				: 0
+
+		const averageTimeInMinutes =
+			totalSubmitted > 0
+				? attempts.reduce(
+						(sum, a) =>
+							sum + (a.submittedAt!.getTime() - a.createdAt.getTime()) / 60000,
+						0,
+					) / totalSubmitted
+				: 0
+
+		const completionRate =
+			totalAssignedUsers > 0 ? (totalSubmitted / totalAssignedUsers) * 100 : 0
+
+		const stats = {
+			assignmentName: assignment.title,
+			averageScore: parseFloat(averageScore.toFixed(2)),
+			averageTimeInMinutes: parseFloat(averageTimeInMinutes.toFixed(2)),
+			completionRate: parseFloat(completionRate.toFixed(2)),
+			totalAssignedUsers,
+			totalSubmittedUsers: totalSubmitted,
+		}
+
+		// Question Analytics
+		const questionsWithAnalytics =
+			await AssignmentRepository.getQuestionAnalytics(assignmentId)
+
+		return HandleServiceResponseSuccess({
+			stats,
+			questions: questionsWithAnalytics,
+		})
+	} catch (error) {
+		Logger.error(`AssignmentService.getStatistics`, { error })
+		return HandleServiceResponseCustomError("Internal Server Error", 500)
+	}
+}

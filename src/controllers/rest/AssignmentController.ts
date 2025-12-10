@@ -238,3 +238,22 @@ export async function getDetailUserAssignmentByUserIdAndAssignmentId(
 		"Successfully fetched detail user assignment by user id and assignment id!",
 	)
 }
+export async function getStatistics(c: Context): Promise<TypedResponse> {
+	const assignmentId = c.req.param("id")
+	const tenantId = c.req.param("tenantId")
+
+	const serviceResponse = await AssignmentService.getStatistics(
+		assignmentId,
+		tenantId,
+	)
+
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
+
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully fetched assignment statistics!",
+	)
+}
