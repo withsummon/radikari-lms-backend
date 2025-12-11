@@ -353,7 +353,7 @@ export async function update(id: string, data: KnowledgeDTO, tenantId: string) {
         // Access control is handled at query level, not by nullifying tenantId
         knowledge = await tx.knowledge.update({
             where: { id },
-            data: { ...rest, tenantId }, // Always maintain the tenant context
+            data: { ...rest, tenantId, status: "PENDING" }, // Always maintain the tenant context
         })
 
         // Delete old attachments and contents (cascade will delete content attachments)
