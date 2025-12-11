@@ -118,6 +118,22 @@ export async function getById(c: Context): Promise<TypedResponse> {
 	)
 }
 
+export async function getAllVersionsById(c: Context): Promise<TypedResponse> {
+	const id = c.req.param("id")
+
+	const serviceResponse = await KnowledgeService.getAllVersionsById(id)
+
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
+
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully fetched all Knowledge versions!",
+	)
+}
+
 export async function update(c: Context): Promise<TypedResponse> {
 	const data: KnowledgeDTO = await c.req.json()
 	const id = c.req.param("id")

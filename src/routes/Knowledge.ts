@@ -33,6 +33,13 @@ KnowledgeRoutes.get(
 	KnowledgeController.getById,
 )
 
+KnowledgeRoutes.get(
+	"/:id/versions",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRoleInTenant,
+	KnowledgeController.getAllVersionsById,
+)
+
 KnowledgeRoutes.post(
 	"/",
 	AuthMiddleware.checkJwt,

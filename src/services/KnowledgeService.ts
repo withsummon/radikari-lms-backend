@@ -42,6 +42,12 @@ export async function create(
     data: KnowledgeDTO
 ): Promise<ServiceResponse<Knowledge | {}>> {
     try {
+        if (data.parentId) {
+            const parent = await KnowledgeRepository.getById(data.parentId)
+
+            data.version = parent!.version + 1
+        }
+
         const createdData = await KnowledgeRepository.create(userId, tenantId, data)
 
         await UserActivityLogService.create(
@@ -127,6 +133,24 @@ export async function getById(
         return HandleServiceResponseSuccess(knowledge)
     } catch (err) {
         Logger.error(`KnowledgeService.getById`, {
+            error: err,
+        })
+        return HandleServiceResponseCustomError("Internal Server Error", 500)
+    }
+}
+
+export async function getAllVersionsById(
+    id: string
+): Promise<ServiceResponse<{ id: string; version: number; headline: string }[] | {}>> {
+    try {
+        const versions = await KnowledgeRepository.getAllVersionsById(id)
+
+        if (!versions || versions.length === 0)
+            return HandleServiceResponseCustomError("Knowledge not found", ResponseStatus.NOT_FOUND)
+
+        return HandleServiceResponseSuccess(versions)
+    } catch (err) {
+        Logger.error(`KnowledgeService.getAllVersionsById`, {
             error: err,
         })
         return HandleServiceResponseCustomError("Internal Server Error", 500)

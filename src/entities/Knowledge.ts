@@ -19,6 +19,8 @@ export interface KnowledgeDTO {
     emails: string[]
     attachments: KnowledgeAttachmentDTO[]
     contents: KnowledgeContentDTO[]
+    parentId?: string
+    version: number
 }
 
 export interface KnowledgeAttachmentDTO {

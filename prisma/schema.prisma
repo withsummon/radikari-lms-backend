@@ -202,9 +202,13 @@ model Knowledge {
   totalViews       Int             @default(0)
   isArchived       Boolean         @default(false)
   rejectionComment String?         @db.Text
+  version          Int             @default(1)
+  parentId         String?
 
-  tenant        Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  createdByUser User    @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  tenant        Tenant?     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdByUser User        @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  parent        Knowledge?  @relation(name: "parent", fields: [parentId], references: [id], onDelete: Cascade)
+  children      Knowledge[] @relation("parent")
 
   knowledgeAttachment        KnowledgeAttachment[]
   knowledgeContent           KnowledgeContent[]
@@ -213,11 +217,14 @@ model Knowledge {
   userKnowledge              UserKnowledge[]
   aiChatRoomMessageKnowledge AiChatRoomMessageKnowledge[]
 
+  @@unique([parentId, version])
   @@index([tenantId, access])
   @@index([createdByUserId])
   @@index([access])
   @@index([totalViews])
   @@index([status])
+  @@index([parentId])
+  @@index([version, parentId])
 }
 
 model UserKnowledge {
