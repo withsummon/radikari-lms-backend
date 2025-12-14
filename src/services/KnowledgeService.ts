@@ -72,6 +72,7 @@ export async function getAll(
     filters: EzFilter.FilteringQuery
 ): Promise<ServiceResponse<EzFilter.PaginatedResult<Knowledge[]> | {}>> {
     try {
+        console.log(filters)
         const data = await KnowledgeRepository.getAll(user, tenantId, filters)
         return HandleServiceResponseSuccess(data)
     } catch (err) {

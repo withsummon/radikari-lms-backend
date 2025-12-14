@@ -118,9 +118,6 @@ export async function getAll(user: UserJWTDAO, tenantId: string, filters: EzFilt
                     },
                 },
             },
-            {
-                createdByUserId: user.id,
-            },
         ],
     })
 
