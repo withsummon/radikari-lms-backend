@@ -180,9 +180,6 @@ export async function getAllArchived(
                     },
                 },
             },
-            {
-                createdByUserId: user.id,
-            },
         ],
     })
 
@@ -344,7 +341,12 @@ export async function getById(id: string) {
     })
 }
 
-export async function update(id: string, data: KnowledgeDTO, tenantId: string) {
+export async function update(
+    id: string,
+    data: KnowledgeDTO,
+    tenantId: string,
+    status: KnowledgeStatus
+) {
     return await prisma.$transaction(async (tx) => {
         const { attachments, contents, emails, ...rest } = data
         let knowledge: Knowledge
@@ -353,7 +355,7 @@ export async function update(id: string, data: KnowledgeDTO, tenantId: string) {
         // Access control is handled at query level, not by nullifying tenantId
         knowledge = await tx.knowledge.update({
             where: { id },
-            data: { ...rest, tenantId, status: "PENDING" }, // Always maintain the tenant context
+            data: { ...rest, tenantId, status }, // Always maintain the tenant context
         })
 
         // Delete old attachments and contents (cascade will delete content attachments)

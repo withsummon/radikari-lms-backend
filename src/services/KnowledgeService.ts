@@ -170,7 +170,13 @@ export async function update(
         if (!knowledge)
             return HandleServiceResponseCustomError("Invalid ID", ResponseStatus.NOT_FOUND)
 
-        const updatedKnowledge = await KnowledgeRepository.update(id, data, tenantId)
+        let status = knowledge.status
+
+        if (status == "REJECTED" || status == "REVISION") {
+            status = "PENDING"
+        }
+
+        const updatedKnowledge = await KnowledgeRepository.update(id, data, tenantId, status)
 
         if (updatedKnowledge.status == KnowledgeStatus.APPROVED) {
             const pubsub = GlobalPubSub.getInstance().getPubSub()
