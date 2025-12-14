@@ -6,18 +6,18 @@ import * as Validations from "$validations/AiPromptValidation"
 const AiPromptRoutes = new Hono()
 
 AiPromptRoutes.get(
-    "/",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRoleInTenant,
-    AiPromptController.getByTenantId
+	"/",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRoleInTenant,
+	AiPromptController.getByTenantId,
 )
 
 AiPromptRoutes.put(
-    "/",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRoleInTenant,
-    Validations.validateAiPromptSchema,
-    AiPromptController.createOrUpdateByTenantId
+	"/",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRoleInTenant,
+	Validations.validateAiPromptSchema,
+	AiPromptController.createOrUpdateByTenantId,
 )
 
 export default AiPromptRoutes

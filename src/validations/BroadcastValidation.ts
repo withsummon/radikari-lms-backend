@@ -5,13 +5,15 @@ import { BroadcastSchema } from "./schema/BroadcastSchema"
 import * as Helpers from "./helper"
 
 export async function validateBroadcastSchema(c: Context, next: Next) {
-    const data: BroadcastDTO = await c.req.json()
-    let invalidFields: Helpers.ErrorStructure[] = Helpers.validateSchema(BroadcastSchema, data)
+	const data: BroadcastDTO = await c.req.json()
+	let invalidFields: Helpers.ErrorStructure[] = Helpers.validateSchema(
+		BroadcastSchema,
+		data,
+	)
 
-    if (invalidFields.length > 0) {
-        return response_bad_request(c, "Validation Error", invalidFields)
-    }
+	if (invalidFields.length > 0) {
+		return response_bad_request(c, "Validation Error", invalidFields)
+	}
 
-    await next()
+	await next()
 }
-
