@@ -185,7 +185,7 @@ export async function update(
 				ResponseStatus.NOT_FOUND,
 			)
 
-		let status = knowledge.status
+        let status = knowledge.status
 
 		if (status == "REJECTED" || status == "REVISION") {
 			status = "PENDING"
