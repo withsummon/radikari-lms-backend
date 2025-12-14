@@ -271,6 +271,28 @@ export async function getUnsubmittedAssignmentUserAttempts() {
 	})
 }
 
+export async function isAttemptTimeValid(
+	assignmentUserAttemptId: string,
+	gracePeriodMs: number = 60000,
+): Promise<boolean> {
+	const attempt = await prisma.assignmentUserAttempt.findUnique({
+		where: { id: assignmentUserAttemptId },
+		include: { assignment: true },
+	})
+
+	if (!attempt || !attempt.assignment) {
+		return false
+	}
+
+	// Calculate expiration: createdAt + gracePeriod + duration
+	const expirationTime =
+		attempt.createdAt.getTime() +
+		gracePeriodMs +
+		attempt.assignment.durationInMinutes * 60000
+
+	return Date.now() < expirationTime
+}
+
 export async function getHistoryUserAssignmentAttempts(
 	userId: string,
 	assignmentId: string,

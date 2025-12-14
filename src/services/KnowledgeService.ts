@@ -185,13 +185,18 @@ export async function update(
 				ResponseStatus.NOT_FOUND,
 			)
 
-        let status = knowledge.status
+		let status = knowledge.status
 
-        if (status == "REJECTED" || status == "REVISION") {
-            status = "PENDING"
-        }
+		if (status == "REJECTED" || status == "REVISION") {
+			status = "PENDING"
+		}
 
-        const updatedKnowledge = await KnowledgeRepository.update(id, data, tenantId, status)
+		const updatedKnowledge = await KnowledgeRepository.update(
+			id,
+			data,
+			tenantId,
+			status,
+		)
 
 		if (updatedKnowledge.status == KnowledgeStatus.APPROVED) {
 			const pubsub = GlobalPubSub.getInstance().getPubSub()

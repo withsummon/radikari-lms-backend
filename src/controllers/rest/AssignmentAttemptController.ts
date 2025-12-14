@@ -161,3 +161,23 @@ export async function getMemberAssignmentAttemptHistory(
 		"Successfully fetched member assignment attempt history!",
 	)
 }
+
+export async function getTimeStatus(c: Context): Promise<TypedResponse> {
+	const assignmentId = c.req.param("assignmentId")
+	const user: UserJWTDAO = c.get("jwtPayload")
+
+	const serviceResponse = await AssignmentAttemptService.getTimeStatus(
+		user.id,
+		assignmentId,
+	)
+
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
+
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully fetched time status",
+	)
+}

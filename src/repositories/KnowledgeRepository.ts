@@ -179,25 +179,25 @@ export async function getAllArchived(
 		isArchived: true,
 	})
 
-    usedFilters.query.where.AND.push({
-        OR: [
-            {
-                access: KnowledgeAccess.PUBLIC,
-            },
-            {
-                access: KnowledgeAccess.TENANT,
-                tenantId,
-            },
-            {
-                access: KnowledgeAccess.EMAIL,
-                userKnowledge: {
-                    some: {
-                        userId: user.id,
-                    },
-                },
-            },
-        ],
-    })
+	usedFilters.query.where.AND.push({
+		OR: [
+			{
+				access: KnowledgeAccess.PUBLIC,
+			},
+			{
+				access: KnowledgeAccess.TENANT,
+				tenantId,
+			},
+			{
+				access: KnowledgeAccess.EMAIL,
+				userKnowledge: {
+					some: {
+						userId: user.id,
+					},
+				},
+			},
+		],
+	})
 
 	const [knowledge, totalData] = await Promise.all([
 		prisma.knowledge.findMany(usedFilters.query as any),
@@ -358,21 +358,21 @@ export async function getById(id: string) {
 }
 
 export async function update(
-    id: string,
-    data: KnowledgeDTO,
-    tenantId: string,
-    status: KnowledgeStatus
+	id: string,
+	data: KnowledgeDTO,
+	tenantId: string,
+	status: KnowledgeStatus,
 ) {
-    return await prisma.$transaction(async (tx) => {
-        const { attachments, contents, emails, ...rest } = data
-        let knowledge: Knowledge
+	return await prisma.$transaction(async (tx) => {
+		const { attachments, contents, emails, ...rest } = data
+		let knowledge: Knowledge
 
-        // FIXED: Always maintain tenantId to preserve context for AI service
-        // Access control is handled at query level, not by nullifying tenantId
-        knowledge = await tx.knowledge.update({
-            where: { id },
-            data: { ...rest, tenantId, status }, // Always maintain the tenant context
-        })
+		// FIXED: Always maintain tenantId to preserve context for AI service
+		// Access control is handled at query level, not by nullifying tenantId
+		knowledge = await tx.knowledge.update({
+			where: { id },
+			data: { ...rest, tenantId, status }, // Always maintain the tenant context
+		})
 
 		// Delete old attachments and contents (cascade will delete content attachments)
 		await tx.knowledgeAttachment.deleteMany({

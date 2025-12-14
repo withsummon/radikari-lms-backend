@@ -136,6 +136,18 @@ export async function updateAnswer(
 			)
 		}
 
+		// Add time validation before processing answer
+		const isTimeValid = await AssignmentAttemptRepository.isAttemptTimeValid(
+			assignmentAttempt.id,
+		)
+
+		if (!isTimeValid) {
+			return HandleServiceResponseCustomError(
+				"Time limit exceeded - cannot submit answers",
+				ResponseStatus.BAD_REQUEST,
+			)
+		}
+
 		const assignmentUserAttemptQuestionAnswer =
 			await AssignmentAttemptRepository.getByAssignmentUserAttemptIdAndAssignmentQuestionId(
 				assignmentAttempt.id,
@@ -534,6 +546,91 @@ export async function getHistoryUserAssignmentAttempts(
 		})
 	} catch (err) {
 		Logger.error(`AssignmentAttemptService.getHistoryUserAssignmentAttempts`, {
+			error: err,
+		})
+		return HandleServiceResponseCustomError("Internal Server Error", 500)
+	}
+}
+
+export async function getTimeStatus(
+	userId: string,
+	assignmentId: string,
+): Promise<
+	ServiceResponse<
+		| {
+				isValid: boolean
+				remainingSeconds: number
+				gracePeriodMs: number
+		  }
+		| {}
+	>
+> {
+	try {
+		const assignmentAttempt =
+			await AssignmentAttemptRepository.getByUserIdAndAssignmentId(
+				userId,
+				assignmentId,
+			)
+
+		if (!assignmentAttempt) {
+			return HandleServiceResponseCustomError(
+				"Assignment attempt not found",
+				ResponseStatus.NOT_FOUND,
+			)
+		}
+
+		if (assignmentAttempt.isSubmitted) {
+			return HandleServiceResponseCustomError(
+				"Assignment already submitted",
+				ResponseStatus.BAD_REQUEST,
+			)
+		}
+
+		// Fetch assignment to get tenantId
+		const assignment = await AssignmentRepository.getById(
+			assignmentAttempt.assignmentId,
+			"", // tenantId not needed for this call, we'll get it from the assignment
+		)
+
+		if (!assignment || !assignment.tenantId) {
+			return HandleServiceResponseCustomError(
+				"Assignment tenant not found",
+				ResponseStatus.NOT_FOUND,
+			)
+		}
+
+		// Re-fetch with proper tenantId if needed
+		const assignmentWithTenant = await AssignmentRepository.getById(
+			assignmentAttempt.assignmentId,
+			assignment.tenantId,
+		)
+
+		if (!assignmentWithTenant) {
+			return HandleServiceResponseCustomError(
+				"Assignment not found",
+				ResponseStatus.NOT_FOUND,
+			)
+		}
+
+		const gracePeriodMs = parseInt(
+			process.env.ASSIGNMENT_GRACE_PERIOD_MS || "60000",
+			10,
+		)
+		const expirationTime =
+			assignmentAttempt.createdAt.getTime() +
+			gracePeriodMs +
+			assignmentWithTenant.durationInMinutes * 60000
+
+		const remainingTime = expirationTime - Date.now()
+		const isValid = remainingTime > 0
+
+		return HandleServiceResponseSuccess({
+			isValid,
+			remainingSeconds: Math.max(0, Math.floor(remainingTime / 1000)),
+			gracePeriodMs,
+		})
+	} catch (err) {
+		Logger.error(`AssignmentAttemptService.getTimeStatus`, {
 			error: err,
 		})
 		return HandleServiceResponseCustomError("Internal Server Error", 500)
