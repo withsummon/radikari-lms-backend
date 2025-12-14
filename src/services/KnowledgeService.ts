@@ -71,15 +71,16 @@ export async function getAll(
 	tenantId: string,
 	filters: EzFilter.FilteringQuery,
 ): Promise<ServiceResponse<EzFilter.PaginatedResult<Knowledge[]> | {}>> {
-	try {
-		const data = await KnowledgeRepository.getAll(user, tenantId, filters)
-		return HandleServiceResponseSuccess(data)
-	} catch (err) {
-		Logger.error(`KnowledgeService.getAll`, {
-			error: err,
-		})
-		return HandleServiceResponseCustomError("Internal Server Error", 500)
-	}
+    try {
+        console.log(filters)
+        const data = await KnowledgeRepository.getAll(user, tenantId, filters)
+        return HandleServiceResponseSuccess(data)
+    } catch (err) {
+        Logger.error(`KnowledgeService.getAll`, {
+            error: err,
+        })
+        return HandleServiceResponseCustomError("Internal Server Error", 500)
+    }
 }
 
 export async function getAllArchived(

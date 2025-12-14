@@ -117,28 +117,25 @@ export async function getAll(
 		},
 	})
 
-	usedFilters.query.where.AND.push({
-		OR: [
-			{
-				access: KnowledgeAccess.PUBLIC,
-			},
-			{
-				access: KnowledgeAccess.TENANT,
-				tenantId,
-			},
-			{
-				access: KnowledgeAccess.EMAIL,
-				userKnowledge: {
-					some: {
-						userId: user.id,
-					},
-				},
-			},
-			{
-				createdByUserId: user.id,
-			},
-		],
-	})
+    usedFilters.query.where.AND.push({
+        OR: [
+            {
+                access: KnowledgeAccess.PUBLIC,
+            },
+            {
+                access: KnowledgeAccess.TENANT,
+                tenantId,
+            },
+            {
+                access: KnowledgeAccess.EMAIL,
+                userKnowledge: {
+                    some: {
+                        userId: user.id,
+                    },
+                },
+            },
+        ],
+    })
 
 	const [knowledge, totalData] = await Promise.all([
 		prisma.knowledge.findMany(usedFilters.query as any),
