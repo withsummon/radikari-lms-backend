@@ -10,6 +10,7 @@
 		"dev": "bun run --watch ./src/index.ts",
 		"start": "bun run ./src/index.ts",
 		"build": "rimraf dist && tsc",
+		"check": "tsc --noEmit",
 		"seed": "bun run prisma/seeds/index.ts",
 		"migrate:dev": "bun run prisma migrate dev",
 		"migrate:deploy": "bun run prisma migrate deploy",

@@ -87,6 +87,9 @@ export async function streamHybridChat({
 				// 4. Retrieve
 				const searchResult = await qdrantClient.search("radikari_knowledge", {
 					vector: normalizedEmbedding,
+					filter: {
+						must: [{ key: "tenantId", match: { value: tenantId } }],
+					},
 					limit: 15,
 					score_threshold: 0.5,
 				})
