@@ -48,4 +48,10 @@ AssignmentAttemptRoutes.get(
 	AssignmentAttemptController.getMemberAssignmentAttemptHistory,
 )
 
+AssignmentAttemptRoutes.get(
+	"/:assignmentId/attempts/time-status",
+	AuthMiddleware.checkJwt,
+	AssignmentAttemptController.getTimeStatus,
+)
+
 export default AssignmentAttemptRoutes

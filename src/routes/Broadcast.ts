@@ -6,18 +6,18 @@ import * as Validations from "$validations/BroadcastValidation"
 const BroadcastRoutes = new Hono()
 
 BroadcastRoutes.get(
-    "/",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRoleInTenant,
-    BroadcastController.getByTenantId
+	"/",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRoleInTenant,
+	BroadcastController.getByTenantId,
 )
 
 BroadcastRoutes.put(
-    "/",
-    AuthMiddleware.checkJwt,
-    AuthMiddleware.checkRoleInTenant,
-    Validations.validateBroadcastSchema,
-    BroadcastController.createOrUpdateByTenantId
+	"/",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRoleInTenant,
+	Validations.validateBroadcastSchema,
+	BroadcastController.createOrUpdateByTenantId,
 )
 
 export default BroadcastRoutes
