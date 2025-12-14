@@ -188,6 +188,7 @@ export async function update(
 
         let status = knowledge.status
 
+
 		if (status == "REJECTED" || status == "REVISION") {
 			status = "PENDING"
 		}
