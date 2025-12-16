@@ -4,27 +4,30 @@ import * as AssignmentAttemptController from "$controllers/consumer/AssignmentAt
 import * as NotificationController from "$controllers/consumer/NotificationController"
 
 export async function startConsumerApp() {
-    const commonChannel = new RabbitMQConnection()
-    await commonChannel.connect()
+	const commonChannel = new RabbitMQConnection()
+	await commonChannel.connect()
 
-    const notificationChannel = new RabbitMQConnection()
-    await notificationChannel.connect()
+	const notificationChannel = new RabbitMQConnection()
+	await notificationChannel.connect()
 
-    await commonChannel.consume(PUBSUB_TOPICS.ASSIGNMENT_ATTEMPT_SUBMIT, async (message) => {
-        await AssignmentAttemptController.calculateAssignmentScore(message)
-    })
+	await commonChannel.consume(
+		PUBSUB_TOPICS.ASSIGNMENT_ATTEMPT_SUBMIT,
+		async (message) => {
+			await AssignmentAttemptController.calculateAssignmentScore(message)
+		},
+	)
 
-    await notificationChannel.consume(
-        PUBSUB_TOPICS.KNOWLEDGE_APPROVAL_NOTIFICATION,
-        async (message) => {
-            await NotificationController.sendKnowledgeApprovalNotification(message)
-        }
-    )
+	await notificationChannel.consume(
+		PUBSUB_TOPICS.KNOWLEDGE_APPROVAL_NOTIFICATION,
+		async (message) => {
+			await NotificationController.sendKnowledgeApprovalNotification(message)
+		},
+	)
 
-    await notificationChannel.consume(
-        PUBSUB_TOPICS.ASSIGNMENT_ASSIGNED_NOTIFICATION,
-        async (message) => {
-            await NotificationController.sendAssignmentAssignedNotification(message)
-        }
-    )
+	await notificationChannel.consume(
+		PUBSUB_TOPICS.ASSIGNMENT_ASSIGNED_NOTIFICATION,
+		async (message) => {
+			await NotificationController.sendAssignmentAssignedNotification(message)
+		},
+	)
 }
