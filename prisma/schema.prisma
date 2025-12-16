@@ -320,6 +320,9 @@ model AiChatRoomMessage {
   knowledgeId          String?
   createdAt            DateTime                @default(now())
   updatedAt            DateTime                @updatedAt
+  promptTokens         Int?
+  completionTokens     Int?
+  totalTokens          Int?
 
   aiChatRoom                 AiChatRoom                   @relation(fields: [aiChatRoomId], references: [id], onDelete: Cascade)
   knowledge                  Knowledge?                   @relation(fields: [knowledgeId], references: [id], onDelete: Cascade)

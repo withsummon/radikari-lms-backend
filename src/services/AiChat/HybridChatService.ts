@@ -193,12 +193,13 @@ ${contextParts.join("\n\n")}`
 				const result = streamText({
 					model: openai("gpt-4.1-mini"),
 					messages: [{ role: "system", content: systemMessage }, ...messages],
-					async onFinish({ text }) {
+					async onFinish({ text, usage }) {
 						Logger.info("HybridChatService.streamHybridChat.onFinish", {
 							chatRoomId,
 							responseLength: text.length,
+							usage,
 						})
-
+						
 						try {
 							// Persist to DB
 							// 1. Save User Message
@@ -226,6 +227,9 @@ ${contextParts.join("\n\n")}`
 									sender: AiChatRoomMessageSender.ASSISTANT,
 									message: text,
 									htmlFormattedMessage: text,
+									promptTokens: (usage as any).inputTokens,
+									completionTokens: (usage as any).outputTokens,
+									totalTokens: (usage as any).totalTokens,
 								},
 							})
 
