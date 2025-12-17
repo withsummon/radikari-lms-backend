@@ -9,7 +9,13 @@ export async function create(data: TenantCreateUpdateDTO) {
 	return await prisma.$transaction(async (tx) => {
 		const { headOfTenantUserId, ...rest } = data
 		const tenant = await tx.tenant.create({
-			data: rest,
+			data: {
+				name: rest.name,
+				description: rest.description,
+				operationId: rest.operationId,
+				tokenLimit: rest.tokenLimit ?? 0,
+				id: ulid(),
+			},
 		})
 
 		const headOfOfficeRole = await tx.tenantRole.findUnique({
@@ -73,6 +79,9 @@ export async function getAll(filters: EzFilter.FilteringQuery) {
 			"password",
 		),
 		operation: tenant.operation,
+		operationId: tenant.operationId,
+		tenantUser: tenant.tenantUser,
+		tokenLimit: tenant.tokenLimit,
 	}))
 
 	let totalPage = 1
@@ -134,6 +143,7 @@ export async function getAllByUserId(
 				user.role === Roles.ADMIN
 					? Roles.ADMIN
 					: tenant.tenantUser[0].tenantRole,
+			tokenLimit: tenant.tokenLimit,
 		})),
 		totalData,
 		totalPage,
@@ -166,7 +176,12 @@ export async function update(id: string, data: TenantCreateUpdateDTO) {
 			where: {
 				id,
 			},
-			data: rest,
+			data: {
+				name: rest.name,
+				description: rest.description,
+				operationId: rest.operationId,
+				tokenLimit: rest.tokenLimit ?? 0,
+			},
 		})
 
 		const headOfOfficeRole = await tx.tenantRole.findUnique({
@@ -188,14 +203,16 @@ export async function update(id: string, data: TenantCreateUpdateDTO) {
 			},
 		})
 
-		await tx.tenantUser.create({
-			data: {
-				id: ulid(),
-				userId: headOfTenantUserId,
-				tenantRoleId: headOfOfficeRole.id,
-				tenantId: id,
-			},
-		})
+		if (headOfTenantUserId) {
+			await tx.tenantUser.create({
+				data: {
+					id: ulid(),
+					userId: headOfTenantUserId,
+					tenantRoleId: headOfOfficeRole.id,
+					tenantId: id,
+				},
+			})
+		}
 
 		return tenant
 	})

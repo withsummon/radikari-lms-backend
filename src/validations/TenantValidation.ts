@@ -9,8 +9,12 @@ import { prisma } from "$pkg/prisma"
 
 export async function validateTenantSchema(c: Context, next: Next) {
 	const data: TenantCreateUpdateDTO = await c.req.json()
+	const method = c.req.method
+
+	const schema = method === "PUT" ? TenantSchema.partial() : TenantSchema
+
 	let invalidFields: Helpers.ErrorStructure[] = Helpers.validateSchema(
-		TenantSchema,
+		schema,
 		data,
 	)
 
@@ -32,17 +36,21 @@ export async function validateTenantSchema(c: Context, next: Next) {
 		}
 	}
 
-	const operation = await prisma.operation.findUnique({
-		where: {
-			id: data.operationId,
-		},
-	})
-
-	if (!operation) {
-		invalidFields.push({
-			field: "operationId",
-			message: "operation not found",
+	if (data.operationId) {
+		const operation = await prisma.operation.findUnique({
+			where: {
+				id: data.operationId,
+			},
 		})
+
+		if (!operation) {
+			invalidFields.push({
+				field: "operationId",
+				message: "operation not found",
+			})
+		}
+	} else if (method === "POST") {
+		// operationId is required for creation, checked by schema but good to be safe
 	}
 
 	if (invalidFields.length > 0) {

@@ -64,6 +64,7 @@ model User {
   aiPromptUpdater                      AiPrompt[]                            @relation("AiPromptUpdater")
   broadcastCreator                     Broadcast[]                           @relation("BroadcastCreator")
   broadcastUpdater                     Broadcast[]                           @relation("BroadcastUpdater")
+  aiUsageLogs                          AiUsageLog[]
 }
 
 model Operation {
@@ -97,6 +98,7 @@ model Tenant {
   forums        Forum[]
   aiPrompt      AiPrompt?
   broadcast     Broadcast?
+  aiUsageLogs   AiUsageLog[]
 }
 
 model TenantRole {
@@ -321,13 +323,11 @@ model AiChatRoomMessage {
   knowledgeId          String?
   createdAt            DateTime                @default(now())
   updatedAt            DateTime                @updatedAt
-  promptTokens         Int?
-  completionTokens     Int?
-  totalTokens          Int?
 
   aiChatRoom                 AiChatRoom                   @relation(fields: [aiChatRoomId], references: [id], onDelete: Cascade)
   knowledge                  Knowledge?                   @relation(fields: [knowledgeId], references: [id], onDelete: Cascade)
   aiChatRoomMessageKnowledge AiChatRoomMessageKnowledge[]
+  aiUsageLogs                AiUsageLog[]
 }
 
 model AiChatRoomMessageKnowledge {
@@ -670,6 +670,7 @@ model AiPrompt {
   updatedByUser User?  @relation("AiPromptUpdater", fields: [updatedByUserId], references: [id], onDelete: Cascade)
 }
 
+
 model Broadcast {
   id              String   @id @unique
   tenantId        String   @unique
@@ -682,4 +683,21 @@ model Broadcast {
   tenant        Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   createdByUser User?  @relation(name: "BroadcastCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
   updatedByUser User?  @relation(name: "BroadcastUpdater", fields: [updatedByUserId], references: [id], onDelete: Cascade)
+}
+
+model AiUsageLog {
+  id                  String             @id @unique
+  tenantId            String
+  userId              String?
+  aiChatRoomMessageId String?
+  action              String // e.g., "ESSAY_SCORING", "CHAT"
+  model               String? // e.g., "gpt-4.1-mini"
+  promptTokens        Int
+  completionTokens    Int
+  totalTokens         Int
+  createdAt           DateTime           @default(now())
+
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user              User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  aiChatRoomMessage AiChatRoomMessage? @relation(fields: [aiChatRoomMessageId], references: [id], onDelete: SetNull)
 }

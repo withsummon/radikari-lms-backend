@@ -27,14 +27,12 @@ export const checkTokenLimit = async (
 	const startOfMonth = now.startOf("month").toJSDate()
 	const endOfMonth = now.endOf("month").toJSDate()
 
-	const result = await prisma.aiChatRoomMessage.aggregate({
+	const result = await prisma.aiUsageLog.aggregate({
 		_sum: {
 			totalTokens: true,
 		},
 		where: {
-			aiChatRoom: {
-				tenantId,
-			},
+			tenantId,
 			createdAt: {
 				gte: startOfMonth,
 				lte: endOfMonth,

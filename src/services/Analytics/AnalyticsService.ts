@@ -10,6 +10,8 @@ interface AnalyticsSummary {
 	aiTokensUsed: number
 	promptTokens: number
 	completionTokens: number
+	totalCostIDR: number
+	highestUsageTenant: { name: string; tokens: number } | null
 }
 
 interface TokenMetric {
@@ -72,58 +74,32 @@ export const getAnalytics = async (
 			}
 		: {}
 
-	const filteredMessages = await prisma.aiChatRoomMessage.findMany({
+	// 1. Fetch Token Usage from AiUsageLog (Single Source of Truth)
+	const usageLogs = await prisma.aiUsageLog.findMany({
 		where: {
 			...dateFilter,
-			totalTokens: {
-				not: null,
-			},
 		},
 		select: {
 			createdAt: true,
 			totalTokens: true,
 			promptTokens: true,
 			completionTokens: true,
+			tenantId: true,
 		},
 		orderBy: {
 			createdAt: "asc",
 		},
 	})
 
-	const roomAggregates = await prisma.aiChatRoomMessage.groupBy({
-		by: ["aiChatRoomId"],
-		where: {
-			totalTokens: { not: null },
-		},
-		_sum: {
-			totalTokens: true,
-			promptTokens: true,
-			completionTokens: true,
-		},
+	// Get Tenant Details
+	const usageLogTenantIds = [...new Set(usageLogs.map((l) => l.tenantId))]
+	const logTenants = await prisma.tenant.findMany({
+		where: { id: { in: usageLogTenantIds } },
+		select: { id: true, name: true, tokenLimit: true },
 	})
-	const roomIds = roomAggregates.map((r) => r.aiChatRoomId)
-
-	const rooms = await prisma.aiChatRoom.findMany({
-		where: {
-			id: { in: roomIds },
-		},
-		select: {
-			id: true,
-			tenant: {
-				select: {
-					id: true,
-					name: true,
-					tokenLimit: true,
-				},
-			},
-		},
-	})
-
-	const roomTenantMap = new Map<string, (typeof rooms)[0]["tenant"]>()
-	for (const r of rooms) {
-		if (r.tenant) {
-			roomTenantMap.set(r.id, r.tenant)
-		}
+	const logTenantMap = new Map<string, (typeof logTenants)[0]>()
+	for (const t of logTenants) {
+		logTenantMap.set(t.id, t)
 	}
 
 	const tokenConsumption: TokenMetric[] = []
@@ -139,17 +115,27 @@ export const getAnalytics = async (
 		return date.toFormat("MMM yyyy")
 	}
 
-	for (const msg of filteredMessages) {
-		const dt = DateTime.fromJSDate(msg.createdAt)
+	// Aggregate Metrics
+	let allTimeTotalTokens = 0
+	let allTimePromptTokens = 0
+	let allTimeCompletionTokens = 0
+
+	// Aggregate Usage Logs
+	for (const log of usageLogs) {
+		const dt = DateTime.fromJSDate(log.createdAt)
 		const key = getFormat(dt)
 
 		if (!groupedData[key]) {
 			groupedData[key] = { total: 0, prompt: 0, completion: 0 }
 		}
 
-		groupedData[key].total += msg.totalTokens || 0
-		groupedData[key].prompt += msg.promptTokens || 0
-		groupedData[key].completion += msg.completionTokens || 0
+		groupedData[key].total += log.totalTokens
+		groupedData[key].prompt += log.promptTokens
+		groupedData[key].completion += log.completionTokens
+
+		allTimeTotalTokens += log.totalTokens
+		allTimePromptTokens += log.promptTokens
+		allTimeCompletionTokens += log.completionTokens
 	}
 
 	for (const [date, metrics] of Object.entries(groupedData)) {
@@ -161,6 +147,7 @@ export const getAnalytics = async (
 		})
 	}
 
+	// Aggregate Tenant Usage
 	const tenantUsageMap = new Map<
 		string,
 		{
@@ -172,34 +159,23 @@ export const getAnalytics = async (
 		}
 	>()
 
-	let allTimeTotalTokens = 0
-	let allTimePromptTokens = 0
-	let allTimeCompletionTokens = 0
+	// Process Usage Logs for Tenants
+	for (const log of usageLogs) {
+		const tenant = logTenantMap.get(log.tenantId)
+		const tenantName = tenant?.name || "Unknown Tenant"
+		const tokenLimit = tenant?.tokenLimit || 0
 
-	for (const agg of roomAggregates) {
-		const tenant = roomTenantMap.get(agg.aiChatRoomId)
-		if (!tenant) continue
-
-		const total = agg._sum.totalTokens || 0
-		const prompt = agg._sum.promptTokens || 0
-		const completion = agg._sum.completionTokens || 0
-
-		allTimeTotalTokens += total
-		allTimePromptTokens += prompt
-		allTimeCompletionTokens += completion
-
-		if (!tenantUsageMap.has(tenant.id)) {
-			tenantUsageMap.set(tenant.id, {
-				tenantId: tenant.id,
-				name: tenant.name,
+		if (!tenantUsageMap.has(log.tenantId)) {
+			tenantUsageMap.set(log.tenantId, {
+				tenantId: log.tenantId,
+				name: tenantName,
 				totalTokens: 0,
-				tokenLimit: tenant.tokenLimit,
+				tokenLimit: tokenLimit,
 				usagePercentage: 0,
 			})
 		}
-
-		const metric = tenantUsageMap.get(tenant.id)!
-		metric.totalTokens += total
+		const metric = tenantUsageMap.get(log.tenantId)!
+		metric.totalTokens += log.totalTokens
 	}
 
 	const tenantUsage = [...tenantUsageMap.values()]
@@ -229,8 +205,6 @@ export const getAnalytics = async (
 			...dateFilter,
 		},
 	})
-	// NOTE: automatedTasks/Artifacts are still filtered by date?
-	// Keeping them filtered as they are "Activity" metrics. Token Usage is "Quota" metric.
 
 	const generatedArtifactsCount = await prisma.aiChatRoomMessage.count({
 		where: {
@@ -242,6 +216,28 @@ export const getAnalytics = async (
 		},
 	})
 
+	// Pricing Calculation (GPT-4.1-mini)
+	// Input: $0.40 / 1M tokens
+	// Output: $1.60 / 1M tokens
+	// 1 USD = 16,000 IDR
+	const USD_TO_IDR = 16000
+	const INPUT_COST_PER_M = 0.4
+	const OUTPUT_COST_PER_M = 1.6
+
+	const totalInputCostUSD = (allTimePromptTokens / 1_000_000) * INPUT_COST_PER_M
+	const totalOutputCostUSD =
+		(allTimeCompletionTokens / 1_000_000) * OUTPUT_COST_PER_M
+	const totalCostUSD = totalInputCostUSD + totalOutputCostUSD
+	const totalCostIDR = totalCostUSD * USD_TO_IDR
+
+	const highestUsageTenant =
+		tenantUsage.length > 0
+			? {
+					name: tenantUsage[0].name,
+					tokens: tenantUsage[0].totalTokens,
+				}
+			: null
+
 	const connectedIntegrationsCount = 0
 
 	return {
@@ -252,6 +248,8 @@ export const getAnalytics = async (
 			aiTokensUsed: allTimeTotalTokens,
 			promptTokens: allTimePromptTokens,
 			completionTokens: allTimeCompletionTokens,
+			totalCostIDR: totalCostIDR,
+			highestUsageTenant: highestUsageTenant,
 		},
 		tokenConsumption,
 		tenantUsage,

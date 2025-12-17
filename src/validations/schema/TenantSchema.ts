@@ -25,5 +25,6 @@ export const TenantSchema = z
 						: "Invalid string",
 			})
 			.optional(),
+		tokenLimit: z.number().optional(),
 	})
 	.strict()

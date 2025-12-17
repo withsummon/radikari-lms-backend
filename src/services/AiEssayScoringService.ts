@@ -2,6 +2,8 @@ import { generateObject } from "ai"
 import { openai } from "@ai-sdk/openai"
 import { z } from "zod"
 import Logger from "$pkg/logger"
+import { prisma } from "$pkg/prisma"
+import { ulid } from "ulid"
 
 // Define the Zod schema for AI essay scoring response
 const essayScoreSchema = z.object({
@@ -19,23 +21,18 @@ const essayScoreSchema = z.object({
 
 export type EssayScoringResult = z.infer<typeof essayScoreSchema>
 
-interface EssayScoringRequest {
+export async function scoreEssayAnswer(request: {
 	question: string
 	userAnswer: string
 	expectedAnswer?: string
 	context?: string
-}
-
-export async function scoreEssayAnswer({
-	question,
-	userAnswer,
-	expectedAnswer,
-	context,
-}: EssayScoringRequest): Promise<EssayScoringResult> {
+	tenantId: string
+	userId?: string
+}): Promise<EssayScoringResult> {
 	try {
 		Logger.info("AiEssayScoringService.scoreEssayAnswer", {
-			question: question.substring(0, 100) + "...",
-			userAnswer: userAnswer.substring(0, 100) + "...",
+			question: request.question.substring(0, 100) + "...",
+			userAnswer: request.userAnswer.substring(0, 100) + "...",
 		})
 
 		// Build the system prompt for essay scoring
@@ -57,10 +54,10 @@ SCORING SYSTEM:
   - 0-59: Insufficient - Incorrect or completely misses the point
 
 CONTEXT INFORMATION:
-${context ? `Additional context: ${context}` : "No additional context provided."}
+${request.context ? `Additional context: ${request.context}` : "No additional context provided."}
 ${
-	expectedAnswer
-		? `Expected answer key points: ${expectedAnswer}`
+	request.expectedAnswer
+		? `Expected answer key points: ${request.expectedAnswer}`
 		: "No specific expected answer provided."
 }
 
@@ -71,15 +68,39 @@ IMPORTANT:
 - Provide constructive feedback that helps the student learn
 `
 
-		const userPrompt = `Question: ${question}\n\nStudent Answer: ${userAnswer}`
+		const userPrompt = `Question: ${request.question}\n\nStudent Answer: ${request.userAnswer}`
 
-		const { object } = await generateObject({
+		const { object, usage } = await generateObject({
 			model: openai("gpt-4.1-mini"),
 			schema: essayScoreSchema,
 			system: systemPrompt,
 			prompt: userPrompt,
 			temperature: 0.3, // Lower temperature for more consistent scoring
 		})
+
+		// Log Token Usage
+		if (usage && request.tenantId) {
+			try {
+				const usageData = usage as any
+				await prisma.aiUsageLog.create({
+					data: {
+						id: ulid(),
+						tenantId: request.tenantId,
+						userId: request.userId,
+						action: "ESSAY_SCORING",
+						model: "gpt-4.1-mini",
+						promptTokens: usageData.promptTokens || 0,
+						completionTokens: usageData.completionTokens || 0,
+						totalTokens: usageData.totalTokens || 0,
+					},
+				})
+			} catch (logError) {
+				Logger.error("AiEssayScoringService.scoreEssayAnswer.logError", {
+					error:
+						logError instanceof Error ? logError.message : String(logError),
+				})
+			}
+		}
 
 		Logger.info("AiEssayScoringService.scoreEssayAnswer", {
 			score: object.score,
@@ -111,11 +132,17 @@ export async function evaluateEssayAnswers(
 		expectedAnswer?: string
 		context?: string
 	}>,
+	tenantId: string,
+	userId?: string,
 ): Promise<Array<{ questionId: string; result: EssayScoringResult }>> {
 	const results = []
 
 	for (const essayQuestion of essayQuestions) {
-		const result = await scoreEssayAnswer(essayQuestion)
+		const result = await scoreEssayAnswer({
+			...essayQuestion,
+			tenantId,
+			userId,
+		})
 		results.push({
 			questionId: essayQuestion.id,
 			result,
