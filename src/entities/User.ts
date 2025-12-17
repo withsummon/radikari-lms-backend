@@ -21,9 +21,14 @@ export interface CreateUserDTO {
 	phoneNumber: string
 	lastLoginAt?: Date
 	profilePictureUrl?: string
+	tokenLimit?: number
 }
 
 export interface UpdateUserDTO extends Omit<CreateUserDTO, "id, password"> {}
+
+export interface UpdateUserLimitDTO {
+	tokenLimit: number
+}
 
 // Exclude keys from user
 export function exclude<User, Key extends keyof User>(

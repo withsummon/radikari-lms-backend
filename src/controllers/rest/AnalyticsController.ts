@@ -4,7 +4,8 @@ import { Context } from "hono"
 
 export const getAnalytics = async (c: Context) => {
 	const user = c.get("user")
-	const tenantId = c.req.header("x-tenant-id") || user?.tenantUser?.[0]?.tenantId
+	const tenantId =
+		c.req.header("x-tenant-id") || user?.tenantUser?.[0]?.tenantId
 	const range = c.req.query("range") || "24h"
 
 	const result = await AnalyticsService.getAnalytics(

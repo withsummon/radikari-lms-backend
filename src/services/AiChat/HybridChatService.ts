@@ -14,6 +14,7 @@ import { AiChatRoomMessageSender } from "../../../generated/prisma/client"
 import Logger from "$pkg/logger"
 import { getById } from "$repositories/KnowledgeRepository"
 import { createGoogleGenerativeAI } from "@ai-sdk/google"
+import { checkTokenLimit } from "$services/Tenant/TenantLimitService"
 
 const google = createGoogleGenerativeAI({
 	apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || "",
@@ -55,6 +56,15 @@ export async function streamHybridChat({
 	const stream = createUIMessageStream({
 		execute: async ({ writer }) => {
 			try {
+				// 0. Check Token Limit
+				// 0. Check Token Limit
+				const limitStatus = await checkTokenLimit(tenantId)
+				if (!limitStatus.allowed) {
+					throw new Error(
+						limitStatus.errorMessage || "Monthly token limit exceeded.",
+					)
+				}
+
 				// 1. Query Contextualization
 				const lastMessage = messages[messages.length - 1]
 
@@ -199,7 +209,7 @@ ${contextParts.join("\n\n")}`
 							responseLength: text.length,
 							usage,
 						})
-						
+
 						try {
 							// Persist to DB
 							// 1. Save User Message

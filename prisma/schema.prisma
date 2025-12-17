@@ -83,6 +83,7 @@ model Tenant {
   name        String
   description String
   operationId String
+  tokenLimit  Int?     @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -626,6 +627,7 @@ model UserActivityLog {
   action    String   @db.Text
   createdAt DateTime @default(now())
 
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -634,6 +636,7 @@ enum NotificationType {
   ANNOUNCEMENT
   ASSIGNMENT
   FORUM
+  SYSTEM
 }
 
 model Notification {

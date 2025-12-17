@@ -19,9 +19,25 @@ interface TokenMetric {
 	completionTokens?: number
 }
 
+interface TenantTokenMetric {
+	tenantId: string
+	name: string
+	totalTokens: number
+	tokenLimit: number | null
+	usagePercentage: number
+}
+
+interface TenantDistribution {
+	name: string
+	value: number
+	fill?: string
+}
+
 interface DashboardData {
 	summary: AnalyticsSummary
 	tokenConsumption: TokenMetric[]
+	tenantUsage: TenantTokenMetric[]
+	tenantDistribution: TenantDistribution[]
 }
 
 export const getAnalytics = async (
@@ -53,17 +69,14 @@ export const getAnalytics = async (
 				createdAt: {
 					gte: startDate.toJSDate(),
 				},
-		  }
+			}
 		: {}
 
-	const messages = await prisma.aiChatRoomMessage.findMany({
+	const filteredMessages = await prisma.aiChatRoomMessage.findMany({
 		where: {
-			aiChatRoom: {
-				tenantId: tenantId,
-			},
 			...dateFilter,
 			totalTokens: {
-				not: null, // Only count messages with token usage
+				not: null,
 			},
 		},
 		select: {
@@ -77,27 +90,48 @@ export const getAnalytics = async (
 		},
 	})
 
-	const totalTokensUsed = messages.reduce(
-		(sum, msg) => sum + (msg.totalTokens || 0),
-		0,
-	)
-	const promptTokensUsed = messages.reduce(
-		(sum, msg) => sum + (msg.promptTokens || 0),
-		0,
-	)
-	const completionTokensUsed = messages.reduce(
-		(sum, msg) => sum + (msg.completionTokens || 0),
-		0,
-	)
+	const roomAggregates = await prisma.aiChatRoomMessage.groupBy({
+		by: ["aiChatRoomId"],
+		where: {
+			totalTokens: { not: null },
+		},
+		_sum: {
+			totalTokens: true,
+			promptTokens: true,
+			completionTokens: true,
+		},
+	})
+	const roomIds = roomAggregates.map((r) => r.aiChatRoomId)
 
-	// 3. Group for Chart Data
+	const rooms = await prisma.aiChatRoom.findMany({
+		where: {
+			id: { in: roomIds },
+		},
+		select: {
+			id: true,
+			tenant: {
+				select: {
+					id: true,
+					name: true,
+					tokenLimit: true,
+				},
+			},
+		},
+	})
+
+	const roomTenantMap = new Map<string, (typeof rooms)[0]["tenant"]>()
+	for (const r of rooms) {
+		if (r.tenant) {
+			roomTenantMap.set(r.id, r.tenant)
+		}
+	}
+
 	const tokenConsumption: TokenMetric[] = []
 	const groupedData: Record<
 		string,
 		{ total: number; prompt: number; completion: number }
 	> = {}
 
-	// Helper to format date key based on range
 	const getFormat = (date: DateTime) => {
 		if (range === "24h") return date.toFormat("HH:mm")
 		if (range === "7d") return date.toFormat("EEE") // Day name (Mon, Tue)
@@ -105,7 +139,7 @@ export const getAnalytics = async (
 		return date.toFormat("MMM yyyy")
 	}
 
-	for (const msg of messages) {
+	for (const msg of filteredMessages) {
 		const dt = DateTime.fromJSDate(msg.createdAt)
 		const key = getFormat(dt)
 
@@ -127,12 +161,76 @@ export const getAnalytics = async (
 		})
 	}
 
+	const tenantUsageMap = new Map<
+		string,
+		{
+			tenantId: string
+			name: string
+			totalTokens: number
+			tokenLimit: number | null
+			usagePercentage: number
+		}
+	>()
+
+	let allTimeTotalTokens = 0
+	let allTimePromptTokens = 0
+	let allTimeCompletionTokens = 0
+
+	for (const agg of roomAggregates) {
+		const tenant = roomTenantMap.get(agg.aiChatRoomId)
+		if (!tenant) continue
+
+		const total = agg._sum.totalTokens || 0
+		const prompt = agg._sum.promptTokens || 0
+		const completion = agg._sum.completionTokens || 0
+
+		allTimeTotalTokens += total
+		allTimePromptTokens += prompt
+		allTimeCompletionTokens += completion
+
+		if (!tenantUsageMap.has(tenant.id)) {
+			tenantUsageMap.set(tenant.id, {
+				tenantId: tenant.id,
+				name: tenant.name,
+				totalTokens: 0,
+				tokenLimit: tenant.tokenLimit,
+				usagePercentage: 0,
+			})
+		}
+
+		const metric = tenantUsageMap.get(tenant.id)!
+		metric.totalTokens += total
+	}
+
+	const tenantUsage = [...tenantUsageMap.values()]
+		.map((t) => ({
+			...t,
+			usagePercentage: t.tokenLimit
+				? Math.round((t.totalTokens / t.tokenLimit) * 100)
+				: 0,
+		}))
+		.sort((a, b) => b.totalTokens - a.totalTokens)
+
+	const tenantDistribution = tenantUsage.map((t, index) => {
+		const hue = 215 // Blue
+		const saturation = 80
+		const lightness = 50 + ((index * 5) % 40)
+
+		return {
+			name: t.name,
+			value: t.totalTokens,
+			fill: `hsl(${hue}, ${saturation}%, ${lightness}%)`,
+		}
+	})
+
 	const automatedTasksCount = await prisma.broadcast.count({
 		where: {
 			tenantId,
 			...dateFilter,
 		},
 	})
+	// NOTE: automatedTasks/Artifacts are still filtered by date?
+	// Keeping them filtered as they are "Activity" metrics. Token Usage is "Quota" metric.
 
 	const generatedArtifactsCount = await prisma.aiChatRoomMessage.count({
 		where: {
@@ -151,10 +249,12 @@ export const getAnalytics = async (
 			automatedTasks: automatedTasksCount,
 			connectedIntegrations: connectedIntegrationsCount,
 			generatedArtifacts: generatedArtifactsCount,
-			aiTokensUsed: totalTokensUsed,
-			promptTokens: promptTokensUsed,
-			completionTokens: completionTokensUsed,
+			aiTokensUsed: allTimeTotalTokens,
+			promptTokens: allTimePromptTokens,
+			completionTokens: allTimeCompletionTokens,
 		},
 		tokenConsumption,
+		tenantUsage,
+		tenantDistribution,
 	}
 }
