@@ -566,6 +566,7 @@ model ForumComment {
   forumId          String
   content          String   @db.Text
   likesCount       Int      @default(0)
+  isDeleted        Boolean @default(false)
   replyToCommentId String?
   createdByUserId  String
   createdAt        DateTime @default(now())
