@@ -16,9 +16,11 @@ import UserActivityLogRoutes from "./UserActivityLog"
 import NotificationRoutes from "./Notification"
 import BroadcastRoutes from "./Broadcast"
 import AiPromptRoutes from "./AiPrompt"
+import AnalyticsRoutes from "./Analytics"
 
 const RoutesRegistry = {
 	UserRoutes,
+	AnalyticsRoutes,
 	ExampleBufferRoutes,
 	OperationRoutes,
 	TenantRoutes,
