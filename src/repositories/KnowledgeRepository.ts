@@ -354,6 +354,72 @@ export async function getById(id: string) {
 	})
 }
 
+export async function getByIds(ids: string[]) {
+	return await prisma.knowledge.findMany({
+		where: {
+			id: {
+				in: ids,
+			},
+		},
+		relationLoadStrategy: "join",
+		select: {
+			id: true,
+			tenantId: true,
+			createdByUserId: true,
+			headline: true,
+			category: true,
+			subCategory: true,
+			case: true,
+			access: true,
+			type: true,
+			status: true,
+			createdAt: true,
+			updatedAt: true,
+			isArchived: true,
+			version: true,
+			parentId: true,
+			userKnowledge: {
+				select: {
+					user: {
+						select: {
+							id: true,
+							fullName: true,
+						},
+					},
+				},
+			},
+			knowledgeAttachment: true,
+			knowledgeContent: {
+				select: {
+					id: true,
+					title: true,
+					description: true,
+					order: true,
+					knowledgeContentAttachment: {
+						orderBy: {
+							order: "asc",
+						},
+					},
+				},
+				orderBy: {
+					order: "asc",
+				},
+			},
+			knowledgeActivityLog: {
+				orderBy: {
+					createdAt: "desc",
+				},
+			},
+			createdByUser: {
+				select: {
+					id: true,
+					fullName: true,
+				},
+			},
+		},
+	})
+}
+
 export async function update(
 	id: string,
 	data: KnowledgeDTO,

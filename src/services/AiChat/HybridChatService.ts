@@ -97,9 +97,13 @@ export async function streamHybridChat({
 				// 4. Retrieve
 				const searchResult = await qdrantClient.search("radikari_knowledge", {
 					vector: normalizedEmbedding,
-					// filter: {
-					// 	must: [{ key: "tenantId", match: { value: tenantId } }],
-					// },
+					...(process.env.NODE_ENV === "production"
+						? {
+								filter: {
+									must: [{ key: "tenantId", match: { value: tenantId } }],
+								},
+							}
+						: {}),
 					limit: 15,
 					score_threshold: 0.5,
 				})
@@ -188,6 +192,7 @@ export async function streamHybridChat({
 				}
 
 				console.log("Context Parts:", contextParts)
+
 
 				// 6. Stream Text
 				const systemMessage = `
