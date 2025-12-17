@@ -414,16 +414,24 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 	if (qualityAssuranceRole || trainerRole) {
 		const qualityAssuranceAndTrainerFeature = [
 			{
+				featureName: "USER_MANAGEMENT",
+				actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+			},
+			{
+				featureName: "ACCESS_CONTROL_LIST",
+				actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+			},
+			{
+				featureName: "TENANT",
+				actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+			},
+			{
 				featureName: "KNOWLEDGE",
 				actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"],
 			},
 			{
-				featureName: "OPERATION",
-				actions: ["VIEW"],
-			},
-			{
-				featureName: "TENANT",
-				actions: ["VIEW"],
+				featureName: "BULK_UPLOAD",
+				actions: ["CREATE"],
 			},
 			{
 				featureName: "ANNOUNCEMENT",
@@ -436,6 +444,10 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 			{
 				featureName: "FORUM",
 				actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+			},
+			{
+				featureName: "USER_ACTIVITY_LOG",
+				actions: ["VIEW"],
 			},
 			{
 				featureName: "NOTIFICATION",
@@ -471,14 +483,28 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 					})
 
 					if (!mappingExists) {
-						accessControlListCreateManyData.push({
-							id: ulid(),
-							featureName: action.feature.name,
-							actionName: action.name,
-							tenantRoleId: qualityAssuranceRole.id,
-							createdById: adminExist.id,
-							updatedById: adminExist.id,
-						})
+						if (action.feature.name !== "OPERATION") {
+							accessControlListCreateManyData.push({
+								id: ulid(),
+								featureName: action.feature.name,
+								actionName: action.name,
+								tenantRoleId: qualityAssuranceRole.id,
+								createdById: adminExist.id,
+								updatedById: adminExist.id,
+							})
+						}
+					} else {
+						if (action.feature.name === "OPERATION") {
+							await prisma.accessControlList.delete({
+								where: {
+									featureName_actionName_tenantRoleId: {
+										featureName: action.feature.name,
+										actionName: action.name,
+										tenantRoleId: qualityAssuranceRole.id,
+									},
+								},
+							})
+						}
 					}
 				}
 

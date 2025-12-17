@@ -7,4 +7,5 @@ export interface TenantDTO {
 
 export interface TenantCreateUpdateDTO extends TenantDTO {
 	headOfTenantUserId: string
+	tokenLimit?: number
 }

@@ -83,6 +83,7 @@ model Tenant {
   name        String
   description String
   operationId String
+  tokenLimit  Int?     @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -320,6 +321,9 @@ model AiChatRoomMessage {
   knowledgeId          String?
   createdAt            DateTime                @default(now())
   updatedAt            DateTime                @updatedAt
+  promptTokens         Int?
+  completionTokens     Int?
+  totalTokens          Int?
 
   aiChatRoom                 AiChatRoom                   @relation(fields: [aiChatRoomId], references: [id], onDelete: Cascade)
   knowledge                  Knowledge?                   @relation(fields: [knowledgeId], references: [id], onDelete: Cascade)
@@ -623,6 +627,7 @@ model UserActivityLog {
   action    String   @db.Text
   createdAt DateTime @default(now())
 
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -631,6 +636,7 @@ enum NotificationType {
   ANNOUNCEMENT
   ASSIGNMENT
   FORUM
+  SYSTEM
 }
 
 model Notification {
