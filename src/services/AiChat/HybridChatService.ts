@@ -97,9 +97,9 @@ export async function streamHybridChat({
 				// 4. Retrieve
 				const searchResult = await qdrantClient.search("radikari_knowledge", {
 					vector: normalizedEmbedding,
-					filter: {
-						must: [{ key: "tenantId", match: { value: tenantId } }],
-					},
+					// filter: {
+					// 	must: [{ key: "tenantId", match: { value: tenantId } }],
+					// },
 					limit: 15,
 					score_threshold: 0.5,
 				})
@@ -135,38 +135,59 @@ export async function streamHybridChat({
 
 				// 7. Build enriched context for the AI using only the top 3 unique results
 				const topThreeResults = uniqueResults.slice(0, 3)
-				const knowledgeIds = topThreeResults
-					.map((item) => (item.payload as any)?.knowledge_id)
-					.filter(Boolean)
-
-				const fullKnowledgeContexts = await Promise.all(
-					knowledgeIds.map(async (id) => {
-						try {
-							return await getById(id)
-						} catch (error) {
-							Logger.error("HybridChatService.getFullKnowledgeContext", {
-								message: `Failed to retrieve knowledge with ID: ${id}`,
-								error,
-							})
-							return null
-						}
-					}),
-				)
 
 				const contextParts: string[] = []
-				for (const knowledge of fullKnowledgeContexts) {
-					if (!knowledge) continue
 
-					let fullContent = knowledge.headline || ""
-					if (knowledge.knowledgeContent) {
-						fullContent +=
-							"\n" +
-							knowledge.knowledgeContent
-								.map((content) => `${content.title}\n${content.description}`)
-								.join("\n\n")
+				// Process each result to include both embedding retrieval content and full knowledge context
+				for (const result of topThreeResults) {
+					const payload = result.payload as any
+					if (!payload?.knowledge_id) continue
+
+					const knowledgeId = payload.knowledge_id
+					const retrievalContent = payload.content // Content from embedding retrievalW
+					const score = result.score
+
+					try {
+						// Fetch full knowledge context from database
+						const fullKnowledge = await getById(knowledgeId)
+
+						if (!fullKnowledge) continue
+
+						// Build context part with both retrieval result and full context
+						let contextPart = `[${fullKnowledge.headline}] (Relevance Score: ${
+							score?.toFixed(3) || "N/A"
+						})\n`
+
+						// Include the specific content that was retrieved via embedding
+						if (retrievalContent) {
+							contextPart += `Retrieved Content: ${retrievalContent}\n\n`
+						}
+
+						// Include full knowledge context for comprehensive understanding
+						contextPart += `Full Article Context:\n`
+						if (fullKnowledge.headline) {
+							contextPart += `Headline: ${fullKnowledge.headline}\n`
+						}
+
+						if (
+							fullKnowledge.knowledgeContent &&
+							fullKnowledge.knowledgeContent.length > 0
+						) {
+							contextPart += fullKnowledge.knowledgeContent
+								.map((content) => `• ${content.title}: ${content.description}`)
+								.join("\n")
+						}
+
+						contextParts.push(contextPart)
+					} catch (error) {
+						Logger.error("HybridChatService.buildContext", {
+							message: `Failed to build context for knowledge ID: ${knowledgeId}`,
+							error,
+						})
 					}
-					contextParts.push(`[${knowledge.headline}]: ${fullContent}`)
 				}
+
+				console.log("Context Parts:", contextParts)
 
 				// 6. Stream Text
 				const systemMessage = `
@@ -270,6 +291,8 @@ ${contextParts.join("\n\n")}`
 						}
 					},
 				})
+
+				console.log(systemMessage)
 
 				// Merge the text stream into the UI message stream
 				writer.merge(result.toUIMessageStream())
