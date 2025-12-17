@@ -230,21 +230,37 @@ ${contextParts.join("\n\n")}`
 							}
 
 							// 2. Save Assistant Response
-							await prisma.aiChatRoomMessage.create({
+							const aiMessage = await prisma.aiChatRoomMessage.create({
 								data: {
 									id: ulid(),
 									aiChatRoomId: chatRoomId,
 									sender: AiChatRoomMessageSender.ASSISTANT,
 									message: text,
 									htmlFormattedMessage: text,
-									promptTokens: (usage as any).inputTokens,
-									completionTokens: (usage as any).outputTokens,
-									totalTokens: (usage as any).totalTokens,
 								},
 							})
 
+							// 3. Log Token Usage
+							if (usage) {
+								const usageData = usage as any
+								await prisma.aiUsageLog.create({
+									data: {
+										id: ulid(),
+										tenantId,
+										userId,
+										aiChatRoomMessageId: aiMessage.id,
+										action: "CHAT",
+										model: "gpt-4.1-mini",
+										promptTokens: usageData.inputTokens || 0,
+										completionTokens: usageData.outputTokens || 0,
+										totalTokens: usageData.totalTokens || 0,
+									},
+								})
+							}
+
 							Logger.info("HybridChatService.streamHybridChat.onFinish", {
-								message: "Successfully saved messages to database.",
+								message:
+									"Successfully saved messages and usage logs to database.",
 							})
 						} catch (error) {
 							Logger.error("HybridChatService.streamHybridChat.onFinish", {
