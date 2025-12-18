@@ -45,6 +45,7 @@ router.route("/user-activity-logs", RoutesRegistry.UserActivityLogRoutes)
 router.route("/notifications", RoutesRegistry.NotificationRoutes)
 router.route("/tenants/:tenantId/ai-prompts", RoutesRegistry.AiPromptRoutes)
 router.route("/tenants/:tenantId/broadcasts", RoutesRegistry.BroadcastRoutes)
+router.route("/analytics", RoutesRegistry.AnalyticsRoutes)
 
 // AI Chat
 router.route("/ai-chat", RoutesRegistry.ChatRoutes)

@@ -141,6 +141,14 @@ export async function getById(id: string, tenantId: string) {
 	})
 }
 
+export async function getByIdDefault(id: string) {
+	return await prisma.assignment.findUnique({
+		where: {
+			id,
+		},
+	})
+}
+
 export async function update(id: string, data: AssignmentCreateDTO) {
 	return await prisma.$transaction(
 		async (tx) => {

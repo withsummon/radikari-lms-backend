@@ -14,6 +14,7 @@ import { AiChatRoomMessageSender } from "../../../generated/prisma/client"
 import Logger from "$pkg/logger"
 import { getById } from "$repositories/KnowledgeRepository"
 import { createGoogleGenerativeAI } from "@ai-sdk/google"
+import { checkTokenLimit } from "$services/Tenant/TenantLimitService"
 
 const google = createGoogleGenerativeAI({
 	apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || "",
@@ -55,6 +56,15 @@ export async function streamHybridChat({
 	const stream = createUIMessageStream({
 		execute: async ({ writer }) => {
 			try {
+				// 0. Check Token Limit
+				// 0. Check Token Limit
+				const limitStatus = await checkTokenLimit(tenantId)
+				if (!limitStatus.allowed) {
+					throw new Error(
+						limitStatus.errorMessage || "Monthly token limit exceeded.",
+					)
+				}
+
 				// 1. Query Contextualization
 				const lastMessage = messages[messages.length - 1]
 
@@ -193,10 +203,11 @@ ${contextParts.join("\n\n")}`
 				const result = streamText({
 					model: openai("gpt-4.1-mini"),
 					messages: [{ role: "system", content: systemMessage }, ...messages],
-					async onFinish({ text }) {
+					async onFinish({ text, usage }) {
 						Logger.info("HybridChatService.streamHybridChat.onFinish", {
 							chatRoomId,
 							responseLength: text.length,
+							usage,
 						})
 
 						try {
@@ -219,7 +230,7 @@ ${contextParts.join("\n\n")}`
 							}
 
 							// 2. Save Assistant Response
-							await prisma.aiChatRoomMessage.create({
+							const aiMessage = await prisma.aiChatRoomMessage.create({
 								data: {
 									id: ulid(),
 									aiChatRoomId: chatRoomId,
@@ -229,8 +240,27 @@ ${contextParts.join("\n\n")}`
 								},
 							})
 
+							// 3. Log Token Usage
+							if (usage) {
+								const usageData = usage as any
+								await prisma.aiUsageLog.create({
+									data: {
+										id: ulid(),
+										tenantId,
+										userId,
+										aiChatRoomMessageId: aiMessage.id,
+										action: "CHAT",
+										model: "gpt-4.1-mini",
+										promptTokens: usageData.inputTokens || 0,
+										completionTokens: usageData.outputTokens || 0,
+										totalTokens: usageData.totalTokens || 0,
+									},
+								})
+							}
+
 							Logger.info("HybridChatService.streamHybridChat.onFinish", {
-								message: "Successfully saved messages to database.",
+								message:
+									"Successfully saved messages and usage logs to database.",
 							})
 						} catch (error) {
 							Logger.error("HybridChatService.streamHybridChat.onFinish", {

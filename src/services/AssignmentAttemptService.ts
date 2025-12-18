@@ -228,6 +228,15 @@ export async function calculateAssignmentScore(
 			throw new Error("Assignment user attempt not found")
 		}
 
+		// Fetch assignment to get tenantId
+		const assignment = await AssignmentRepository.getByIdDefault(
+			assignmentAttempt.assignmentId,
+		)
+
+		if (!assignment) {
+			throw new Error("Assignment not found")
+		}
+
 		Logger.info(`AssignmentAttemptService.calculateAssignmentScore`, {
 			message: "Calculating assignment score",
 		})
@@ -312,7 +321,11 @@ export async function calculateAssignmentScore(
 				message: `Scoring ${essayQuestions.length} essay questions with AI`,
 			})
 
-			const essayResults = await evaluateEssayAnswers(essayQuestions)
+			const essayResults = await evaluateEssayAnswers(
+				essayQuestions,
+				assignment.tenantId,
+				assignmentAttempt.userId,
+			)
 
 			for (const { questionId, result } of essayResults) {
 				const isCorrect = result.isCorrect

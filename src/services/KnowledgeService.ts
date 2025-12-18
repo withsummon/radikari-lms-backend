@@ -71,16 +71,16 @@ export async function getAll(
 	tenantId: string,
 	filters: EzFilter.FilteringQuery,
 ): Promise<ServiceResponse<EzFilter.PaginatedResult<Knowledge[]> | {}>> {
-    try {
-        console.log(filters)
-        const data = await KnowledgeRepository.getAll(user, tenantId, filters)
-        return HandleServiceResponseSuccess(data)
-    } catch (err) {
-        Logger.error(`KnowledgeService.getAll`, {
-            error: err,
-        })
-        return HandleServiceResponseCustomError("Internal Server Error", 500)
-    }
+	try {
+		console.log(filters)
+		const data = await KnowledgeRepository.getAll(user, tenantId, filters)
+		return HandleServiceResponseSuccess(data)
+	} catch (err) {
+		Logger.error(`KnowledgeService.getAll`, {
+			error: err,
+		})
+		return HandleServiceResponseCustomError("Internal Server Error", 500)
+	}
 }
 
 export async function getAllArchived(
@@ -186,8 +186,7 @@ export async function update(
 				ResponseStatus.NOT_FOUND,
 			)
 
-        let status = knowledge.status
-
+		let status = knowledge.status
 
 		if (status == "REJECTED" || status == "REVISION") {
 			status = "PENDING"
