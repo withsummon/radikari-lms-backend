@@ -3,182 +3,184 @@ import { TenantCreateUpdateDTO } from "$entities/Tenant"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import * as TenantRepository from "$repositories/TenantRepository"
 import {
-    HandleServiceResponseCustomError,
-    HandleServiceResponseSuccess,
-    ResponseStatus,
-    ServiceResponse,
+	HandleServiceResponseCustomError,
+	HandleServiceResponseSuccess,
+	ResponseStatus,
+	ServiceResponse,
 } from "$entities/Service"
 import Logger from "$pkg/logger"
 import * as UserActivityLogService from "$services/UserActivityLogService"
 import { UserJWTDAO } from "$entities/User"
 
 export async function create(
-    data: TenantCreateUpdateDTO,
-    userId: string,
+	data: TenantCreateUpdateDTO,
+	userId: string,
 ): Promise<ServiceResponse<Tenant | {}>> {
-    try {
-        const createdData = await TenantRepository.create(data)
+	try {
+		const createdData = await TenantRepository.create(data)
 
-        await UserActivityLogService.create(
-            userId,
-            "Menambahkan tenant",
-            "default",
-            `dengan nama "${createdData.name}"`,
-        )
+		await UserActivityLogService.create(
+			userId,
+			"Menambahkan tenant",
+			"default",
+			`dengan nama "${createdData.name}"`,
+		)
 
-        return HandleServiceResponseSuccess(createdData)
-    } catch (err) {
-        Logger.error(`TenantService.create : `, {
-            error: err,
-        })
-        return HandleServiceResponseCustomError("Internal Server Error", 500)
-    }
+		return HandleServiceResponseSuccess(createdData)
+	} catch (err) {
+		Logger.error(`TenantService.create : `, {
+			error: err,
+		})
+		return HandleServiceResponseCustomError("Internal Server Error", 500)
+	}
 }
 
 export async function getAll(
-    filters: EzFilter.FilteringQuery,
+	filters: EzFilter.FilteringQuery,
 ): Promise<ServiceResponse<EzFilter.PaginatedResult<Tenant[]> | {}>> {
-    try {
-        const data = await TenantRepository.getAll(filters)
-        return HandleServiceResponseSuccess(data)
-    } catch (err) {
-        Logger.error(`TenantService.getAll`, {
-            error: err,
-        })
-        return HandleServiceResponseCustomError("Internal Server Error", 500)
-    }
+	try {
+		const data = await TenantRepository.getAll(filters)
+		return HandleServiceResponseSuccess(data)
+	} catch (err) {
+		Logger.error(`TenantService.getAll`, {
+			error: err,
+		})
+		return HandleServiceResponseCustomError("Internal Server Error", 500)
+	}
 }
 
 export async function getById(
-    id: string,
+	id: string,
 ): Promise<ServiceResponse<Tenant | {}>> {
-    try {
-        let tenant = await TenantRepository.getById(id)
+	try {
+		let tenant = await TenantRepository.getById(id)
 
-        if (!tenant)
-            return HandleServiceResponseCustomError(
-                "Invalid ID",
-                ResponseStatus.NOT_FOUND,
-            )
+		if (!tenant)
+			return HandleServiceResponseCustomError(
+				"Invalid ID",
+				ResponseStatus.NOT_FOUND,
+			)
 
-        return HandleServiceResponseSuccess(tenant)
-    } catch (err) {
-        Logger.error(`TenantService.getById`, {
-            error: err,
-        })
-        return HandleServiceResponseCustomError("Internal Server Error", 500)
-    }
+		return HandleServiceResponseSuccess(tenant)
+	} catch (err) {
+		Logger.error(`TenantService.getById`, {
+			error: err,
+		})
+		return HandleServiceResponseCustomError("Internal Server Error", 500)
+	}
 }
 
 export type UpdateResponse = Tenant | {}
 export async function update(
-    id: string,
-    data: TenantCreateUpdateDTO,
-    userId: string,
+	id: string,
+	data: TenantCreateUpdateDTO,
+	userId: string,
 ): Promise<ServiceResponse<UpdateResponse>> {
-    try {
-        const tenant = await TenantRepository.getById(id)
+	try {
+		const tenant = await TenantRepository.getById(id)
 
-        if (!tenant)
-            return HandleServiceResponseCustomError(
-                "Invalid ID",
-                ResponseStatus.NOT_FOUND,
-            )
+		if (!tenant)
+			return HandleServiceResponseCustomError(
+				"Invalid ID",
+				ResponseStatus.NOT_FOUND,
+			)
 
-        const updatedTenant = await TenantRepository.update(id, data)
+		const updatedTenant = await TenantRepository.update(id, data)
 
-        await UserActivityLogService.create(
-            userId,
-            "Mengedit tenant",
-            "default",
-            `dengan nama "${updatedTenant.name}"`,
-        )
+		await UserActivityLogService.create(
+			userId,
+			"Mengedit tenant",
+			"default",
+			`dengan nama "${updatedTenant.name}"`,
+		)
 
-        return HandleServiceResponseSuccess(updatedTenant)
-    } catch (err) {
-        Logger.error(`TenantService.update`, {
-            error: err,
-        })
-        return HandleServiceResponseCustomError("Internal Server Error", 500)
-    }
+		return HandleServiceResponseSuccess(updatedTenant)
+	} catch (err) {
+		Logger.error(`TenantService.update`, {
+			error: err,
+		})
+		return HandleServiceResponseCustomError("Internal Server Error", 500)
+	}
 }
 
 export async function deleteById(
-    id: string,
-    userId: string,
+	id: string,
+	userId: string,
 ): Promise<ServiceResponse<{}>> {
-    try {
-        const tenant = await TenantRepository.getById(id)
-        if (!tenant)
-            return HandleServiceResponseCustomError(
-                "Invalid ID",
-                ResponseStatus.NOT_FOUND,
-            )
+	try {
+		const tenant = await TenantRepository.getById(id)
+		if (!tenant)
+			return HandleServiceResponseCustomError(
+				"Invalid ID",
+				ResponseStatus.NOT_FOUND,
+			)
 
-        await TenantRepository.deleteById(id)
+		await TenantRepository.deleteById(id)
 
-        await UserActivityLogService.create(
-            userId,
-            "Menghapus tenant",
-            "default",
-            `dengan nama "${tenant.name}"`,
-        )
+		await UserActivityLogService.create(
+			userId,
+			"Menghapus tenant",
+			"default",
+			`dengan nama "${tenant.name}"`,
+		)
 
-        return HandleServiceResponseSuccess({})
-    } catch (err) {
-        Logger.error(`TenantService.deleteById`, {
-            error: err,
-        })
-        return HandleServiceResponseCustomError("Internal Server Error", 500)
-    }
+		return HandleServiceResponseSuccess({})
+	} catch (err) {
+		Logger.error(`TenantService.deleteById`, {
+			error: err,
+		})
+		return HandleServiceResponseCustomError("Internal Server Error", 500)
+	}
 }
 
 export async function getAllByUserId(
-    filters: EzFilter.FilteringQuery,
-    user: UserJWTDAO,
+	filters: EzFilter.FilteringQuery,
+	user: UserJWTDAO,
 ): Promise<ServiceResponse<EzFilter.PaginatedResult<Tenant[]> | {}>> {
-    try {
-        const tenants = await TenantRepository.getAllByUserId(filters, user)
-        return HandleServiceResponseSuccess(tenants)
-    } catch (err) {
-        Logger.error(`TenantService.getAllByUserId`, {
-            error: err,
-        })
-        return HandleServiceResponseCustomError("Internal Server Error", 500)
-    }
+	try {
+		const tenants = await TenantRepository.getAllByUserId(filters, user)
+		return HandleServiceResponseSuccess(tenants)
+	} catch (err) {
+		Logger.error(`TenantService.getAllByUserId`, {
+			error: err,
+		})
+		return HandleServiceResponseCustomError("Internal Server Error", 500)
+	}
 }
 
 // --- FUNGSI ADD MEMBER ---
 export async function addMember(
-    tenantId: string,
-    userId: string,
-    tenantRoleId: string
+	tenantId: string,
+	userId: string,
+	tenantRoleId: string,
 ): Promise<ServiceResponse<{}>> {
-    try {
-        // 1. Validasi Tenant
-        const tenant = await TenantRepository.getById(tenantId)
-        if (!tenant) {
-            return HandleServiceResponseCustomError(
-                "Tenant tidak ditemukan",
-                ResponseStatus.NOT_FOUND,
-            )
-        }
+	try {
+		// 1. Validasi Tenant
+		const tenant = await TenantRepository.getById(tenantId)
+		if (!tenant) {
+			return HandleServiceResponseCustomError(
+				"Tenant tidak ditemukan",
+				ResponseStatus.NOT_FOUND,
+			)
+		}
 
-        // 2. Simpan ke Database via Repository
-        await TenantRepository.addTenantUser(tenantId, userId, tenantRoleId)
+		// 2. Simpan ke Database via Repository
+		await TenantRepository.addTenantUser(tenantId, userId, tenantRoleId)
 
-        return HandleServiceResponseSuccess({})
-        
-    } catch (err: any) {
-        // Handle Unique Constraint Error (P2002 dari Prisma)
-        // Artinya kombinasi tenantId dan userId sudah ada
-        if (err.code === 'P2002') {
-             return HandleServiceResponseCustomError("User sudah menjadi member di tenant ini", ResponseStatus.BAD_REQUEST)
-        }
+		return HandleServiceResponseSuccess({})
+	} catch (err: any) {
+		// Handle Unique Constraint Error (P2002 dari Prisma)
+		// Artinya kombinasi tenantId dan userId sudah ada
+		if (err.code === "P2002") {
+			return HandleServiceResponseCustomError(
+				"User sudah menjadi member di tenant ini",
+				ResponseStatus.BAD_REQUEST,
+			)
+		}
 
-        Logger.error(`TenantService.addMember`, {
-            error: err,
-        })
-        return HandleServiceResponseCustomError("Internal Server Error", 500)
-    }
+		Logger.error(`TenantService.addMember`, {
+			error: err,
+		})
+		return HandleServiceResponseCustomError("Internal Server Error", 500)
+	}
 }

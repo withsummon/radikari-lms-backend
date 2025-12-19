@@ -91,7 +91,6 @@ export async function streamHybridChat({
 
 				console.log("Context Parts:", contextParts)
 
-
 				// 6. Stream Text
 				const systemMessage = `
 You are the Radikari Knowledge Assistant. Your role is to help users understand and apply information from Radikari documentation and contextual materials.

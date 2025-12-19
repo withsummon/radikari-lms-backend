@@ -572,7 +572,6 @@ export async function bulkCreate(data: KnowledgeBulkCreateDTO, userId: string) {
 			})
 		}
 
-
 		await KnowledgeRepository.createMany(knowledgeCreateManyInput)
 		await KnowledgeRepository.createManyAttachments(
 			knwoledgeAttachmentCreateManyInput,
@@ -761,7 +760,6 @@ export async function bulkCreateTypeCase(
 				})
 			}
 		}
-
 
 		await KnowledgeRepository.createMany(knowledgeCreateManyInput)
 		await KnowledgeRepository.createManyContent(knwoledgeContentCreateManyInput)

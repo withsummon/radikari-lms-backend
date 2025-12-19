@@ -109,12 +109,9 @@ export async function getAll(
 		},
 	}
 
-	// Get latest version only (knowledge that has no children)
+	// Show all versions (remove the children filter)
 	usedFilters.query.where.AND.push({
 		isArchived: false,
-		children: {
-			none: {},
-		},
 	})
 
 	usedFilters.query.where.AND.push({
