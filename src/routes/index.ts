@@ -32,6 +32,7 @@ router.route(
 	"/master-knowledge-cases",
 	RoutesRegistry.MasterKnowledgeCaseRoutes,
 )
+router.route("/tenants/:tenantId/users/manage", RoutesRegistry.TenantUserManagementRoutes)
 router.route("/tenants/:tenantId/knowledges", RoutesRegistry.KnowledgeRoutes)
 router.route("/bulk", RoutesRegistry.BulkKnowledgeRoutes)
 router.route("/access-control-lists", RoutesRegistry.AccessControlListRoutes)

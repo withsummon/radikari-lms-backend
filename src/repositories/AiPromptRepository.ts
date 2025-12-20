@@ -4,10 +4,17 @@ import { AiPromptDTO } from "$entities/AiPrompt"
 import { ulid } from "ulid"
 
 export async function create(data: AiPromptDTO) {
-	return await prisma.aiPrompt.create({
-		data,
-	})
+  return await prisma.aiPrompt.create({
+    data: {
+      id: ulid(),
+      tenantId: data.tenantId!,
+      prompt: data.prompt,
+      createdByUserId: data.createdByUserId,
+      updatedByUserId: data.updatedByUserId,
+    },
+  })
 }
+
 
 export async function getByTenantId(tenantId: string) {
 	return await prisma.aiPrompt.findUnique({
