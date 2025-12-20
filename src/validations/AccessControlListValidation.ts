@@ -43,7 +43,7 @@ export async function validateAccessControlListCreateRoleSchema(
 		return response_bad_request(c, "Validation Error", invalidFields)
 	}
 
-	const tenantRoleExist = await prisma.tenantRole.findUnique({
+	const tenantRoleExist = await prisma.tenantRole.findFirst({
 		where: {
 			identifier: data.identifier,
 		},
