@@ -1,88 +1,89 @@
 import { UserJWTDAO, UserLoginDTO } from "$entities/User"
 import * as AuthService from "$services/AuthService"
 import {
-	handleServiceErrorWithResponse,
-	response_bad_request,
-	response_success,
+    handleServiceErrorWithResponse,
+    response_bad_request,
+    response_success,
 } from "$utils/response.utils"
 import { Context, TypedResponse } from "hono"
 import { googleOAuth } from "$pkg/oauth/google"
 
 export async function login(c: Context): Promise<TypedResponse> {
-	const data: UserLoginDTO = await c.req.json()
-	const serviceResponse = await AuthService.logIn(data)
+    const data: UserLoginDTO = await c.req.json()
+    const serviceResponse = await AuthService.logIn(data)
 
-	if (!serviceResponse.status) {
-		return handleServiceErrorWithResponse(c, serviceResponse)
-	}
+    if (!serviceResponse.status) {
+        return handleServiceErrorWithResponse(c, serviceResponse)
+    }
 
-	return response_success(c, serviceResponse.data, "Successfully Logged In!")
+    return response_success(c, serviceResponse.data, "Successfully Logged In!")
 }
 
 export async function verifyToken(c: Context): Promise<TypedResponse> {
-	const { token } = await c.req.json()
-	const serviceResponse = AuthService.verifyToken(token)
+    const { token } = await c.req.json()
+    const serviceResponse = AuthService.verifyToken(token)
 
-	if (!serviceResponse.status) {
-		return handleServiceErrorWithResponse(c, serviceResponse)
-	}
+    if (!serviceResponse.status) {
+        return handleServiceErrorWithResponse(c, serviceResponse)
+    }
 
-	return response_success(c, serviceResponse.data, "Token Verified!")
+    return response_success(c, serviceResponse.data, "Token Verified!")
 }
 
 export async function changePassword(c: Context): Promise<TypedResponse> {
-	const { newPassword, oldPassword } = await c.req.json()
-	const invalidFields: any = []
-	if (!newPassword) invalidFields.push("newPassword is required")
-	if (!oldPassword) invalidFields.push("oldPassword is required")
+    const { newPassword, oldPassword } = await c.req.json()
+    const invalidFields: any = []
+    if (!newPassword) invalidFields.push("newPassword is required")
+    if (!oldPassword) invalidFields.push("oldPassword is required")
 
-	const user: UserJWTDAO = c.get("jwtPayload")
-	if (invalidFields.length > 0)
-		return response_bad_request(c, "Invalid Fields", invalidFields)
+    const user: UserJWTDAO = c.get("jwtPayload")
+    if (invalidFields.length > 0)
+        return response_bad_request(c, "Invalid Fields", invalidFields)
 
-	const serviceResponse = await AuthService.changePassword(
-		user.id,
-		oldPassword,
-		newPassword,
-	)
+    const serviceResponse = await AuthService.changePassword(
+        user.id,
+        oldPassword,
+        newPassword,
+    )
 
-	if (!serviceResponse.status) {
-		return handleServiceErrorWithResponse(c, serviceResponse)
-	}
+    if (!serviceResponse.status) {
+        return handleServiceErrorWithResponse(c, serviceResponse)
+    }
 
-	return response_success(
-		c,
-		serviceResponse.data,
-		"Successfully changed password!",
-	)
+    return response_success(
+        c,
+        serviceResponse.data,
+        "Successfully changed password!",
+    )
 }
 
 export function googleLogin(c: Context) {
-	const authUrl = googleOAuth.generateAuthUrl({
-		access_type: "offline",
-		scope: [
-			"https://www.googleapis.com/auth/userinfo.email",
-			"https://www.googleapis.com/auth/userinfo.profile",
-		],
-		include_granted_scopes: true,
-	})
+    const authUrl = googleOAuth.generateAuthUrl({
+        access_type: "offline",
+        scope: [
+            "https://www.googleapis.com/auth/userinfo.email",
+            "https://www.googleapis.com/auth/userinfo.profile",
+        ],
+        include_granted_scopes: true,
+    })
 
-	return c.redirect(authUrl)
+    return c.redirect(authUrl)
 }
 
 export async function googleCallback(c: Context): Promise<TypedResponse> {
-	const { code } = c.req.query()
-	const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000"
+    const { code } = c.req.query()
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000"
 
-	const serviceResponse = await AuthService.googleCallback(code)
+    const serviceResponse = await AuthService.googleCallback(code)
 
-	if (!serviceResponse.status) {
-		return handleServiceErrorWithResponse(c, serviceResponse)
-	}
+    if (!serviceResponse.status) {
+        return handleServiceErrorWithResponse(c, serviceResponse)
+    }
 
-	const token = serviceResponse.data.token
+    const token = serviceResponse.data.token
+    const userPayload = encodeURIComponent(JSON.stringify(serviceResponse.data.user))
 
-	return c.redirect(
-		`${frontendUrl}?token=${token}&user=${JSON.stringify(serviceResponse.data.user)}`,
-	)
+    return c.redirect(
+        `${frontendUrl}/login?token=${token}&user=${userPayload}`,
+    )
 }
