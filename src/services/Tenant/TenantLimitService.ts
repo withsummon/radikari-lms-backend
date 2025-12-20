@@ -67,7 +67,6 @@ export const checkTokenLimit = async (
 	}
 
 	return { allowed: true, usage, limit, usagePercent }
-	return { allowed: true, usage, limit, usagePercent }
 }
 
 async function sendLimitWarningIfNeeded(
@@ -91,7 +90,9 @@ async function sendLimitWarningIfNeeded(
 			tenantId,
 			NotificationType.SYSTEM,
 			"Peringatan Batas Token",
-			`Penggunaan token tenant ${tenantName} telah mencapai ${Math.floor((usage / limit) * 100)}% dari batas bulanan.`,
+			`Penggunaan token tenant ${tenantName} telah mencapai ${Math.floor(
+				(usage / limit) * 100,
+			)}% dari batas bulanan.`,
 		)
 	}
 }
