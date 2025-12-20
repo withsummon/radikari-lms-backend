@@ -18,23 +18,48 @@ export async function create(data: TenantCreateUpdateDTO) {
 			},
 		})
 
-		const headOfOfficeRole = await tx.tenantRole.findUnique({
-			where: {
-				identifier: "HEAD_OF_OFFICE",
+		// Create default roles for the tenant
+		const checkerRole = await tx.tenantRole.create({
+			data: {
+				id: ulid(),
+				identifier: "CHECKER",
+				name: "Checker",
+				description: "Checker Role",
+				level: 1,
+				tenantId: tenant.id,
 			},
 		})
 
-		if (!headOfOfficeRole) {
-			throw new Error("Head of Office role not found")
-		}
+		await tx.tenantRole.create({
+			data: {
+				id: ulid(),
+				identifier: "MAKER",
+				name: "Maker",
+				description: "Maker Role",
+				level: 1,
+				tenantId: tenant.id,
+			},
+		})
 
+		await tx.tenantRole.create({
+			data: {
+				id: ulid(),
+				identifier: "CONSUMER",
+				name: "Consumer",
+				description: "Consumer Role",
+				level: 1,
+				tenantId: tenant.id,
+			},
+		})
+
+		// Assign CHECKER role to the head of tenant (admin)
 		if (headOfTenantUserId) {
 			await tx.tenantUser.create({
 				data: {
 					id: ulid(),
 					tenantId: tenant.id,
 					userId: headOfTenantUserId,
-					tenantRoleId: headOfOfficeRole.id,
+					tenantRoleId: checkerRole.id,
 				},
 			})
 		}
@@ -184,21 +209,38 @@ export async function update(id: string, data: TenantCreateUpdateDTO) {
 			},
 		})
 
-		const headOfOfficeRole = await tx.tenantRole.findUnique({
+
+		// Try to find the tenant specific CHECKER role
+		let adminRole = await tx.tenantRole.findFirst({
 			where: {
-				identifier: "HEAD_OF_OFFICE",
+				identifier: "CHECKER",
+				tenantId: id,
 			},
 		})
 
-		if (!headOfOfficeRole) {
-			throw new Error("Head of Office role not found")
+		// Fallback to legacy HEAD_OF_OFFICE role if CHECKER not found
+		if (!adminRole) {
+			adminRole = await tx.tenantRole.findFirst({
+				where: {
+					identifier: "HEAD_OF_OFFICE",
+				},
+			})
 		}
 
+		if (!adminRole) {
+			// If neither exists, we can't assign an admin properly. 
+			// But creating one might be safer? For now, throw error as before.
+			throw new Error("Admin role (CHECKER or HEAD_OF_OFFICE) not found")
+		}
+
+		// Remove existing admin users (checking both roles to be safe/thorough)
 		await tx.tenantUser.deleteMany({
 			where: {
 				tenantId: id,
 				tenantRole: {
-					identifier: "HEAD_OF_OFFICE",
+					identifier: {
+						in: ["CHECKER", "HEAD_OF_OFFICE"],
+					},
 				},
 			},
 		})
@@ -208,7 +250,7 @@ export async function update(id: string, data: TenantCreateUpdateDTO) {
 				data: {
 					id: ulid(),
 					userId: headOfTenantUserId,
-					tenantRoleId: headOfOfficeRole.id,
+					tenantRoleId: adminRole.id, // Use the found role (CHECKER preferred)
 					tenantId: id,
 				},
 			})
