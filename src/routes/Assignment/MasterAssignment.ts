@@ -80,6 +80,16 @@ AssignmentRoutes.post(
 	AssignmentController.create,
 )
 
+AssignmentRoutes.post(
+	"/generate-questions",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRoleAssignmentAccess([
+		TenantRoleIdentifier.TRAINER,
+		TenantRoleIdentifier.QUALITY_ASSURANCE,
+	]),
+	AssignmentController.generateQuestionsStream,
+)
+
 AssignmentRoutes.put(
 	"/:id",
 	AuthMiddleware.checkJwt,
