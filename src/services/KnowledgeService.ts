@@ -578,6 +578,16 @@ export async function bulkCreate(data: KnowledgeBulkCreateDTO, userId: string) {
 		)
 		await KnowledgeRepository.createManyContent(knwoledgeContentCreateManyInput)
 
+		// Post-creation: Trigger AI indexing
+		const knowledgeIds = knowledgeCreateManyInput.map((k) => k.id as string) // knowledgeCreateManyInput has id
+		const createdKnowledges = await KnowledgeRepository.getByIds(knowledgeIds)
+		const pubsub = GlobalPubSub.getInstance().getPubSub()
+
+		for (const knowledge of createdKnowledges) {
+			const payload = generateKnowledgeQueueDTO(knowledge as any)
+			await pubsub.sendToQueue(PUBSUB_TOPICS.KNOWLEDGE_CREATE, payload)
+		}
+
 		return HandleServiceResponseSuccess({})
 	} catch (err) {
 		Logger.error(`KnowledgeService.bulkCreate`, {
@@ -753,6 +763,16 @@ export async function bulkCreateTypeCase(
 
 		await KnowledgeRepository.createMany(knowledgeCreateManyInput)
 		await KnowledgeRepository.createManyContent(knwoledgeContentCreateManyInput)
+
+		// Post-creation: Trigger AI indexing
+		const knowledgeIds = knowledgeCreateManyInput.map((k) => k.id as string) // knowledgeCreateManyInput has id
+		const createdKnowledges = await KnowledgeRepository.getByIds(knowledgeIds)
+		const pubsub = GlobalPubSub.getInstance().getPubSub()
+
+		for (const knowledge of createdKnowledges) {
+			const payload = generateKnowledgeQueueDTO(knowledge as any)
+			await pubsub.sendToQueue(PUBSUB_TOPICS.KNOWLEDGE_CREATE, payload)
+		}
 
 		return HandleServiceResponseSuccess({})
 	} catch (error) {

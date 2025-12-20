@@ -18,10 +18,12 @@ import BroadcastRoutes from "./Broadcast"
 import AiPromptRoutes from "./AiPrompt"
 import AnalyticsRoutes from "./Analytics"
 import TenantUserManagementRoutes from "./TenantUserManagementRoutes"
+import EphemeralRoutes from "./Ephemeral/EphemeralRoutes"
 
 const RoutesRegistry = {
 	UserRoutes,
 	AnalyticsRoutes,
+	EphemeralRoutes,
 	ExampleBufferRoutes,
 	OperationRoutes,
 	TenantRoutes,

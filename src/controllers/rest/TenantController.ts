@@ -1,9 +1,9 @@
 import { Context, TypedResponse } from "hono"
 import * as TenantService from "$services/TenantService"
 import {
-    handleServiceErrorWithResponse,
-    response_created,
-    response_success,
+	handleServiceErrorWithResponse,
+	response_created,
+	response_success,
 } from "$utils/response.utils"
 import { TenantCreateUpdateDTO } from "$entities/Tenant"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
@@ -13,200 +13,203 @@ import { UserJWTDAO } from "$entities/User"
 import * as TenantRoleService from "$services/TenantRoleService"
 
 export async function create(c: Context): Promise<TypedResponse> {
-    const data: TenantCreateUpdateDTO = await c.req.json()
-    const user: UserJWTDAO = c.get("jwtPayload")
+	const data: TenantCreateUpdateDTO = await c.req.json()
+	const user: UserJWTDAO = c.get("jwtPayload")
 
-    const serviceResponse = await TenantService.create(data, user.id)
+	const serviceResponse = await TenantService.create(data, user.id)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_created(
-        c,
-        serviceResponse.data,
-        "Successfully created new Tenant!",
-    )
+	return response_created(
+		c,
+		serviceResponse.data,
+		"Successfully created new Tenant!",
+	)
 }
 
 export async function getAll(c: Context): Promise<TypedResponse> {
-    const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(
-        c.req.query(),
-    )
-    const serviceResponse = await TenantService.getAll(filters)
+	const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(
+		c.req.query(),
+	)
+	const serviceResponse = await TenantService.getAll(filters)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(
-        c,
-        serviceResponse.data,
-        "Successfully fetched all Tenant!",
-    )
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully fetched all Tenant!",
+	)
 }
 
 export async function getById(c: Context): Promise<TypedResponse> {
-    const id = c.req.param("id")
+	const id = c.req.param("id")
 
-    const serviceResponse = await TenantService.getById(id)
+	const serviceResponse = await TenantService.getById(id)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(
-        c,
-        serviceResponse.data,
-        "Successfully fetched Tenant by id!",
-    )
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully fetched Tenant by id!",
+	)
 }
 
 export async function update(c: Context): Promise<TypedResponse> {
-    const data: TenantCreateUpdateDTO = await c.req.json()
-    const id = c.req.param("id")
-    const user: UserJWTDAO = c.get("jwtPayload")
+	const data: TenantCreateUpdateDTO = await c.req.json()
+	const id = c.req.param("id")
+	const user: UserJWTDAO = c.get("jwtPayload")
 
-    const serviceResponse = await TenantService.update(id, data, user.id)
+	const serviceResponse = await TenantService.update(id, data, user.id)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(
-        c,
-        serviceResponse.data,
-        "Successfully updated Tenant!",
-    )
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully updated Tenant!",
+	)
 }
 
 export async function deleteById(c: Context): Promise<TypedResponse> {
-    const id = c.req.param("id")
-    const user: UserJWTDAO = c.get("jwtPayload")
-    const serviceResponse = await TenantService.deleteById(id, user.id)
+	const id = c.req.param("id")
+	const user: UserJWTDAO = c.get("jwtPayload")
+	const serviceResponse = await TenantService.deleteById(id, user.id)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(
-        c,
-        serviceResponse.data,
-        "Successfully deleted Tenant!",
-    )
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully deleted Tenant!",
+	)
 }
 
 export async function getUserInTenant(c: Context): Promise<TypedResponse> {
-    const id = c.req.param("id")
+	const id = c.req.param("id")
 
-    const serviceResponse = await TenanUserService.getByTenantId(id)
+	const serviceResponse = await TenanUserService.getByTenantId(id)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(
-        c,
-        serviceResponse.data,
-        "Successfully fetched users in tenant!",
-    )
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully fetched users in tenant!",
+	)
 }
 
 export async function assignUserToTenant(c: Context): Promise<TypedResponse> {
-    const data: TenantUserUpdateDTO[] = await c.req.json()
-    const id = c.req.param("id")
+	const data: TenantUserUpdateDTO[] = await c.req.json()
+	const id = c.req.param("id")
 
-    const serviceResponse = await TenanUserService.assignUserTenantByTenantId(
-        id,
-        data,
-    )
+	const serviceResponse = await TenanUserService.assignUserTenantByTenantId(
+		id,
+		data,
+	)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(
-        c,
-        serviceResponse.data,
-        "Successfully assigned user to tenant!",
-    )
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully assigned user to tenant!",
+	)
 }
 
 export async function getAllByUser(c: Context): Promise<TypedResponse> {
-    const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(
-        c.req.query(),
-    )
-    const user: UserJWTDAO = c.get("jwtPayload")
+	const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(
+		c.req.query(),
+	)
+	const user: UserJWTDAO = c.get("jwtPayload")
 
-    const serviceResponse = await TenantService.getAllByUserId(filters, user)
+	const serviceResponse = await TenantService.getAllByUserId(filters, user)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(
-        c,
-        serviceResponse.data,
-        "Successfully fetched all tenants by user id!",
-    )
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully fetched all tenants by user id!",
+	)
 }
 
 export async function getAllRoles(c: Context): Promise<TypedResponse> {
-    const serviceResponse = await TenantRoleService.getAll()
+	const serviceResponse = await TenantRoleService.getAll()
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(
-        c,
-        serviceResponse.data,
-        "Successfully fetched all roles!",
-    )
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully fetched all roles!",
+	)
 }
 
 export async function createTenantUser(c: Context): Promise<TypedResponse> {
-    const data: TenantUserUpdateDTO = await c.req.json()
-    const id = c.req.param("id")
+	const data: TenantUserUpdateDTO = await c.req.json()
+	const id = c.req.param("id")
 
-    const serviceResponse = await TenanUserService.create(id, data)
+	const serviceResponse = await TenanUserService.create(id, data)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(
-        c,
-        serviceResponse.data,
-        "Successfully created tenant user!",
-    )
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully created tenant user!",
+	)
 }
 
 // [FIXED] Fungsi Add Member yang benar
 export async function addMember(c: Context): Promise<TypedResponse> {
-    const id = c.req.param("id")
-    const body = await c.req.json()
-    
-    // Pastikan membaca tenantRoleId
-    const { userId, tenantRoleId } = body 
+	const id = c.req.param("id")
+	const body = await c.req.json()
 
-    // Validasi input
-    if (!userId || !tenantRoleId) {
-        return c.json({ 
-            status: false, 
-            message: "userId and tenantRoleId are required" 
-        }, 400)
-    }
+	// Pastikan membaca tenantRoleId
+	const { userId, tenantRoleId } = body
 
-    const serviceResponse = await TenantService.addMember(id, userId, tenantRoleId)
+	// Validasi input
+	if (!userId || !tenantRoleId) {
+		return c.json(
+			{
+				status: false,
+				message: "userId and tenantRoleId are required",
+			},
+			400,
+		)
+	}
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	const serviceResponse = await TenantService.addMember(
+		id,
+		userId,
+		tenantRoleId,
+	)
 
-    return response_success(
-        c,
-        serviceResponse.data,
-        "Member successfully added!"
-    )
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
+
+	return response_success(c, serviceResponse.data, "Member successfully added!")
 }
