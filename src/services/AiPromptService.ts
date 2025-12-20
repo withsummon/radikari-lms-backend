@@ -11,22 +11,21 @@ import Logger from "$pkg/logger"
 import * as TenantRepository from "$repositories/TenantRepository"
 
 export async function getByTenantId(
-  tenantId: string,
+	tenantId: string,
 ): Promise<ServiceResponse<AiPrompt | { prompt: string }>> {
-  try {
-    const aiPrompt = await AiPromptRepository.getByTenantId(tenantId);
+	try {
+		const aiPrompt = await AiPromptRepository.getByTenantId(tenantId)
 
-    if (!aiPrompt) {
-      return HandleServiceResponseSuccess({ prompt: "" }) as any;
-    }
+		if (!aiPrompt) {
+			return HandleServiceResponseSuccess({ prompt: "" }) as any
+		}
 
-    return HandleServiceResponseSuccess(aiPrompt) as any;
-  } catch (err) {
-    Logger.error(`AiPromptService.getByTenantId`, { error: err });
-    return HandleServiceResponseCustomError("Internal Server Error", 500) as any;
-  }
+		return HandleServiceResponseSuccess(aiPrompt) as any
+	} catch (err) {
+		Logger.error(`AiPromptService.getByTenantId`, { error: err })
+		return HandleServiceResponseCustomError("Internal Server Error", 500) as any
+	}
 }
-
 
 export type UpdateResponse = AiPrompt | {}
 export async function upsertByTenantId(

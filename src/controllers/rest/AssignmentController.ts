@@ -1,5 +1,6 @@
 import { Context, TypedResponse } from "hono"
 import * as AssignmentService from "$services/AssignmentService"
+import * as AssignmentAiService from "$services/AssignmentAiService"
 import {
 	handleServiceErrorWithResponse,
 	response_created,
@@ -8,6 +9,7 @@ import {
 import { AssignmentCreateDTO } from "$entities/Assignment"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { UserJWTDAO } from "$entities/User"
+import Logger from "$pkg/logger"
 
 export async function create(c: Context): Promise<TypedResponse> {
 	const data: AssignmentCreateDTO = await c.req.json()
@@ -256,4 +258,42 @@ export async function getStatistics(c: Context): Promise<TypedResponse> {
 		serviceResponse.data,
 		"Successfully fetched assignment statistics!",
 	)
+}
+
+export async function generateQuestionsStream(c: Context): Promise<Response> {
+	const body = await c.req.json()
+	const tenantId = c.req.param("tenantId")
+	const user: UserJWTDAO = c.get("jwtPayload")
+
+	try {
+		const { prompt, count = 5 } = body
+
+		if (!prompt || typeof prompt !== "string") {
+			return c.json({ error: "Prompt is required and must be a string" }, 400)
+		}
+
+		if (!tenantId) {
+			return c.json({ error: "Tenant ID is required" }, 400)
+		}
+
+		const result = await AssignmentAiService.streamQuestions({
+			prompt,
+			count,
+			tenantId,
+		})
+
+		return result.toTextStreamResponse()
+	} catch (error) {
+		Logger.error("AssignmentController.generateQuestionsStream.error", {
+			error,
+			tenantId,
+			userId: user.id,
+		})
+
+		if (error instanceof Error) {
+			return c.json({ error: error.message }, 500)
+		}
+
+		return c.json({ error: "Internal server error" }, 500)
+	}
 }
