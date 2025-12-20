@@ -59,6 +59,7 @@
 		"ai": "^5.0.97",
 		"amqplib": "^0.10.9",
 		"axios": "^1.6.5",
+		"bcryptjs": "^3.0.3",
 		"cors": "^2.8.5",
 		"csv-parse": "^6.1.0",
 		"csv-stringify": "^6.6.0",
