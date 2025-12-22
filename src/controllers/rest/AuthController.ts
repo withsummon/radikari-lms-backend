@@ -21,7 +21,7 @@ export async function login(c: Context): Promise<TypedResponse> {
 
 export async function verifyToken(c: Context): Promise<TypedResponse> {
     const { token } = await c.req.json()
-    const serviceResponse = AuthService.verifyToken(token)
+    const serviceResponse = await AuthService.verifyToken(token)
 
     if (!serviceResponse.status) {
         return handleServiceErrorWithResponse(c, serviceResponse)

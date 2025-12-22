@@ -54,6 +54,7 @@ router.route("/analytics", RoutesRegistry.AnalyticsRoutes)
 // AI Chat
 router.route("/ai-chat", RoutesRegistry.ChatRoutes)
 router.route("/ephemeral", RoutesRegistry.EphemeralRoutes)
+router.route("/storage", RoutesRegistry.StorageRoutes)
 
 router.get("/", (c: Context) => {
 	return response_success(c, "main routes!")

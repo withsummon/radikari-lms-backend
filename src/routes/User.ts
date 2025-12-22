@@ -31,7 +31,7 @@ UserRoutes.post(
 UserRoutes.put(
 	"/:id",
 	AuthMiddleware.checkJwt,
-	AuthMiddleware.checkRole([Roles.ADMIN]),
+	AuthMiddleware.checkRoleOrSameUser([Roles.ADMIN]),
 	Validations.validateUpdateDTO,
 	UserController.update,
 )

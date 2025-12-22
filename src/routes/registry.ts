@@ -19,6 +19,7 @@ import AiPromptRoutes from "./AiPrompt"
 import AnalyticsRoutes from "./Analytics"
 import TenantUserManagementRoutes from "./TenantUserManagementRoutes"
 import EphemeralRoutes from "./Ephemeral/EphemeralRoutes"
+import StorageRoutes from "./Storage"
 
 const RoutesRegistry = {
 	UserRoutes,
@@ -42,6 +43,7 @@ const RoutesRegistry = {
 	BroadcastRoutes,
 	AiPromptRoutes,
 	TenantUserManagementRoutes,
+	StorageRoutes,
 }
 
 export default RoutesRegistry

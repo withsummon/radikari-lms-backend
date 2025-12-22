@@ -275,3 +275,21 @@ export function checkAccessTenantRole(featureName: string, actionName: string) {
 		}
 	}
 }
+export function checkRoleOrSameUser(roles: Roles[]) {
+	return async (c: Context, next: Next) => {
+		try {
+			const user = getJwtUser(c)
+			if (!user) return response_unauthorized(c, "Invalid token payload")
+
+			const targetUserId = c.req.param("id")
+
+			if (roles.includes(user.role) || user.id === targetUserId) {
+				await next()
+			} else {
+				return response_forbidden(c, "Forbidden Action!")
+			}
+		} catch (err) {
+			return response_internal_server_error(c, (err as Error).message)
+		}
+	}
+}

@@ -62,14 +62,23 @@ export async function logIn(data: UserLoginDTO): Promise<ServiceResponse<any>> {
 	}
 }
 
-export function verifyToken(token: string): ServiceResponse<any> {
+export async function verifyToken(token: string): Promise<ServiceResponse<any>> {
 	try {
 		try {
 			const JWT_SECRET = process.env.JWT_SECRET || ""
-			jwt.verify(token, JWT_SECRET)
+			const decoded = jwt.verify(token, JWT_SECRET) as UserJWTDAO
+			
+			const user = await UserRepository.getById(decoded.id)
+			if (!user) {
+				return HandleServiceResponseCustomError("User not found", 404)
+			}
+
 			return {
 				status: true,
-				data: {},
+				data: {
+					user: exclude(user, "password"),
+					token
+				},
 			}
 		} catch (err) {
 			return HandleServiceResponseCustomError("Invalid Token", 403)
