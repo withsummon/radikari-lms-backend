@@ -101,8 +101,7 @@ export async function getAll(filters: EzFilter.FilteringQuery) {
 		headOfOffice: exclude(
 			(
 				tenant.tenantUser.find(
-					(tenantUser: any) =>
-						tenantUser.tenantRole.identifier === "CHECKER",
+					(tenantUser: any) => tenantUser.tenantRole.identifier === "CHECKER",
 				) ||
 				tenant.tenantUser.find(
 					(tenantUser: any) =>
@@ -217,7 +216,6 @@ export async function update(id: string, data: TenantCreateUpdateDTO) {
 			},
 		})
 
-
 		// Try to find the tenant specific CHECKER role
 		let adminRole = await tx.tenantRole.findFirst({
 			where: {
@@ -236,7 +234,7 @@ export async function update(id: string, data: TenantCreateUpdateDTO) {
 		}
 
 		if (!adminRole) {
-			// If neither exists, we can't assign an admin properly. 
+			// If neither exists, we can't assign an admin properly.
 			// But creating one might be safer? For now, throw error as before.
 			throw new Error("Admin role (CHECKER or HEAD_OF_OFFICE) not found")
 		}
