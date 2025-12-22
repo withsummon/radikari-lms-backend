@@ -7,6 +7,13 @@ export async function create(data: OperationDTO) {
 		data,
 	})
 }
+export async function findByName(name: string) {
+	return await prisma.operation.findFirst({
+		where: {
+			name,
+		},
+	})
+}
 
 export async function getAll(filters: EzFilter.FilteringQuery) {
 	const queryBuilder = new EzFilter.BuildQueryFilter()

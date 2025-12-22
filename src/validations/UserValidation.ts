@@ -50,14 +50,16 @@ export async function validateUpdateDTO(c: Context, next: Next) {
 		return response_bad_request(c, "Bad Request", invalidFields)
 	}
 
-	const userExist = await prisma.user.findUnique({
-		where: {
-			email: data.email,
-		},
-	})
+	if (data.email) {
+		const userExist = await prisma.user.findUnique({
+			where: {
+				email: data.email,
+			},
+		})
 
-	if (userExist != null && userExist.id !== id) {
-		invalidFields.push({ field: "email", message: "email already used" })
+		if (userExist != null && userExist.id !== id) {
+			invalidFields.push({ field: "email", message: "email already used" })
+		}
 	}
 	if (invalidFields.length > 0) {
 		return response_bad_request(c, "Bad Request", invalidFields)

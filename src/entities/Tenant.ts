@@ -5,7 +5,8 @@ export interface TenantDTO {
 	operationId: string
 }
 
-export interface TenantCreateUpdateDTO extends TenantDTO {
+export interface TenantCreateUpdateDTO extends Omit<TenantDTO, "operationId"> {
+    operationId?: string
 	headOfTenantUserId: string
 	tokenLimit?: number
 }

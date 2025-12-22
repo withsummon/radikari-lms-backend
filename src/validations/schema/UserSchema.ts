@@ -30,15 +30,18 @@ export const UserValidationUpdateSchema = z
 			.string({
 				error: (issue) => (issue.input === undefined ? undefined : undefined),
 			})
-			.min(5, ErrorMessages.user.fullName.min),
+			.min(5, ErrorMessages.user.fullName.min)
+            .optional(),
 		email: z.string({
 			error: (issue) => (issue.input === undefined ? undefined : undefined),
-		}),
+		}).optional(),
 		phoneNumber: z
 			.string({
 				error: (issue) => (issue.input === undefined ? undefined : undefined),
 			})
-			.min(10, ErrorMessages.user.phoneNumber.min),
+			.min(10, ErrorMessages.user.phoneNumber.min)
+            .optional(),
+        profilePictureUrl: z.string().optional().nullable(),
 	})
 	.strict()
 

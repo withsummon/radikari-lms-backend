@@ -11,12 +11,7 @@ export const TenantSchema = z
 					? "description is required"
 					: "Invalid string",
 		}),
-		operationId: z.string({
-			error: (issue) =>
-				issue.input === undefined
-					? "operationId is required"
-					: "Invalid string",
-		}),
+		operationId: z.string().optional(),
 		headOfTenantUserId: z
 			.string({
 				error: (issue) =>

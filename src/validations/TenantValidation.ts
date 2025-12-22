@@ -50,7 +50,7 @@ export async function validateTenantSchema(c: Context, next: Next) {
 			})
 		}
 	} else if (method === "POST") {
-		// operationId is required for creation, checked by schema but good to be safe
+		// operationId is optional, will be handled by service if missing
 	}
 
 	if (invalidFields.length > 0) {

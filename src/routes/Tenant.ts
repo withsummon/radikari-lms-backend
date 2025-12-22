@@ -67,11 +67,31 @@ TenantRoutes.put(
 	TenantController.assignUserToTenant,
 )
 
+
 TenantRoutes.delete(
 	"/:id",
 	AuthMiddleware.checkJwt,
 	AuthMiddleware.checkRole([Roles.ADMIN]),
 	TenantController.deleteById,
+)
+
+TenantRoutes.put(
+	"/:id/settings",
+	AuthMiddleware.checkJwt,
+	TenantController.upsertSetting,
+)
+
+
+TenantRoutes.get(
+	"/:id/settings",
+	AuthMiddleware.checkJwt,
+	TenantController.getSettings,
+)
+
+TenantRoutes.get(
+	"/:id/users/:userId/points",
+	AuthMiddleware.checkJwt,
+	TenantController.getUserPoints,
 )
 
 export default TenantRoutes
