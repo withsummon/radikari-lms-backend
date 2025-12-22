@@ -228,13 +228,16 @@ export async function getSummary(
 	}
 
 	usedFilters.query.where.AND.push({
+		tenantId, // Filter by tenant first
+	})
+
+	usedFilters.query.where.AND.push({
 		OR: [
 			{
 				access: KnowledgeAccess.PUBLIC,
 			},
 			{
 				access: KnowledgeAccess.TENANT,
-				tenantId,
 			},
 			{
 				access: KnowledgeAccess.EMAIL,
