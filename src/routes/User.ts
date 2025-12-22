@@ -16,7 +16,6 @@ UserRoutes.get(
 UserRoutes.get(
 	"/:id",
 	AuthMiddleware.checkJwt,
-	AuthMiddleware.checkRole([Roles.ADMIN]),
 	UserController.getById,
 )
 

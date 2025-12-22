@@ -113,3 +113,17 @@ export async function getByTenantId(
 		return HandleServiceResponseCustomError("Internal Server Error", 500)
 	}
 }
+
+export async function getAll(
+	filters: any,
+): Promise<ServiceResponse<TenantUser[] | {}>> {
+	try {
+		const tenantUsers = await TenantUserRepository.getAll(filters)
+		return HandleServiceResponseSuccess(tenantUsers)
+	} catch (error) {
+		Logger.error(`TenanUserService.getAll`, {
+			error,
+		})
+		return HandleServiceResponseCustomError("Internal Server Error", 500)
+	}
+}
