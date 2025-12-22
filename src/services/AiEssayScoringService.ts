@@ -1,43 +1,58 @@
-import { generateObject } from "ai";
-import { openai } from "@ai-sdk/openai";
-import { z } from "zod";
-import Logger from "$pkg/logger";
-import { prisma } from "$pkg/prisma";
-import { ulid } from "ulid";
+import { generateObject } from "ai"
+import { openai } from "@ai-sdk/openai"
+import { z } from "zod"
+import Logger from "$pkg/logger"
+import { prisma } from "$pkg/prisma"
+import { ulid } from "ulid"
 
 // Define the Zod schema for AI essay scoring response
 const essayScoreSchema = z.object({
-  isCorrect: z
-    .boolean()
-    .describe("Whether the answer is correct (score >= 70)"),
-  score: z.number().min(0).max(100).describe("The score for the essay (0-100)"),
-  feedback: z.string().describe("Brief constructive feedback for the student"),
-  confidence: z
-    .number()
-    .min(0)
-    .max(1)
-    .describe("AI's confidence level in the evaluation (0-1)"),
-});
+	isCorrect: z
+		.boolean()
+		.describe("Whether the answer is correct (score >= 70)"),
+	score: z.number().min(0).max(100).describe("The score for the essay (0-100)"),
+	feedback: z.string().describe("Brief overall summary of the evaluation"),
+	strengths: z
+		.array(z.string())
+		.describe("Specific points the student did well (2-3 items)"),
+	weaknesses: z
+		.array(z.string())
+		.describe("Specific areas that need improvement (2-3 items)"),
+	suggestions: z
+		.array(z.string())
+		.describe("Actionable advice for improvement (2-3 items)"),
+	keyPointsCovered: z
+		.array(z.string())
+		.describe("Key concepts from expected answer that were covered"),
+	keyPointsMissing: z
+		.array(z.string())
+		.describe("Important concepts from expected answer that were missed"),
+	confidence: z
+		.number()
+		.min(0)
+		.max(1)
+		.describe("AI's confidence level in the evaluation (0-1)"),
+})
 
-export type EssayScoringResult = z.infer<typeof essayScoreSchema>;
+export type EssayScoringResult = z.infer<typeof essayScoreSchema>
 
 export async function scoreEssayAnswer(request: {
-  question: string;
-  userAnswer: string;
-  expectedAnswer?: string;
-  context?: string;
-  tenantId: string;
-  userId?: string;
+	question: string
+	userAnswer: string
+	expectedAnswer?: string
+	context?: string
+	tenantId: string
+	userId?: string
 }): Promise<EssayScoringResult> {
-  try {
-    Logger.info("AiEssayScoringService.scoreEssayAnswer", {
-      question: request.question.substring(0, 100) + "...",
-      userAnswer: request.userAnswer.substring(0, 100) + "...",
-    });
+	try {
+		Logger.info("AiEssayScoringService.scoreEssayAnswer", {
+			question: request.question.substring(0, 100) + "...",
+			userAnswer: request.userAnswer.substring(0, 100) + "...",
+		})
 
-    // Build the system prompt for essay scoring
-    const systemPrompt = `
-You are a supportive and understanding essay evaluator for educational assessments. Your goal is to evaluate if the student has the right "conceptual direction" and "understanding," rather than requiring 100% accurate wording or exhaustive completeness.
+		// Build the system prompt for essay scoring
+		const systemPrompt = `
+You are a supportive and understanding essay evaluator for educational assessments. Your goal is to provide DETAILED, STRUCTURED feedback that helps students learn and improve.
 
 EVALUATION PHILOSOPHY:
 - Prioritize "Understanding over Accuracy": If a student explains the core concept correctly but uses informal language or misses non-essential details, they should still receive a high score.
@@ -57,107 +72,142 @@ SCORING SYSTEM:
   - 0-49: Insufficient - Completely unrelated or fundamentally incorrect.
 
 THRESHOLD:
-- Any answer that demonstrates the correct "essence" or "direction" of the expected answer should be considered "Correct" (isCorrect: true).
+- Any answer that demonstrates the correct "essence" or "direction" of the expected answer should be considered "Correct" (isCorrect: true, score >= 70).
+
+REQUIRED OUTPUT STRUCTURE:
+You MUST provide:
+
+1. **feedback**: A brief 1-2 sentence overall summary of the evaluation
+
+2. **strengths**: Array of 2-3 specific things the student did well
+   - Be specific and encouraging
+   - Mention correct concepts, good explanations, or proper understanding
+   - Example: "Correctly identified the main concept of photosynthesis"
+
+3. **weaknesses**: Array of 2-3 specific areas that need improvement
+   - Be constructive and specific
+   - Point out missing concepts, unclear explanations, or misconceptions
+   - Example: "Did not mention the role of chlorophyll in the process"
+
+4. **suggestions**: Array of 2-3 actionable advice items
+   - Provide clear, specific steps for improvement
+   - Example: "Review the role of ATP in cellular energy transfer"
+
+5. **keyPointsCovered**: Array of key concepts from the expected answer that the student successfully addressed
+   - List specific concepts/points from the reference answer
+   - Empty array if no expected answer provided
+
+6. **keyPointsMissing**: Array of important concepts from the expected answer that were not addressed
+   - List specific missing concepts/points
+   - Empty array if no expected answer provided or if all points covered
 
 CONTEXT INFORMATION:
 ${
-  request.context
-    ? `Additional context: ${request.context}`
-    : "No additional context provided."
+	request.context
+		? `Additional context: ${request.context}`
+		: "No additional context provided."
 }
 ${
-  request.expectedAnswer
-    ? `Expected answer key points: ${request.expectedAnswer}`
-    : "No specific expected answer provided."
+	request.expectedAnswer
+		? `Expected answer key points: ${request.expectedAnswer}`
+		: "No specific expected answer provided. Focus on conceptual correctness."
 }
 
-IMPORTANT:
-- Be fair and consistent in your evaluation
-- Consider the language used by the student (respond in the same language if possible)
+IMPORTANT GUIDELINES:
+- Be fair, consistent, and encouraging in your evaluation
+- Respond in the same language as the student's answer (Indonesian/English)
 - Focus on understanding rather than exact wording
-- Provide constructive feedback that helps the student learn
-`;
+- Provide specific, actionable feedback that helps learning
+- If no expected answer is provided, evaluate based on conceptual correctness
+- Keep each array item concise but specific (1-2 sentences max)
+- Make feedback constructive and supportive
+`
 
-    const userPrompt = `Question: ${request.question}\n\nStudent Answer: ${request.userAnswer}`;
+		const userPrompt = `Question: ${request.question}\n\nStudent Answer: ${request.userAnswer}`
 
-    const { object, usage } = await generateObject({
-      model: openai("gpt-4.1-mini"),
-      schema: essayScoreSchema,
-      system: systemPrompt,
-      prompt: userPrompt,
-      temperature: 0.5,
-    });
+		const { object, usage } = await generateObject({
+			model: openai("gpt-4.1-mini"),
+			schema: essayScoreSchema,
+			system: systemPrompt,
+			prompt: userPrompt,
+			temperature: 0.5,
+		})
 
-    // Log Token Usage
-    if (usage && request.tenantId) {
-      try {
-        const usageData = usage as any;
-        await prisma.aiUsageLog.create({
-          data: {
-            id: ulid(),
-            tenantId: request.tenantId,
-            userId: request.userId,
-            action: "ESSAY_SCORING",
-            model: "gpt-4.1-mini",
-            promptTokens: usageData.promptTokens || 0,
-            completionTokens: usageData.completionTokens || 0,
-            totalTokens: usageData.totalTokens || 0,
-          },
-        });
-      } catch (logError) {
-        Logger.error("AiEssayScoringService.scoreEssayAnswer.logError", {
-          error:
-            logError instanceof Error ? logError.message : String(logError),
-        });
-      }
-    }
+		// Log Token Usage
+		if (usage && request.tenantId) {
+			try {
+				const usageData = usage as any
+				await prisma.aiUsageLog.create({
+					data: {
+						id: ulid(),
+						tenantId: request.tenantId,
+						userId: request.userId,
+						action: "ESSAY_SCORING",
+						model: "gpt-4.1-mini",
+						promptTokens: usageData.promptTokens || 0,
+						completionTokens: usageData.completionTokens || 0,
+						totalTokens: usageData.totalTokens || 0,
+					},
+				})
+			} catch (logError) {
+				Logger.error("AiEssayScoringService.scoreEssayAnswer.logError", {
+					error:
+						logError instanceof Error ? logError.message : String(logError),
+				})
+			}
+		}
 
-    Logger.info("AiEssayScoringService.scoreEssayAnswer", {
-      score: object.score,
-      isCorrect: object.isCorrect,
-      confidence: object.confidence,
-    });
+		Logger.info("AiEssayScoringService.scoreEssayAnswer", {
+			score: object.score,
+			isCorrect: object.isCorrect,
+			confidence: object.confidence,
+		})
 
-    return object;
-  } catch (error) {
-    Logger.error("AiEssayScoringService.scoreEssayAnswer", {
-      error: error instanceof Error ? error.message : String(error),
-    });
+		return object
+	} catch (error) {
+		Logger.error("AiEssayScoringService.scoreEssayAnswer", {
+			error: error instanceof Error ? error.message : String(error),
+		})
 
-    // Return a default result on error
-    return {
-      isCorrect: false,
-      score: 0,
-      feedback: "Error occurred during evaluation. Manual review required.",
-      confidence: 0,
-    };
-  }
+		// Return a default result on error
+		return {
+			isCorrect: false,
+			score: 0,
+			feedback: "Error occurred during evaluation. Manual review required.",
+			strengths: [],
+			weaknesses: ["Evaluation error occurred"],
+			suggestions: ["Please contact your instructor for manual review"],
+			keyPointsCovered: [],
+			keyPointsMissing: [],
+			confidence: 0,
+		}
+	}
 }
 
 export async function evaluateEssayAnswers(
-  essayQuestions: Array<{
-    id: string;
-    question: string;
-    userAnswer: string;
-    expectedAnswer?: string;
-    context?: string;
-  }>,
-  tenantId: string,
-  userId?: string
+	essayQuestions: Array<{
+		id: string
+		question: string
+		userAnswer: string
+		expectedAnswer?: string
+		context?: string
+	}>,
+	tenantId: string,
+	userId?: string,
 ): Promise<Array<{ questionId: string; result: EssayScoringResult }>> {
-  const results = [];
+	const results = []
 
-  for (const essayQuestion of essayQuestions) {
-    const result = await scoreEssayAnswer({
-      ...essayQuestion,
-      tenantId,
-      userId,
-    });
-    results.push({
-      questionId: essayQuestion.id,
-      result,
-    });
-  }
+	for (const essayQuestion of essayQuestions) {
+		const result = await scoreEssayAnswer({
+			...essayQuestion,
+			tenantId,
+			userId,
+		})
+		results.push({
+			questionId: essayQuestion.id,
+			result,
+		})
+	}
 
-  return results;
+	return results
 }

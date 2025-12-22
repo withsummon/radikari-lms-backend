@@ -276,7 +276,6 @@ export async function getSettings(c: Context): Promise<TypedResponse> {
 		return handleServiceErrorWithResponse(c, serviceResponse)
 	}
 
-
 	return response_success(
 		c,
 		serviceResponse.data,

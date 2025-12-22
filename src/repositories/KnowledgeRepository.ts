@@ -139,7 +139,7 @@ export async function getAll(
 			where: usedFilters.query.where,
 		}),
 	])
-	
+
 	let totalPage = 1
 	if (totalData > usedFilters.query.take)
 		totalPage = Math.ceil(totalData / usedFilters.query.take)
@@ -307,6 +307,7 @@ export async function getById(id: string) {
 			isArchived: true,
 			version: true,
 			parentId: true,
+			rejectionComment: true,
 			userKnowledge: {
 				select: {
 					user: {
@@ -335,6 +336,18 @@ export async function getById(id: string) {
 				},
 			},
 			knowledgeActivityLog: {
+				select: {
+					id: true,
+					action: true,
+					createdAt: true,
+					createdByUser: {
+						select: {
+							id: true,
+							fullName: true,
+							profilePictureUrl: true,
+						},
+					},
+				},
 				orderBy: {
 					createdAt: "desc",
 				},
@@ -373,6 +386,7 @@ export async function getByIds(ids: string[]) {
 			isArchived: true,
 			version: true,
 			parentId: true,
+			rejectionComment: true,
 			userKnowledge: {
 				select: {
 					user: {
@@ -401,6 +415,18 @@ export async function getByIds(ids: string[]) {
 				},
 			},
 			knowledgeActivityLog: {
+				select: {
+					id: true,
+					action: true,
+					createdAt: true,
+					createdByUser: {
+						select: {
+							id: true,
+							fullName: true,
+							profilePictureUrl: true,
+						},
+					},
+				},
 				orderBy: {
 					createdAt: "desc",
 				},

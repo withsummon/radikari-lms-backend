@@ -1,1 +1,1 @@
-export * as Chat from "./ChatService"
+export * as Chat from "./(deprecated)ChatService"

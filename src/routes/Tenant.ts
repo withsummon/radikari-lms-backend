@@ -74,7 +74,6 @@ TenantRoutes.put(
 	TenantController.assignUserToTenant,
 )
 
-
 TenantRoutes.delete(
 	"/:id",
 	AuthMiddleware.checkJwt,
@@ -87,7 +86,6 @@ TenantRoutes.put(
 	AuthMiddleware.checkJwt,
 	TenantController.upsertSetting,
 )
-
 
 TenantRoutes.get(
 	"/:id/settings",

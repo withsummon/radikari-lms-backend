@@ -31,17 +31,19 @@ export const UserValidationUpdateSchema = z
 				error: (issue) => (issue.input === undefined ? undefined : undefined),
 			})
 			.min(5, ErrorMessages.user.fullName.min)
-            .optional(),
-		email: z.string({
-			error: (issue) => (issue.input === undefined ? undefined : undefined),
-		}).optional(),
+			.optional(),
+		email: z
+			.string({
+				error: (issue) => (issue.input === undefined ? undefined : undefined),
+			})
+			.optional(),
 		phoneNumber: z
 			.string({
 				error: (issue) => (issue.input === undefined ? undefined : undefined),
 			})
 			.min(10, ErrorMessages.user.phoneNumber.min)
-            .optional(),
-        profilePictureUrl: z.string().optional().nullable(),
+			.optional(),
+		profilePictureUrl: z.string().optional().nullable(),
 	})
 	.strict()
 

@@ -1,5 +1,6 @@
 import { Context, TypedResponse } from "hono"
 import { EphemeralChatService } from "$services/Ephemeral/EphemeralChatService"
+import * as TenantService from "$services/TenantService"
 import {
 	response_created,
 	response_internal_server_error,
@@ -129,10 +130,51 @@ export async function sendMessage(c: Context): Promise<any> {
  * Origin validation helper
  * Checks if the request origin is allowed for the given tenant
  */
-function validateOrigin(tenantId: string, origin?: string): boolean {
+async function validateOrigin(
+	tenantId: string,
+	origin?: string,
+): Promise<boolean> {
 	if (!origin) return false
 
 	try {
+		// First, try to get dynamic whitelisted domains from tenant settings
+		const settingsResponse = await TenantService.getSettings(tenantId)
+
+		if (settingsResponse.status && settingsResponse.data) {
+			const responseData = settingsResponse.data as {
+				content?: Array<{
+					id: string
+					key: string
+					value: string
+					tenantId: string
+				}>
+				message?: string
+				errors?: any[]
+			}
+
+			const whitelistSetting = (responseData.content || []).find(
+				(setting: any) => setting.key === "WHITELISTED_DOMAINS",
+			)
+
+			if (whitelistSetting?.value) {
+				try {
+					const whitelistedDomains = JSON.parse(whitelistSetting.value)
+					if (Array.isArray(whitelistedDomains)) {
+						const allowedDomains = whitelistedDomains.map(
+							(item: any) => item.domain,
+						)
+						return allowedDomains.includes(origin)
+					}
+				} catch (parseError) {
+					Logger.info("EphemeralChatController.validateOrigin.parseError", {
+						tenantId,
+						error: parseError,
+					})
+				}
+			}
+		}
+
+		// Fallback to environment variable for backward compatibility
 		const allowlistEnv = process.env.TENANT_ORIGIN_ALLOWLIST
 
 		if (!allowlistEnv) {

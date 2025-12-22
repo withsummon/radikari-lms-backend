@@ -19,12 +19,12 @@ export async function create(data: TenantCreateUpdateDTO) {
 		})
 
 		// Create default roles for the tenant
-		const checkerRole = await tx.tenantRole.create({
+		const qaRole = await tx.tenantRole.create({
 			data: {
 				id: ulid(),
-				identifier: "CHECKER",
-				name: "Checker",
-				description: "Checker Role",
+				identifier: "QUALITY_ASSURANCE",
+				name: "Quality Assurance",
+				description: "QA Role with full admin access",
 				level: 1,
 				tenantId: tenant.id,
 			},
@@ -52,14 +52,14 @@ export async function create(data: TenantCreateUpdateDTO) {
 			},
 		})
 
-		// Assign CHECKER role to the head of tenant (admin)
+		// Assign QUALITY_ASSURANCE role to the head of tenant (admin)
 		if (headOfTenantUserId) {
 			await tx.tenantUser.create({
 				data: {
 					id: ulid(),
 					tenantId: tenant.id,
 					userId: headOfTenantUserId,
-					tenantRoleId: checkerRole.id,
+					tenantRoleId: qaRole.id,
 				},
 			})
 		}
@@ -101,8 +101,7 @@ export async function getAll(filters: EzFilter.FilteringQuery) {
 		headOfOffice: exclude(
 			(
 				tenant.tenantUser.find(
-					(tenantUser: any) =>
-						tenantUser.tenantRole.identifier === "CHECKER",
+					(tenantUser: any) => tenantUser.tenantRole.identifier === "CHECKER",
 				) ||
 				tenant.tenantUser.find(
 					(tenantUser: any) =>
@@ -217,7 +216,6 @@ export async function update(id: string, data: TenantCreateUpdateDTO) {
 			},
 		})
 
-
 		// Try to find the tenant specific CHECKER role
 		let adminRole = await tx.tenantRole.findFirst({
 			where: {
@@ -236,7 +234,7 @@ export async function update(id: string, data: TenantCreateUpdateDTO) {
 		}
 
 		if (!adminRole) {
-			// If neither exists, we can't assign an admin properly. 
+			// If neither exists, we can't assign an admin properly.
 			// But creating one might be safer? For now, throw error as before.
 			throw new Error("Admin role (CHECKER or HEAD_OF_OFFICE) not found")
 		}
