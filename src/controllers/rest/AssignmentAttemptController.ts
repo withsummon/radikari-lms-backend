@@ -181,3 +181,26 @@ export async function getTimeStatus(c: Context): Promise<TypedResponse> {
 		"Successfully fetched time status",
 	)
 }
+
+export async function getAssignmentExportData(
+	c: Context,
+): Promise<TypedResponse> {
+	const assignmentId = c.req.param("assignmentId")
+	const tenantId = c.get("tenantId")
+
+	const serviceResponse =
+		await AssignmentAttemptService.getAssignmentExportData(
+			tenantId,
+			assignmentId,
+		)
+
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
+
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully fetched assignment export data!",
+	)
+}

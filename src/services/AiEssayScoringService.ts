@@ -11,22 +11,7 @@ const essayScoreSchema = z.object({
 		.boolean()
 		.describe("Whether the answer is correct (score >= 70)"),
 	score: z.number().min(0).max(100).describe("The score for the essay (0-100)"),
-	feedback: z.string().describe("Brief overall summary of the evaluation"),
-	strengths: z
-		.array(z.string())
-		.describe("Specific points the student did well (2-3 items)"),
-	weaknesses: z
-		.array(z.string())
-		.describe("Specific areas that need improvement (2-3 items)"),
-	suggestions: z
-		.array(z.string())
-		.describe("Actionable advice for improvement (2-3 items)"),
-	keyPointsCovered: z
-		.array(z.string())
-		.describe("Key concepts from expected answer that were covered"),
-	keyPointsMissing: z
-		.array(z.string())
-		.describe("Important concepts from expected answer that were missed"),
+	feedback: z.string().describe("Brief constructive feedback for the student"),
 	confidence: z
 		.number()
 		.min(0)
@@ -52,7 +37,7 @@ export async function scoreEssayAnswer(request: {
 
 		// Build the system prompt for essay scoring
 		const systemPrompt = `
-You are a supportive and understanding essay evaluator for educational assessments. Your goal is to provide DETAILED, STRUCTURED feedback that helps students learn and improve.
+You are a supportive and understanding essay evaluator for educational assessments. Your goal is to evaluate if the student has the right "conceptual direction" and "understanding," rather than requiring 100% accurate wording or exhaustive completeness.
 
 EVALUATION PHILOSOPHY:
 - Prioritize "Understanding over Accuracy": If a student explains the core concept correctly but uses informal language or misses non-essential details, they should still receive a high score.
@@ -110,17 +95,14 @@ ${
 ${
 	request.expectedAnswer
 		? `Expected answer key points: ${request.expectedAnswer}`
-		: "No specific expected answer provided. Focus on conceptual correctness."
+		: "No specific expected answer provided."
 }
 
 IMPORTANT GUIDELINES:
 - Be fair, consistent, and encouraging in your evaluation
 - Respond in the same language as the student's answer (Indonesian/English)
 - Focus on understanding rather than exact wording
-- Provide specific, actionable feedback that helps learning
-- If no expected answer is provided, evaluate based on conceptual correctness
-- Keep each array item concise but specific (1-2 sentences max)
-- Make feedback constructive and supportive
+- Provide constructive feedback that helps the student learn
 `
 
 		const userPrompt = `Question: ${request.question}\n\nStudent Answer: ${request.userAnswer}`
@@ -174,11 +156,6 @@ IMPORTANT GUIDELINES:
 			isCorrect: false,
 			score: 0,
 			feedback: "Error occurred during evaluation. Manual review required.",
-			strengths: [],
-			weaknesses: ["Evaluation error occurred"],
-			suggestions: ["Please contact your instructor for manual review"],
-			keyPointsCovered: [],
-			keyPointsMissing: [],
 			confidence: 0,
 		}
 	}

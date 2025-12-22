@@ -7,6 +7,11 @@ import { Roles } from "../../generated/prisma/client"
 const UserRoutes = new Hono()
 
 UserRoutes.get(
+	"/me", 
+	AuthMiddleware.checkJwt, 
+	UserController.me)
+
+UserRoutes.get(
 	"/",
 	AuthMiddleware.checkJwt,
 	AuthMiddleware.checkRole([Roles.ADMIN]),
