@@ -12,7 +12,7 @@ export async function create(data: TenantCreateUpdateDTO) {
 			data: {
 				name: rest.name,
 				description: rest.description,
-				operationId: rest.operationId,
+				operationId: rest.operationId as string,
 				tokenLimit: rest.tokenLimit ?? 0,
 				id: ulid(),
 			},
@@ -75,7 +75,9 @@ export async function getAll(filters: EzFilter.FilteringQuery) {
 		tenantUser: {
 			where: {
 				tenantRole: {
-					identifier: "HEAD_OF_OFFICE",
+					identifier: {
+						in: ["CHECKER", "HEAD_OF_OFFICE"],
+					},
 				},
 			},
 			include: {
@@ -97,9 +99,15 @@ export async function getAll(filters: EzFilter.FilteringQuery) {
 		name: tenant.name,
 		description: tenant.description,
 		headOfOffice: exclude(
-			tenant.tenantUser.find(
-				(tenantUser: any) =>
-					tenantUser.tenantRole.identifier === "HEAD_OF_OFFICE",
+			(
+				tenant.tenantUser.find(
+					(tenantUser: any) =>
+						tenantUser.tenantRole.identifier === "CHECKER",
+				) ||
+				tenant.tenantUser.find(
+					(tenantUser: any) =>
+						tenantUser.tenantRole.identifier === "HEAD_OF_OFFICE",
+				)
 			)?.user ?? {},
 			"password",
 		),
@@ -280,6 +288,49 @@ export async function addTenantUser(
 			tenantId,
 			userId,
 			tenantRoleId,
+		},
+	})
+}
+
+export async function upsertSetting(
+	tenantId: string,
+	key: string,
+	value: string,
+) {
+	return await prisma.tenantSetting.upsert({
+		where: {
+			tenantId_key: {
+				tenantId,
+				key,
+			},
+		},
+		update: {
+			value,
+		},
+		create: {
+			id: ulid(),
+			tenantId,
+			key,
+			value,
+		},
+	})
+}
+
+export async function getSetting(tenantId: string, key: string) {
+	return await prisma.tenantSetting.findUnique({
+		where: {
+			tenantId_key: {
+				tenantId,
+				key,
+			},
+		},
+	})
+}
+
+export async function getAllSettings(tenantId: string) {
+	return await prisma.tenantSetting.findMany({
+		where: {
+			tenantId,
 		},
 	})
 }

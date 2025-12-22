@@ -17,7 +17,27 @@ export async function create(
 	userId: string,
 ): Promise<ServiceResponse<Tenant | {}>> {
 	try {
-		const createdData = await TenantRepository.create(data)
+		// Check or Assign Mock Operation
+		if (!data.operationId) {
+			const MOCK_OP_NAME = "Mock Operation";
+			const OperationRepository = await import("$repositories/OperationRepository");
+			
+			let mockOp = await OperationRepository.findByName(MOCK_OP_NAME);
+			
+			if (!mockOp) {
+				// Create Mock Operation if not exists
+				// We need a dummy user ID for headOfOperationUserId or use the current userId
+				mockOp = await OperationRepository.create({
+					name: MOCK_OP_NAME,
+					description: "Default Mock Operation for simplified tenants",
+					headOfOperationUserId: userId, // assigning current user as head for now
+				} as any); // Type assertion if DTO doesn't match exactly, or verify OperationDTO
+			}
+			
+			data.operationId = mockOp.id;
+		}
+
+		const createdData = await TenantRepository.create(data as any)
 
 		await UserActivityLogService.create(
 			userId,
@@ -178,7 +198,72 @@ export async function addMember(
 			)
 		}
 
+
+
 		Logger.error(`TenantService.addMember`, {
+			error: err,
+		})
+		return HandleServiceResponseCustomError("Internal Server Error", 500)
+	}
+}
+
+export async function getUserPoints(
+	tenantId: string,
+	userId: string,
+): Promise<ServiceResponse<{ totalPoints: number } | {}>> {
+	try {
+        const AssignmentAttemptRepository = await import("$repositories/Assignment/AssignmentAttemptRepository");
+		const points = await AssignmentAttemptRepository.getUserTotalPointAssignment(
+			userId,
+			tenantId,
+		)
+
+        // Points is returned as [{sum: number}] or similar from raw query
+        // Need to check the return type of prisma.$queryRaw
+        const totalPoints = points && (points as any)[0]?.sum ? Number((points as any)[0].sum) : 0;
+
+		return HandleServiceResponseSuccess({ totalPoints })
+	} catch (err) {
+		Logger.error(`TenantService.getUserPoints`, {
+			error: err,
+		})
+		return HandleServiceResponseCustomError("Internal Server Error", 500)
+	}
+}
+
+export async function upsertSetting(
+	tenantId: string,
+	key: string,
+	value: string,
+	userId: string,
+): Promise<ServiceResponse<{}>> {
+	try {
+		const setting = await TenantRepository.upsertSetting(tenantId, key, value)
+
+		await UserActivityLogService.create(
+			userId,
+			"Update Tenant Setting",
+			"default",
+			`Key: ${key}`,
+		)
+
+		return HandleServiceResponseSuccess(setting)
+	} catch (err) {
+		Logger.error(`TenantService.upsertSetting`, {
+			error: err,
+		})
+		return HandleServiceResponseCustomError("Internal Server Error", 500)
+	}
+}
+
+export async function getSettings(
+	tenantId: string,
+): Promise<ServiceResponse<any[] | {}>> {
+	try {
+		const settings = await TenantRepository.getAllSettings(tenantId)
+		return HandleServiceResponseSuccess(settings)
+	} catch (err) {
+		Logger.error(`TenantService.getSettings`, {
 			error: err,
 		})
 		return HandleServiceResponseCustomError("Internal Server Error", 500)

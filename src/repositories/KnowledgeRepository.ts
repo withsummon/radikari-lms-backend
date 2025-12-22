@@ -117,10 +117,9 @@ export async function getAll(
 	usedFilters.query.where.AND.push({
 		OR: [
 			{
-				access: KnowledgeAccess.PUBLIC,
-			},
-			{
-				access: KnowledgeAccess.TENANT,
+				access: {
+					in: [KnowledgeAccess.PUBLIC, KnowledgeAccess.TENANT],
+				},
 				tenantId,
 			},
 			{
@@ -140,7 +139,7 @@ export async function getAll(
 			where: usedFilters.query.where,
 		}),
 	])
-
+	
 	let totalPage = 1
 	if (totalData > usedFilters.query.take)
 		totalPage = Math.ceil(totalData / usedFilters.query.take)
@@ -176,10 +175,9 @@ export async function getAllArchived(
 	usedFilters.query.where.AND.push({
 		OR: [
 			{
-				access: KnowledgeAccess.PUBLIC,
-			},
-			{
-				access: KnowledgeAccess.TENANT,
+				access: {
+					in: [KnowledgeAccess.PUBLIC, KnowledgeAccess.TENANT],
+				},
 				tenantId,
 			},
 			{

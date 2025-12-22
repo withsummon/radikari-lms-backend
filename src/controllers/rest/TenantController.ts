@@ -213,3 +213,72 @@ export async function addMember(c: Context): Promise<TypedResponse> {
 
 	return response_success(c, serviceResponse.data, "Member successfully added!")
 }
+
+export async function upsertSetting(c: Context): Promise<TypedResponse> {
+	const id = c.req.param("id")
+	const body = await c.req.json()
+	const user: UserJWTDAO = c.get("jwtPayload")
+
+	const { key, value } = body
+
+	if (!key || !value) {
+		return c.json(
+			{
+				status: false,
+				message: "key and value are required",
+			},
+			400,
+		)
+	}
+
+	const serviceResponse = await TenantService.upsertSetting(
+		id,
+		key,
+		value,
+		user.id,
+	)
+
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
+
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully updated tenant setting!",
+	)
+}
+
+export async function getSettings(c: Context): Promise<TypedResponse> {
+	const id = c.req.param("id")
+
+	const serviceResponse = await TenantService.getSettings(id)
+
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
+
+
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully fetched tenant settings!",
+	)
+}
+
+export async function getUserPoints(c: Context): Promise<TypedResponse> {
+	const id = c.req.param("id")
+	const userId = c.req.param("userId")
+
+	const serviceResponse = await TenantService.getUserPoints(id, userId)
+
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
+
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully fetched user points!",
+	)
+}
