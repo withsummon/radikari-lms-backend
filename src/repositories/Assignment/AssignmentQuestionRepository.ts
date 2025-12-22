@@ -228,6 +228,8 @@ export async function getAllQuestions(assignmentId: string) {
 					content: true,
 				},
 			},
+			assignmentQuestionTrueFalseAnswer: true,
+			assignmentQuestionEssayReferenceAnswer: true,
 		},
 	})
 }

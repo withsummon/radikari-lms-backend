@@ -344,3 +344,22 @@ export async function getSubmittedAttemptsByAssignmentId(assignmentId: string) {
 		},
 	})
 }
+
+export async function getAllSubmittedAttemptsByAssignmentId(
+	assignmentId: string,
+) {
+	return await prisma.assignmentUserAttempt.findMany({
+		where: {
+			assignmentId,
+			isSubmitted: true,
+		},
+	})
+}
+
+export async function getUserById(userId: string) {
+	return await prisma.user.findUniqueOrThrow({
+		where: {
+			id: userId,
+		},
+	})
+}
