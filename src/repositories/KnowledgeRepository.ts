@@ -139,7 +139,7 @@ export async function getAll(
 			where: usedFilters.query.where,
 		}),
 	])
-	
+
 	let totalPage = 1
 	if (totalData > usedFilters.query.take)
 		totalPage = Math.ceil(totalData / usedFilters.query.take)
