@@ -1,83 +1,80 @@
 import { CreateUserDTO, UpdateUserDTO } from "$entities/User"
 import * as UserService from "$services/UserService"
 import {
-	handleServiceErrorWithResponse,
-	response_created,
-	response_success,
+  handleServiceErrorWithResponse,
+  response_created,
+  response_success,
 } from "$utils/response.utils"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { Context, TypedResponse } from "hono"
+import { UserJWTDAO } from "$entities/User"
+
 export async function create(c: Context): Promise<TypedResponse> {
-	const data: CreateUserDTO = await c.req.json()
+  const data: CreateUserDTO = await c.req.json()
 
-	const serviceResponse = await UserService.create(data)
+  const serviceResponse = await UserService.create(data)
+  if (!serviceResponse.status) {
+    return handleServiceErrorWithResponse(c, serviceResponse)
+  }
 
-	if (!serviceResponse.status) {
-		return handleServiceErrorWithResponse(c, serviceResponse)
-	}
-
-	return response_created(
-		c,
-		serviceResponse.data,
-		"Successfully created new User!",
-	)
+  return response_created(c, serviceResponse.data, "Successfully created new User!")
 }
 
 export async function getAll(c: Context): Promise<TypedResponse> {
-	const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(
-		c.req.query(),
-	)
+  const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(
+    c.req.query(),
+  )
 
-	const serviceResponse = await UserService.getAll(filters)
+  const serviceResponse = await UserService.getAll(filters)
+  if (!serviceResponse.status) {
+    return handleServiceErrorWithResponse(c, serviceResponse)
+  }
 
-	if (!serviceResponse.status) {
-		return handleServiceErrorWithResponse(c, serviceResponse)
-	}
-
-	return response_success(
-		c,
-		serviceResponse.data,
-		"Successfully fetched all User!",
-	)
+  return response_success(c, serviceResponse.data, "Successfully fetched all User!")
 }
 
 export async function getById(c: Context): Promise<TypedResponse> {
-	const id = c.req.param("id")
+  const id = c.req.param("id")
 
-	const serviceResponse = await UserService.getById(id)
+  const serviceResponse = await UserService.getById(id)
+  if (!serviceResponse.status) {
+    return handleServiceErrorWithResponse(c, serviceResponse)
+  }
 
-	if (!serviceResponse.status) {
-		return handleServiceErrorWithResponse(c, serviceResponse)
-	}
-
-	return response_success(
-		c,
-		serviceResponse.data,
-		"Successfully fetched indikator kerja by id!",
-	)
+  return response_success(c, serviceResponse.data, "Successfully fetched user by id!")
 }
 
 export async function update(c: Context): Promise<TypedResponse> {
-	const data: UpdateUserDTO = await c.req.json()
-	const id = c.req.param("id")
+  const data: UpdateUserDTO = await c.req.json()
+  const id = c.req.param("id")
 
-	const serviceResponse = await UserService.update(id, data)
+  const serviceResponse = await UserService.update(id, data)
+  if (!serviceResponse.status) {
+    return handleServiceErrorWithResponse(c, serviceResponse)
+  }
 
-	if (!serviceResponse.status) {
-		return handleServiceErrorWithResponse(c, serviceResponse)
-	}
-
-	return response_success(c, serviceResponse.data, "Successfully updated User!")
+  return response_success(c, serviceResponse.data, "Successfully updated User!")
 }
 
 export async function deleteById(c: Context): Promise<TypedResponse> {
-	const id = c.req.param("id")
+  const id = c.req.param("id")
 
-	const serviceResponse = await UserService.deleteById(id)
+  const serviceResponse = await UserService.deleteById(id)
+  if (!serviceResponse.status) {
+    return handleServiceErrorWithResponse(c, serviceResponse)
+  }
 
-	if (!serviceResponse.status) {
-		return handleServiceErrorWithResponse(c, serviceResponse)
-	}
+  return response_success(c, serviceResponse.data, "Successfully deleted User!")
+}
 
-	return response_success(c, serviceResponse.data, "Successfully deleted User!")
+// ✅ NEW: /users/me
+export async function me(c: Context): Promise<TypedResponse> {
+  const jwtPayload: UserJWTDAO = c.get("jwtPayload")
+
+  const serviceResponse = await UserService.getMe(jwtPayload.id)
+  if (!serviceResponse.status) {
+    return handleServiceErrorWithResponse(c, serviceResponse)
+  }
+
+  return response_success(c, serviceResponse.data, "Successfully fetched current user!")
 }
