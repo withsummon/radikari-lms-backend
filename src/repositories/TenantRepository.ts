@@ -19,12 +19,12 @@ export async function create(data: TenantCreateUpdateDTO) {
 		})
 
 		// Create default roles for the tenant
-		const checkerRole = await tx.tenantRole.create({
+		const qaRole = await tx.tenantRole.create({
 			data: {
 				id: ulid(),
-				identifier: "CHECKER",
-				name: "Checker",
-				description: "Checker Role",
+				identifier: "QUALITY_ASSURANCE",
+				name: "Quality Assurance",
+				description: "QA Role with full admin access",
 				level: 1,
 				tenantId: tenant.id,
 			},
@@ -52,14 +52,14 @@ export async function create(data: TenantCreateUpdateDTO) {
 			},
 		})
 
-		// Assign CHECKER role to the head of tenant (admin)
+		// Assign QUALITY_ASSURANCE role to the head of tenant (admin)
 		if (headOfTenantUserId) {
 			await tx.tenantUser.create({
 				data: {
 					id: ulid(),
 					tenantId: tenant.id,
 					userId: headOfTenantUserId,
-					tenantRoleId: checkerRole.id,
+					tenantRoleId: qaRole.id,
 				},
 			})
 		}

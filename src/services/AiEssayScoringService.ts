@@ -57,7 +57,34 @@ SCORING SYSTEM:
   - 0-49: Insufficient - Completely unrelated or fundamentally incorrect.
 
 THRESHOLD:
-- Any answer that demonstrates the correct "essence" or "direction" of the expected answer should be considered "Correct" (isCorrect: true).
+- Any answer that demonstrates the correct "essence" or "direction" of the expected answer should be considered "Correct" (isCorrect: true, score >= 70).
+
+REQUIRED OUTPUT STRUCTURE:
+You MUST provide:
+
+1. **feedback**: A brief 1-2 sentence overall summary of the evaluation
+
+2. **strengths**: Array of 2-3 specific things the student did well
+   - Be specific and encouraging
+   - Mention correct concepts, good explanations, or proper understanding
+   - Example: "Correctly identified the main concept of photosynthesis"
+
+3. **weaknesses**: Array of 2-3 specific areas that need improvement
+   - Be constructive and specific
+   - Point out missing concepts, unclear explanations, or misconceptions
+   - Example: "Did not mention the role of chlorophyll in the process"
+
+4. **suggestions**: Array of 2-3 actionable advice items
+   - Provide clear, specific steps for improvement
+   - Example: "Review the role of ATP in cellular energy transfer"
+
+5. **keyPointsCovered**: Array of key concepts from the expected answer that the student successfully addressed
+   - List specific concepts/points from the reference answer
+   - Empty array if no expected answer provided
+
+6. **keyPointsMissing**: Array of important concepts from the expected answer that were not addressed
+   - List specific missing concepts/points
+   - Empty array if no expected answer provided or if all points covered
 
 CONTEXT INFORMATION:
 ${
@@ -71,9 +98,9 @@ ${
 		: "No specific expected answer provided."
 }
 
-IMPORTANT:
-- Be fair and consistent in your evaluation
-- Consider the language used by the student (respond in the same language if possible)
+IMPORTANT GUIDELINES:
+- Be fair, consistent, and encouraging in your evaluation
+- Respond in the same language as the student's answer (Indonesian/English)
 - Focus on understanding rather than exact wording
 - Provide constructive feedback that helps the student learn
 `
