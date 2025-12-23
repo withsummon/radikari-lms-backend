@@ -218,6 +218,7 @@ export async function setCorrectAnswer(
 	assignmentUserAttemptId: string,
 	assignmentQuestionId: string,
 	isCorrect: boolean,
+	aiGradingReasoning?: string,
 ) {
 	return await prisma.assignmentUserAttemptQuestionAnswer.update({
 		where: {
@@ -228,6 +229,7 @@ export async function setCorrectAnswer(
 		},
 		data: {
 			isAnswerCorrect: isCorrect,
+			...(aiGradingReasoning && { aiGradingReasoning }),
 		},
 	})
 }

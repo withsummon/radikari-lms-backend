@@ -340,10 +340,14 @@ export async function calculateAssignmentScore(
 					aiConfidence: result.confidence,
 				})
 
+				// Serialize the complete AI feedback to JSON for storage
+				const aiGradingReasoning = JSON.stringify(result)
+
 				await AssignmentAttemptRepository.setCorrectAnswer(
 					assignmentUserAttemptId,
 					questionId,
 					isCorrect,
+					aiGradingReasoning,
 				)
 			}
 		}
@@ -435,6 +439,7 @@ export async function getAllQuestionsAndAnswers(
 					content: question.content,
 					type: question.type,
 					userAnswer: assignmentUserAttemptAnswer?.essayAnswer,
+					aiGradingReasoning: assignmentUserAttemptAnswer?.aiGradingReasoning,
 				}
 			} else if (question.type === AssignmentQuestionType.TRUE_FALSE) {
 				return {
@@ -527,6 +532,7 @@ export async function getHistoryUserAssignmentAttempts(
 						type: question.type,
 						isCorrect: assignmentUserAttemptAnswer?.isAnswerCorrect,
 						userAnswer: assignmentUserAttemptAnswer?.essayAnswer,
+						aiGradingReasoning: assignmentUserAttemptAnswer?.aiGradingReasoning,
 					}
 				} else if (question.type === AssignmentQuestionType.TRUE_FALSE) {
 					return {

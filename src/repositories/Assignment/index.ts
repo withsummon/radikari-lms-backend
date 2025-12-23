@@ -589,7 +589,7 @@ export async function getQuestionAnalytics(assignmentId: string) {
 	const analyticsPromises = questions.map(async (q) => {
 		const totalResponses = q._count.assignmentUserAttemptQuestionAnswers
 
-		let answerAnalytics = null
+		let answerAnalytics: any = null
 		if (q.type === "MULTIPLE_CHOICE") {
 			const optionCounts =
 				await prisma.assignmentUserAttemptQuestionAnswer.groupBy({
@@ -617,6 +617,43 @@ export async function getQuestionAnalytics(assignmentId: string) {
 					isCorrectAnswer: opt.isCorrectAnswer,
 				}
 			})
+		} else if (q.type === "ESSAY") {
+			const recentAnswers =
+				await prisma.assignmentUserAttemptQuestionAnswer.findMany({
+					where: {
+						assignmentQuestionId: q.id,
+						essayAnswer: { not: null },
+					},
+					take: 20,
+					orderBy: {
+						assignmentUserAttempt: {
+							submittedAt: "desc",
+						},
+					},
+					include: {
+						assignmentUserAttempt: {
+							include: {
+								user: {
+									select: {
+										fullName: true,
+										profilePictureUrl: true,
+									},
+								},
+							},
+						},
+					},
+				})
+
+			answerAnalytics = recentAnswers.map((answer) => ({
+				id: answer.id,
+				content: answer.essayAnswer,
+				user: {
+					fullName: answer.assignmentUserAttempt.user.fullName,
+					profilePictureUrl:
+						answer.assignmentUserAttempt.user.profilePictureUrl,
+				},
+				submittedAt: answer.assignmentUserAttempt.submittedAt,
+			}))
 		}
 
 		return {
