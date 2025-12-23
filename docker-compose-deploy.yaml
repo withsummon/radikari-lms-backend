@@ -103,7 +103,7 @@ services:
     container_name: radikari-lms-migrate
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgres://nwpostgres:radikari123@postgres:5432/radikari_lms?schema=public}
-    command: bun prisma migrate deploy
+    command: bun prisma migrate resolve --rolled-back 20251223121920_add_ai_grading_reasoning_field && bun prisma migrate deploy
     depends_on:
       postgres:
         condition: service_healthy
