@@ -144,7 +144,6 @@ export function checkRoleAssignmentAccess(tenantRoleIdentifiers: string[]) {
 
 			const tenantRoles = await TenantRoleRepository.getByUserId(
 				user.id,
-				tenantId,
 			)
 
 			if (!tenantRoles || tenantRoles.length === 0) {

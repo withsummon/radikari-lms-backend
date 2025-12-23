@@ -16,59 +16,9 @@ export async function seedTenant(prisma: PrismaClient) {
 			},
 		})
 
-		const tenantRoleCreateManyInput: Prisma.TenantRoleCreateManyInput[] = [
-			{
-				id: ulid(),
-				identifier: "HEAD_OF_OFFICE",
-				name: "Head of Office",
-				description: "Head of Office",
-				level: 1,
-			},
-			{
-				id: ulid(),
-				identifier: "OPS_MANAGER",
-				name: "Ops Manager",
-				description: "Ops Manager",
-				level: 2,
-			},
-			{
-				id: ulid(),
-				identifier: "SUPERVISOR",
-				name: "Supervisor",
-				description: "Supervisor",
-				level: 3,
-			},
-			{
-				id: ulid(),
-				identifier: "TEAM_LEADER",
-				name: "Team Leader",
-				description: "Team Leader",
-				level: 4,
-			},
-			{
-				id: ulid(),
-				identifier: "TRAINER",
-				name: "Trainer",
-				description: "Trainer",
-				level: 4,
-			},
-			{
-				id: ulid(),
-				identifier: "QUALITY_ASSURANCE",
-				name: "Quality Assurance",
-				description: "Quality Assurance",
-				level: 4,
-			},
-			{
-				id: ulid(),
-				identifier: "AGENT",
-				name: "Agent",
-				description: "Agent",
-				level: 5,
-			},
-		]
-		await prisma.tenantRole.createMany({
-			data: tenantRoleCreateManyInput,
+		// Fetch existing global roles instead of creating new ones
+		const headOfOfficeRole = await prisma.tenantRole.findFirst({
+			where: { identifier: "HEAD_OF_OFFICE" },
 		})
 
 		const user = await prisma.user.findFirst({
@@ -77,15 +27,13 @@ export async function seedTenant(prisma: PrismaClient) {
 			},
 		})
 
-		if (user) {
+		if (user && headOfOfficeRole) {
 			await prisma.tenantUser.create({
 				data: {
 					id: ulid(),
 					userId: user.id,
 					tenantId: tenant.id,
-					tenantRoleId: tenantRoleCreateManyInput.find(
-						(role) => role.identifier === "HEAD_OF_OFFICE",
-					)?.id!,
+					tenantRoleId: headOfOfficeRole.id,
 				},
 			})
 		}

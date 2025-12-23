@@ -163,7 +163,6 @@ export async function getSummaryByUserIdAndTenantId(
 	try {
 		const userTenantRoles = await TenantRoleRepository.getByUserId(
 			userId,
-			tenantId,
 		)
 		const tenantRoleIds = userTenantRoles.map((tenantRole) => tenantRole.id)
 

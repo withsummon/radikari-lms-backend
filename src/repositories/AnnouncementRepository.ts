@@ -29,7 +29,7 @@ export async function getAll(
 	const queryBuilder = new EzFilter.BuildQueryFilter()
 	const usedFilters = queryBuilder.build(filters)
 
-	const tenantRoles = await TenantRoleRepository.getByUserId(userId, tenantId)
+	const tenantRoles = await TenantRoleRepository.getByUserId(userId)
 
 	usedFilters.query.where.AND.push({
 		tenantId,
