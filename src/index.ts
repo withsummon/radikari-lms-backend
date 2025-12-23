@@ -9,15 +9,6 @@ import { displayAsciiArt } from "$utils/ascii_art.utils"
 import { REST_ASCII_ART } from "./utils/ascii_art.utils"
 // import server from "$server/instance";
 import app from "$app/instance"
-import { execSync } from "child_process"
-
-try {
-	Logger.info("Attempting to resolve failed migration...", { resource: "DB_MIGRATE" })
-	execSync("bun run prisma migrate resolve --rolled-back 20251223121920_add_ai_grading_reasoning_field", { stdio: 'inherit' });
-	Logger.info("Successfully resolved failed migration", { resource: "DB_MIGRATE" })
-} catch (error) {
-	Logger.error("Failed to resolve migration (this is expected if it was already resolved or environment issues)", { error })
-}
 
 function parseArguments(args: string[]): Record<string, string> {
 	const parsedArgs: Record<string, string> = {}
