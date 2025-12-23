@@ -67,7 +67,6 @@ export async function deleteById(c: Context): Promise<TypedResponse> {
   return response_success(c, serviceResponse.data, "Successfully deleted User!")
 }
 
-// ✅ NEW: /users/me
 export async function me(c: Context): Promise<TypedResponse> {
   const jwtPayload: UserJWTDAO = c.get("jwtPayload")
 
