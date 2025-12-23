@@ -617,6 +617,39 @@ export async function getQuestionAnalytics(assignmentId: string) {
 					isCorrectAnswer: opt.isCorrectAnswer,
 				}
 			})
+		} else if (q.type === "TRUE_FALSE") {
+			const tfCounts =
+				await prisma.assignmentUserAttemptQuestionAnswer.groupBy({
+					by: ["trueFalseAnswer"],
+					where: { assignmentQuestionId: q.id },
+					_count: {
+						trueFalseAnswer: true,
+					},
+				})
+
+			const options = [
+				{ id: "true", content: "Benar", value: true },
+				{ id: "false", content: "Salah", value: false },
+			]
+
+			answerAnalytics = options.map((opt) => {
+				const countResult = tfCounts.find(
+					(c) => c.trueFalseAnswer === opt.value,
+				)
+				const selectionCount = countResult
+					? countResult._count.trueFalseAnswer
+					: 0
+				return {
+					optionId: opt.id, // Used by frontend to identify True/False
+					content: opt.content,
+					selectionCount,
+					totalResponses, // Total calculated from all answers to this question
+					selectionPercentage:
+						totalResponses > 0 ? (selectionCount / totalResponses) * 100 : 0,
+					isCorrectAnswer:
+						q.assignmentQuestionTrueFalseAnswer?.correctAnswer === opt.value,
+				}
+			})
 		} else if (q.type === "ESSAY") {
 			const recentAnswers =
 				await prisma.assignmentUserAttemptQuestionAnswer.findMany({
