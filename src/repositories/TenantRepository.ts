@@ -18,48 +18,26 @@ export async function create(data: TenantCreateUpdateDTO) {
 			},
 		})
 
-		// Create default roles for the tenant
-		const qaRole = await tx.tenantRole.create({
-			data: {
-				id: ulid(),
-				identifier: "QUALITY_ASSURANCE",
-				name: "Quality Assurance",
-				description: "QA Role with full admin access",
-				level: 1,
-				tenantId: tenant.id,
-			},
+		// Find existing global CHECKER role for tenant admin
+		let adminRole = await tx.tenantRole.findFirst({
+			where: { identifier: "CHECKER" },
 		})
 
-		await tx.tenantRole.create({
-			data: {
-				id: ulid(),
-				identifier: "MAKER",
-				name: "Maker",
-				description: "Maker Role",
-				level: 1,
-				tenantId: tenant.id,
-			},
-		})
+		// Fallback to HEAD_OF_OFFICE if CHECKER not found (backward compatibility)
+		if (!adminRole) {
+			adminRole = await tx.tenantRole.findFirst({
+				where: { identifier: "HEAD_OF_OFFICE" },
+			})
+		}
 
-		await tx.tenantRole.create({
-			data: {
-				id: ulid(),
-				identifier: "CONSUMER",
-				name: "Consumer",
-				description: "Consumer Role",
-				level: 1,
-				tenantId: tenant.id,
-			},
-		})
-
-		// Assign QUALITY_ASSURANCE role to the head of tenant (admin)
-		if (headOfTenantUserId) {
+		// Assign admin role to the head of tenant
+		if (headOfTenantUserId && adminRole) {
 			await tx.tenantUser.create({
 				data: {
 					id: ulid(),
 					tenantId: tenant.id,
 					userId: headOfTenantUserId,
-					tenantRoleId: qaRole.id,
+					tenantRoleId: adminRole.id,
 				},
 			})
 		}
@@ -216,11 +194,10 @@ export async function update(id: string, data: TenantCreateUpdateDTO) {
 			},
 		})
 
-		// Try to find the tenant specific CHECKER role
+		// Try to find the global CHECKER role
 		let adminRole = await tx.tenantRole.findFirst({
 			where: {
 				identifier: "CHECKER",
-				tenantId: id,
 			},
 		})
 

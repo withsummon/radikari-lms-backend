@@ -13,7 +13,7 @@ export async function generatedFilterForAssignment(
 		return usedFilters
 	}
 
-	const tenantRoles = await TenantRoleRepository.getByUserId(user.id, tenantId)
+	const tenantRoles = await TenantRoleRepository.getByUserId(user.id)
 
 	if (
 		tenantRoles.find(
