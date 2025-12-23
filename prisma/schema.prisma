@@ -505,6 +505,7 @@ model AssignmentUserAttemptQuestionAnswer {
   graderComment              String?
   gradedByUserId             String?
   trueFalseAnswer            Boolean?
+  aiGradingReasoning         String?                @db.Text
 
   assignmentUserAttempt    AssignmentUserAttempt     @relation(fields: [assignmentUserAttemptId], references: [id], onDelete: Cascade)
   assignmentQuestion       AssignmentQuestion        @relation(fields: [assignmentQuestionId], references: [id], onDelete: Cascade)
