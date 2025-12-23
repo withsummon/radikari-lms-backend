@@ -13,7 +13,7 @@
 		"check": "tsc --noEmit",
 		"seed": "bun run prisma/seeds/index.ts",
 		"migrate:dev": "bun run prisma migrate dev",
-		"migrate:deploy": "bun run prisma migrate deploy",
+		"migrate:deploy": "bun run prisma migrate resolve --rolled-back 20251223121920_add_ai_grading_reasoning_field && bun run prisma migrate deploy",
 		"migrate:generate": "bun run prisma generate",
 		"codegen": "bun run codegen/index.ts",
 		"codegen:crud": "bun run codegen/index.ts --generate=crud",
