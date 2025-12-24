@@ -163,7 +163,43 @@ async function validateOrigin(
 						const allowedDomains = whitelistedDomains.map(
 							(item: any) => item.domain,
 						)
-						return allowedDomains.includes(origin)
+						Logger.info(
+							"EphemeralChatController.validateOrigin.checkingWhitelist",
+							{
+								tenantId,
+								origin,
+								allowedDomains,
+								whitelistedDomains,
+							},
+						)
+
+						// Normalize origin to hostname for comparison
+						// Origin can be "https://example.com" or "example.com"
+						let originHostname = origin
+						try {
+							const url = new URL(origin)
+							originHostname = url.hostname
+						} catch {
+							// If URL parsing fails, use origin as-is
+						}
+
+						// Check if origin hostname matches any whitelisted domain
+						// Both should be normalized to hostname for comparison
+						for (const domain of allowedDomains) {
+							let normalizedDomain = domain
+							try {
+								const url = new URL(domain)
+								normalizedDomain = url.hostname
+							} catch {
+								// If URL parsing fails, use domain as-is
+							}
+
+							if (originHostname === normalizedDomain) {
+								return true
+							}
+						}
+
+						return false
 					}
 				} catch (parseError) {
 					Logger.info("EphemeralChatController.validateOrigin.parseError", {

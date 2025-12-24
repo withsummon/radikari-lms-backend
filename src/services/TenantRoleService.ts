@@ -18,5 +18,3 @@ export async function getAll(): Promise<ServiceResponse<{}>> {
 		return HandleServiceResponseCustomError("Internal Server Error", 500)
 	}
 }
-
-

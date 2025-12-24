@@ -116,21 +116,28 @@ export async function getByTenantId(
 
 export async function getAll(
 	filters: any,
-): Promise<ServiceResponse<{} | { content: { entries: TenantUser[]; totalData: number; totalPage: number } }>> {
+): Promise<
+	ServiceResponse<
+		| {}
+		| {
+				content: { entries: TenantUser[]; totalData: number; totalPage: number }
+		  }
+	>
+> {
 	try {
 		const { entries, count } = await TenantUserRepository.getAll(filters)
-        
-        const rows = filters.rows ? Number(filters.rows) : count;
-        // avoid division by zero if count is 0 and rows is 0 (though rows defaults to count if falsy)
-        // actually if filters.rows is provided it's used. If not, we fetched all, so 1 page.
-        // If count is 0, totalPage is 0.
-        const totalPage = rows > 0 ? Math.ceil(count / rows) : 1;
+
+		const rows = filters.rows ? Number(filters.rows) : count
+		// avoid division by zero if count is 0 and rows is 0 (though rows defaults to count if falsy)
+		// actually if filters.rows is provided it's used. If not, we fetched all, so 1 page.
+		// If count is 0, totalPage is 0.
+		const totalPage = rows > 0 ? Math.ceil(count / rows) : 1
 
 		return HandleServiceResponseSuccess({
-            entries,
-            totalData: count,
-            totalPage,
-        })
+			entries,
+			totalData: count,
+			totalPage,
+		})
 	} catch (error) {
 		Logger.error(`TenanUserService.getAll`, {
 			error,

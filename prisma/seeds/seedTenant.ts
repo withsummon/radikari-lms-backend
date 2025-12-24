@@ -20,7 +20,7 @@ export async function seedTenant(prisma: PrismaClient) {
 		const headOfOfficeRole = await prisma.tenantRole.findFirst({
 			where: { identifier: "HEAD_OF_OFFICE" },
 		})
-		
+
 		const agentRole = await prisma.tenantRole.findFirst({
 			where: { identifier: "AGENT" },
 		})
@@ -30,7 +30,7 @@ export async function seedTenant(prisma: PrismaClient) {
 				role: Roles.ADMIN,
 			},
 		})
-		
+
 		const regularUser = await prisma.user.findFirst({
 			where: {
 				email: "user@test.com",
@@ -48,7 +48,7 @@ export async function seedTenant(prisma: PrismaClient) {
 				},
 			})
 		}
-		
+
 		// Add regular user (user@test.com) with AGENT role
 		if (regularUser && agentRole) {
 			await prisma.tenantUser.create({
