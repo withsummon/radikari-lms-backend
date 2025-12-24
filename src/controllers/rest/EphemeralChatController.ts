@@ -42,7 +42,7 @@ export async function createThread(c: Context): Promise<TypedResponse> {
 
 		// Validate origin (CORS + allowlist)
 		const origin = c.req.header("origin")
-		if (!validateOrigin(tenantId, origin)) {
+		if (!(await validateOrigin(tenantId, origin))) {
 			Logger.info("EphemeralChatController.createThread.invalidOrigin", {
 				tenantId,
 				origin,
@@ -78,7 +78,7 @@ export async function sendMessage(c: Context): Promise<any> {
 
 		// Validate origin
 		const origin = c.req.header("origin")
-		if (!validateOrigin(tenantId, origin)) {
+		if (!(await validateOrigin(tenantId, origin))) {
 			Logger.info("EphemeralChatController.sendMessage.invalidOrigin", {
 				tenantId,
 				threadId,
