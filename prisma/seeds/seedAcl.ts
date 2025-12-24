@@ -413,12 +413,12 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 
 	/**
 	 * ACL MAPPING - NEW vs LEGACY ROLES
-	 * 
+	 *
 	 * The following ACL permissions are shared between new and legacy roles:
 	 * - CHECKER ACL = QUALITY_ASSURANCE ACL (full admin access to all features)
 	 * - MAKER ACL = TRAINER ACL (content creation, assignments, knowledge management)
 	 * - CONSUMER ACL = AGENT ACL (view-only access)
-	 * 
+	 *
 	 * This ensures users with new roles (CHECKER, MAKER, CONSUMER) have the same
 	 * permissions as their legacy equivalents, maintaining backward compatibility.
 	 */

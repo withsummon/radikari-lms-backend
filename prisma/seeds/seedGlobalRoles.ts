@@ -3,9 +3,9 @@ import { ulid } from "ulid"
 
 /**
  * DUAL ROLE SYSTEM DOCUMENTATION
- * 
+ *
  * This project maintains TWO role systems for backward compatibility:
- * 
+ *
  * 1. LEGACY ROLES (7 roles) - For existing/old tenants:
  *    - HEAD_OF_OFFICE (level 5) - Highest organizational role
  *    - OPS_MANAGER (level 4) - Operations manager
@@ -14,15 +14,15 @@ import { ulid } from "ulid"
  *    - QUALITY_ASSURANCE (level 1) - QA specialist with full admin access
  *    - TRAINER (level 1) - Content creator and trainer
  *    - AGENT (level 1) - Basic user/agent
- * 
+ *
  * 2. NEW SIMPLIFIED ROLES (3 roles) - For new tenant creation:
  *    - CHECKER (level 5) - Tenant admin, ACL equivalent to QUALITY_ASSURANCE
  *    - MAKER (level 1) - Content creator, ACL equivalent to TRAINER
  *    - CONSUMER (level 1) - View-only user, ACL equivalent to AGENT
- * 
+ *
  * When creating new tenants, they receive CHECKER, MAKER, CONSUMER by default.
  * Old tenants continue using their legacy roles without disruption.
- * 
+ *
  * ACL MAPPING:
  * - CHECKER ACL = QUALITY_ASSURANCE ACL (full admin access)
  * - MAKER ACL = TRAINER ACL (content creation & management)
