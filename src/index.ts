@@ -9,22 +9,6 @@ import { displayAsciiArt } from "$utils/ascii_art.utils"
 import { REST_ASCII_ART } from "./utils/ascii_art.utils"
 // import server from "$server/instance";
 import app from "$app/instance"
-import { prisma } from "$pkg/prisma"
-
-// Fix corrupted TenantRole data (P2032 error)
-;(async () => {
-	try {
-		Logger.info("Checking for corrupt TenantRole data...", { resource: "DB_FIX" })
-		const count = await prisma.$executeRawUnsafe(`DELETE FROM "TenantRole" WHERE "tenantId" IS NULL`)
-		if (Number(count) > 0) {
-			Logger.warning(`Deleted ${count} corrupt TenantRole(s) with null tenantId.`, { resource: "DB_FIX" })
-		} else {
-			Logger.info("No corrupt TenantRole data found.", { resource: "DB_FIX" })
-		}
-	} catch (error) {
-		Logger.error("Failed to clean up corrupt data", { error })
-	}
-})()
 
 function parseArguments(args: string[]): Record<string, string> {
 	const parsedArgs: Record<string, string> = {}
