@@ -147,23 +147,19 @@ async function validateOrigin(
 		})
 
 		if (settingsResponse.status && settingsResponse.data) {
-			const responseData = settingsResponse.data as {
-				content?: Array<{
-					id: string
-					key: string
-					value: string
-					tenantId: string
-				}>
-				message?: string
-				errors?: any[]
-			}
+			const responseData = settingsResponse.data as Array<{
+				id: string
+				key: string
+				value: string
+				tenantId: string
+			}>
 
 			Logger.info("EphemeralChatController.validateOrigin.responseData", {
-				contentLength: responseData.content?.length,
-				contentKeys: responseData.content?.map((c) => c.key),
+				contentLength: responseData?.length,
+				contentKeys: responseData?.map((c) => c.key),
 			})
 
-			const whitelistSetting = (responseData.content || []).find(
+			const whitelistSetting = (responseData || []).find(
 				(setting: any) => setting.key === "WHITELISTED_DOMAINS",
 			)
 
