@@ -209,6 +209,45 @@ export async function getAll(filters: any) {
         }
     }
 
+    // Handle filters (exact match for specific fields)
+    if (filters.filters) {
+        let parsedFilters: Array<{ key: string; value: string }> = [];
+        if (typeof filters.filters === 'string') {
+            try {
+                parsedFilters = JSON.parse(filters.filters);
+            } catch (e) { /* ignore */ }
+        } else if (Array.isArray(filters.filters)) {
+            parsedFilters = filters.filters;
+        }
+
+        for (const filter of parsedFilters) {
+            const { key, value } = filter;
+            if (!key || !value) continue;
+
+            // Handle different filter keys
+            if (key === 'tenantId') {
+                where.tenantId = value;
+            } else if (key === 'tenantRoleId') {
+                where.tenantRoleId = value;
+            } else if (key === 'user.email') {
+                // For user.email, use contains for partial match
+                if (!where.user) where.user = {};
+                where.user.email = { contains: value, mode: 'insensitive' };
+            } else if (key.includes('.')) {
+                // For nested keys, unflatten and use contains
+                const condition = unflatten({
+                    [key]: { contains: value, mode: 'insensitive' }
+                });
+                if (!where.AND) where.AND = [];
+                if (!Array.isArray(where.AND)) where.AND = [where.AND];
+                where.AND.push(condition);
+            } else {
+                // For direct keys, exact match
+                where[key] = value;
+            }
+        }
+    }
+
     const [entries, count] = await prisma.$transaction([
         prisma.tenantUser.findMany({
             where,
