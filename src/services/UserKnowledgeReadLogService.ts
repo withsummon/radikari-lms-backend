@@ -1,67 +1,78 @@
-import { UserKnowledgeReadLog } from "../../generated/prisma/client"
-import * as EzFilter from "@nodewave/prisma-ezfilter"
 import * as UserKnowledgeReadLogRepository from "$repositories/UserKnowledgeReadLogRepository"
-import {
-  HandleServiceResponseCustomError,
-  HandleServiceResponseSuccess,
-  ResponseStatus,
-  ServiceResponse,
-} from "$entities/Service"
-import Logger from "$pkg/logger"
+import { prisma } from "$pkg/prisma"
 
-export async function getAll(
-  filters: EzFilter.FilteringQuery,
-): Promise<
-  ServiceResponse<EzFilter.PaginatedResult<UserKnowledgeReadLog[]> | {}>
-> {
-  try {
-    const data = await UserKnowledgeReadLogRepository.getAll(filters)
-    return HandleServiceResponseSuccess(data)
-  } catch (err) {
-    Logger.error(`UserKnowledgeReadLogService.getAll`, { error: err })
-    return HandleServiceResponseCustomError("Internal Server Error", 500)
-  }
+type ServiceResult<T> =
+	| { status: true; data: T }
+	| { status: false; message: string; code?: number; error?: unknown }
+
+function ok<T>(data: T): ServiceResult<T> {
+	return { status: true, data }
 }
 
-export async function getByUserAndKnowledge(
-  userId: string,
-  knowledgeId: string,
-): Promise<ServiceResponse<UserKnowledgeReadLog | {}>> {
-  try {
-    const data =
-      await UserKnowledgeReadLogRepository.getByUserAndKnowledge(
-        userId,
-        knowledgeId,
-      )
-
-    if (!data)
-      return HandleServiceResponseCustomError(
-        "Data not found",
-        ResponseStatus.NOT_FOUND,
-      )
-
-    return HandleServiceResponseSuccess(data)
-  } catch (err) {
-    Logger.error(`UserKnowledgeReadLogService.getByUserAndKnowledge`, {
-      error: err,
-    })
-    return HandleServiceResponseCustomError("Internal Server Error", 500)
-  }
+function fail(
+	message: string,
+	error?: unknown,
+	code?: number,
+): ServiceResult<never> {
+	return { status: false, message, error, code }
 }
 
-export async function markViewed(
-  userId: string,
-  knowledgeId: string,
-): Promise<ServiceResponse<UserKnowledgeReadLog | {}>> {
-  try {
-    const data = await UserKnowledgeReadLogRepository.upsertView(
-      userId,
-      knowledgeId,
-    )
+// Admin checker: list logs scoped by tenant
+export async function getAllByTenant(tenantId: string, filters: any) {
+	try {
+		const data = await UserKnowledgeReadLogRepository.getAllByTenant(
+			tenantId,
+			filters,
+		)
+		return ok(data)
+	} catch (e) {
+		return fail("Failed to fetch knowledge read logs", e)
+	}
+}
 
-    return HandleServiceResponseSuccess(data)
-  } catch (err) {
-    Logger.error(`UserKnowledgeReadLogService.markViewed`, { error: err })
-    return HandleServiceResponseCustomError("Internal Server Error", 500)
-  }
+// User: get status (scoped by tenant)
+export async function getStatusInTenant(
+	tenantId: string,
+	userId: string,
+	knowledgeId: string,
+) {
+	try {
+		// Ensure knowledge belongs to tenant (prevent cross-tenant probing)
+		const knowledge = await prisma.knowledge.findFirst({
+			where: { id: knowledgeId, tenantId },
+			select: { id: true },
+		})
+		if (!knowledge) return fail("Knowledge not found in tenant", null, 404)
+
+		const data = await UserKnowledgeReadLogRepository.getByUserAndKnowledge(
+			userId,
+			knowledgeId,
+		)
+		return ok(data)
+	} catch (e) {
+		return fail("Failed to fetch read status", e)
+	}
+}
+
+// User: mark viewed (scoped by tenant)
+export async function markViewedInTenant(
+	tenantId: string,
+	userId: string,
+	knowledgeId: string,
+) {
+	try {
+		const knowledge = await prisma.knowledge.findFirst({
+			where: { id: knowledgeId, tenantId },
+			select: { id: true },
+		})
+		if (!knowledge) return fail("Knowledge not found in tenant", null, 404)
+
+		const data = await UserKnowledgeReadLogRepository.upsertView(
+			userId,
+			knowledgeId,
+		)
+		return ok(data)
+	} catch (e) {
+		return fail("Failed to mark knowledge as viewed", e)
+	}
 }
