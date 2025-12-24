@@ -140,6 +140,12 @@ async function validateOrigin(
 		// First, try to get dynamic whitelisted domains from tenant settings
 		const settingsResponse = await TenantService.getSettings(tenantId)
 
+		Logger.info("EphemeralChatController.validateOrigin.settingsResponse", {
+			tenantId,
+			status: settingsResponse.status,
+			hasData: !!settingsResponse.data,
+		})
+
 		if (settingsResponse.status && settingsResponse.data) {
 			const responseData = settingsResponse.data as {
 				content?: Array<{
@@ -152,9 +158,19 @@ async function validateOrigin(
 				errors?: any[]
 			}
 
+			Logger.info("EphemeralChatController.validateOrigin.responseData", {
+				contentLength: responseData.content?.length,
+				contentKeys: responseData.content?.map((c) => c.key),
+			})
+
 			const whitelistSetting = (responseData.content || []).find(
 				(setting: any) => setting.key === "WHITELISTED_DOMAINS",
 			)
+
+			Logger.info("EphemeralChatController.validateOrigin.whitelistSetting", {
+				found: !!whitelistSetting,
+				hasValue: !!whitelistSetting?.value,
+			})
 
 			if (whitelistSetting?.value) {
 				try {
