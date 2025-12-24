@@ -99,14 +99,11 @@ model Tenant {
   aiPrompt      AiPrompt?
   broadcast     Broadcast?
   aiUsageLogs   AiUsageLog[]
-  tenantRoles   TenantRole[]
 }
 
 model TenantRole {
   id          String   @id @unique
-  identifier  String
-  tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  identifier  String   @unique
   level       Int
   name        String
   description String
@@ -117,8 +114,6 @@ model TenantRole {
   accessControlList              AccessControlList[]
   assignmentTenantRoleAccesses   AssignmentTenantRoleAccess[]
   announcementTenantRoleAccesses AnnouncementTenantRoleAccess[]
-
-  @@unique([identifier, tenantId])
 }
 
 model TenantUser {
