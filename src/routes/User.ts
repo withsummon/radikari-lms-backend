@@ -6,10 +6,7 @@ import { Roles } from "../../generated/prisma/client"
 
 const UserRoutes = new Hono()
 
-UserRoutes.get(
-	"/me", 
-	AuthMiddleware.checkJwt, 
-	UserController.me)
+UserRoutes.get("/me", AuthMiddleware.checkJwt, UserController.me)
 
 UserRoutes.get(
 	"/",
@@ -18,11 +15,7 @@ UserRoutes.get(
 	UserController.getAll,
 )
 
-UserRoutes.get(
-	"/:id",
-	AuthMiddleware.checkJwt,
-	UserController.getById,
-)
+UserRoutes.get("/:id", AuthMiddleware.checkJwt, UserController.getById)
 
 UserRoutes.post(
 	"/",
