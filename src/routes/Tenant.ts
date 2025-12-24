@@ -3,6 +3,7 @@ import * as TenantController from "$controllers/rest/TenantController"
 import * as AuthMiddleware from "$middlewares/authMiddleware"
 import * as Validations from "$validations/TenantValidation"
 import { Roles } from "../../generated/prisma/client"
+import * as UserKnowledgeReadLogController from "$controllers/rest/UserKnowledgeReadLogController"
 
 const TenantRoutes = new Hono()
 
@@ -11,6 +12,25 @@ TenantRoutes.get(
 	AuthMiddleware.checkJwt,
 	AuthMiddleware.checkRole([Roles.ADMIN]),
 	TenantController.getAll,
+)
+
+TenantRoutes.get(
+  "/:id/knowledge-reads",
+  AuthMiddleware.checkJwt,
+  AuthMiddleware.checkRole([Roles.ADMIN]),
+  UserKnowledgeReadLogController.getAll,
+)
+
+TenantRoutes.post(
+  "/:id/knowledge-reads/view",
+  AuthMiddleware.checkJwt,
+  UserKnowledgeReadLogController.markViewed,
+)
+
+TenantRoutes.get(
+  "/knowledge/:knowledgeId/read-status",
+  AuthMiddleware.checkJwt,
+  UserKnowledgeReadLogController.getStatus,
 )
 
 TenantRoutes.get(
