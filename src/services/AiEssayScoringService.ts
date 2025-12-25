@@ -5,7 +5,7 @@ import Logger from "$pkg/logger"
 import { prisma } from "$pkg/prisma"
 import { ulid } from "ulid"
 
-// Define the Zod schema for AI essay scoring response  
+// Define the Zod schema for AI essay scoring response
 const essayScoreSchema = z.object({
 	isCorrect: z
 		.boolean()

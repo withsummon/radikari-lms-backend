@@ -18,5 +18,3 @@ export async function getAll(tenantId?: string): Promise<ServiceResponse<{}>> {
 		return HandleServiceResponseCustomError("Internal Server Error", 500)
 	}
 }
-
-

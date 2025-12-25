@@ -618,14 +618,15 @@ export async function getQuestionAnalytics(assignmentId: string) {
 				}
 			})
 		} else if (q.type === "TRUE_FALSE") {
-			const tfCounts =
-				await prisma.assignmentUserAttemptQuestionAnswer.groupBy({
+			const tfCounts = await prisma.assignmentUserAttemptQuestionAnswer.groupBy(
+				{
 					by: ["trueFalseAnswer"],
 					where: { assignmentQuestionId: q.id },
 					_count: {
 						trueFalseAnswer: true,
 					},
-				})
+				},
+			)
 
 			const options = [
 				{ id: "true", content: "Benar", value: true },

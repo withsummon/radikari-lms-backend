@@ -1090,7 +1090,7 @@
 // 	console.log("🚀 Starting seed...")
 
 // 	await prisma.$transaction(async (tx) => {
-// 		await seedOperation(tx) //ini rusak tx nya karena 
+// 		await seedOperation(tx) //ini rusak tx nya karena
 // 		await seedTenant(tx)
 // 		await seedTrainerAndQA(tx)
 // 		await seedAccessControlList(tx)

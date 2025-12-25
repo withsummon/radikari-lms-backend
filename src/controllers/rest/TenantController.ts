@@ -300,4 +300,3 @@ export async function getUserPoints(c: Context): Promise<TypedResponse> {
 		"Successfully fetched user points!",
 	)
 }
-
