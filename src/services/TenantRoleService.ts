@@ -6,9 +6,9 @@ import { HandleServiceResponseSuccess } from "$entities/Service"
 import Logger from "$pkg/logger"
 import * as TenantRoleRepository from "$repositories/TenantRoleRepository"
 
-export async function getAll(): Promise<ServiceResponse<{}>> {
+export async function getAll(tenantId?: string): Promise<ServiceResponse<{}>> {
 	try {
-		const tenantRoles = await TenantRoleRepository.getAll()
+		const tenantRoles = await TenantRoleRepository.getAll(tenantId)
 
 		return HandleServiceResponseSuccess(tenantRoles)
 	} catch (error) {
