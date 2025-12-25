@@ -9,14 +9,48 @@ import { ulid } from "ulid"
 const essayScoreSchema = z.object({
 	isCorrect: z
 		.boolean()
+		.default(false)
 		.describe("Whether the answer is correct (score >= 70)"),
-	score: z.number().min(0).max(100).describe("The score for the essay (0-100)"),
-	feedback: z.string().describe("Brief constructive feedback for the student"),
+	score: z
+		.number()
+		.min(0)
+		.max(100)
+		.default(0)
+		.describe("The score for the essay (0-100)"),
+	feedback: z
+		.string()
+		.default("")
+		.describe("Brief constructive feedback for the student"),
 	confidence: z
 		.number()
 		.min(0)
 		.max(1)
+		.default(0)
 		.describe("AI's confidence level in the evaluation (0-1)"),
+	strengths: z
+		.array(z.string())
+		.default([])
+		.describe("Array of 2-3 specific things the student did well"),
+	weaknesses: z
+		.array(z.string())
+		.default([])
+		.describe("Array of 2-3 specific areas that need improvement"),
+	suggestions: z
+		.array(z.string())
+		.default([])
+		.describe("Array of 2-3 actionable advice items for improvement"),
+	keyPointsCovered: z
+		.array(z.string())
+		.default([])
+		.describe(
+			"Array of key concepts from expected answer that student addressed",
+		),
+	keyPointsMissing: z
+		.array(z.string())
+		.default([])
+		.describe(
+			"Array of important concepts from expected answer that were not addressed",
+		),
 })
 
 export type EssayScoringResult = z.infer<typeof essayScoreSchema>
@@ -100,7 +134,7 @@ ${
 
 IMPORTANT GUIDELINES:
 - Be fair, consistent, and encouraging in your evaluation
-- Respond in the same language as the student's answer (Indonesian/English)
+- ALWAYS respond in Indonesian (Bahasa Indonesia), regardless of the language used in the student's answer
 - Focus on understanding rather than exact wording
 - Provide constructive feedback that helps the student learn
 `
@@ -108,7 +142,7 @@ IMPORTANT GUIDELINES:
 		const userPrompt = `Question: ${request.question}\n\nStudent Answer: ${request.userAnswer}`
 
 		const { object, usage } = await generateObject({
-			model: openai("gpt-4.1-mini"),
+			model: openai("gpt-4o-mini"),
 			schema: essayScoreSchema,
 			system: systemPrompt,
 			prompt: userPrompt,
@@ -125,7 +159,7 @@ IMPORTANT GUIDELINES:
 						tenantId: request.tenantId,
 						userId: request.userId,
 						action: "ESSAY_SCORING",
-						model: "gpt-4.1-mini",
+						model: "gpt-4o-mini",
 						promptTokens: usageData.promptTokens || 0,
 						completionTokens: usageData.completionTokens || 0,
 						totalTokens: usageData.totalTokens || 0,
@@ -149,6 +183,9 @@ IMPORTANT GUIDELINES:
 	} catch (error) {
 		Logger.error("AiEssayScoringService.scoreEssayAnswer", {
 			error: error instanceof Error ? error.message : String(error),
+			stack: error instanceof Error ? error.stack : undefined,
+			errorType: error?.constructor?.name,
+			fullError: JSON.stringify(error, Object.getOwnPropertyNames(error)),
 		})
 
 		// Return a default result on error
@@ -157,6 +194,11 @@ IMPORTANT GUIDELINES:
 			score: 0,
 			feedback: "Error occurred during evaluation. Manual review required.",
 			confidence: 0,
+			strengths: [],
+			weaknesses: [],
+			suggestions: [],
+			keyPointsCovered: [],
+			keyPointsMissing: [],
 		}
 	}
 }

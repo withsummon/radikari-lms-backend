@@ -114,9 +114,7 @@ export async function getByTenantId(
 	}
 }
 
-export async function getAll(
-	filters: any,
-): Promise<
+export async function getAll(filters: any): Promise<
 	ServiceResponse<
 		| {}
 		| {

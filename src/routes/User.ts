@@ -11,7 +11,7 @@ UserRoutes.get("/me", AuthMiddleware.checkJwt, UserController.me)
 UserRoutes.get(
 	"/",
 	AuthMiddleware.checkJwt,
-	AuthMiddleware.checkRole([Roles.ADMIN]),
+	// Allow all authenticated users to view user list (needed for tenant member management)
 	UserController.getAll,
 )
 

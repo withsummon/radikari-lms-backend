@@ -5,13 +5,38 @@ import {
 	handleServiceErrorWithResponse,
 } from "$utils/response.utils"
 
+// Helper sederhana untuk mengubah JSON String ("{...}") menjadi Object ({...})
+const safeParse = (value: any) => {
+	if (typeof value === "string") {
+		try {
+			return JSON.parse(value)
+		} catch {
+			return value // Kembalikan apa adanya jika bukan JSON valid
+		}
+	}
+	return value
+}
+
 export async function getAll(c: Context) {
 	const tenantId = c.req.param("id")
-	const filters = c.req.query()
+	const rawQuery = c.req.query()
+
+	// FIX: Buat object baru yang sudah di-parse
+	const queryParams = {
+		...rawQuery,
+		// Parse manual field-field yang dikirim sebagai JSON string oleh frontend
+		filters: rawQuery.filters ? safeParse(rawQuery.filters) : undefined,
+		searchFilters: rawQuery.searchFilters
+			? safeParse(rawQuery.searchFilters)
+			: undefined,
+		rangedFilters: rawQuery.rangedFilters
+			? safeParse(rawQuery.rangedFilters)
+			: undefined,
+	}
 
 	const result = await UserKnowledgeReadLogService.getAllByTenant(
 		tenantId,
-		filters as any,
+		queryParams as any,
 	)
 
 	if (!result.status) return handleServiceErrorWithResponse(c, result)

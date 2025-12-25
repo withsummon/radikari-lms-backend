@@ -1,5 +1,6 @@
 import { PrismaClient } from "../../generated/prisma/client"
 import { seedAdmin } from "./seedAdmin"
+import { seedGlobalRoles } from "./seedGlobalRoles"
 import { seedTenant } from "./seedTenant"
 import { seedTrainerAndQA } from "./seedTrainerAndQA"
 import { seedKnowledge } from "./seedKnowledge"
@@ -23,6 +24,7 @@ async function seed() {
 		try {
 			await seedAdmin(prisma)
 			await seedOperation(prisma)
+			await seedGlobalRoles(prisma)
 			await seedTenant(prisma)
 			await seedTrainerAndQA(prisma)
 			await seedAccessControlList(prisma)
