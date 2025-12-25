@@ -103,7 +103,7 @@ services:
     container_name: radikari-lms-migrate
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgres://nwpostgres:radikari123@postgres:5432/radikari_lms?schema=public}
-    command: bun prisma migrate deploy
+    command: bun prisma migrate deploy && bun run seed
     depends_on:
       postgres:
         condition: service_healthy
