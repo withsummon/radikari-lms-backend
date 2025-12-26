@@ -65,6 +65,9 @@ model User {
   broadcastCreator                     Broadcast[]                           @relation("BroadcastCreator")
   broadcastUpdater                     Broadcast[]                           @relation("BroadcastUpdater")
   aiUsageLogs                          AiUsageLog[]
+
+  // ✅ FIX: opposite relation for UserKnowledgeReadLog.user
+  userKnowledgeReadLogs UserKnowledgeReadLog[]
 }
 
 model Operation {
@@ -105,13 +108,15 @@ model Tenant {
 model TenantRole {
   id          String   @id @unique
   identifier  String
-  tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
   level       Int
   name        String
   description String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   tenantUser                     TenantUser[]
   accessControlList              AccessControlList[]
@@ -192,6 +197,31 @@ enum KnowledgeType {
   CASE
 }
 
+enum KnowledgeReadStatus {
+  NOT_VIEWED
+  VIEWED
+}
+
+model UserKnowledgeReadLog {
+  id            String              @id @unique
+  knowledgeId   String
+  userId        String
+  status        KnowledgeReadStatus @default(NOT_VIEWED)
+  firstViewedAt DateTime?
+  lastViewedAt  DateTime?
+  viewCount     Int                 @default(0)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  knowledge Knowledge @relation(fields: [knowledgeId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([knowledgeId, userId])
+  @@index([knowledgeId])
+  @@index([userId])
+  @@index([lastViewedAt])
+}
+
 model Knowledge {
   id               String          @id @unique
   tenantId         String?
@@ -222,6 +252,9 @@ model Knowledge {
   AiChatRoomMessage          AiChatRoomMessage[]
   userKnowledge              UserKnowledge[]
   aiChatRoomMessageKnowledge AiChatRoomMessageKnowledge[]
+
+  // ✅ FIX: opposite relation for UserKnowledgeReadLog.knowledge
+  userKnowledgeReadLogs UserKnowledgeReadLog[]
 
   @@unique([parentId, version])
   @@index([tenantId, access])
@@ -574,7 +607,7 @@ model ForumComment {
   forumId          String
   content          String   @db.Text
   likesCount       Int      @default(0)
-  isDeleted        Boolean @default(false)
+  isDeleted        Boolean  @default(false)
   replyToCommentId String?
   createdByUserId  String
   createdAt        DateTime @default(now())
@@ -632,7 +665,6 @@ model UserActivityLog {
   action    String   @db.Text
   createdAt DateTime @default(now())
 
-
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -675,7 +707,6 @@ model AiPrompt {
   updatedByUser User?  @relation("AiPromptUpdater", fields: [updatedByUserId], references: [id], onDelete: Cascade)
 }
 
-
 model Broadcast {
   id              String   @id @unique
   tenantId        String   @unique
@@ -691,7 +722,7 @@ model Broadcast {
 }
 
 model AiUsageLog {
-  id                  String             @id @unique
+  id                  String   @id @unique
   tenantId            String
   userId              String?
   aiChatRoomMessageId String?
@@ -700,7 +731,7 @@ model AiUsageLog {
   promptTokens        Int
   completionTokens    Int
   totalTokens         Int
-  createdAt           DateTime           @default(now())
+  createdAt           DateTime @default(now())
 
   tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   user              User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
