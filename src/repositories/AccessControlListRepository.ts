@@ -88,6 +88,7 @@ export async function createRole(data: TenantRoleDTO) {
 		data: {
 			id: tenantRoleId,
 			identifier: data.identifier,
+			tenantId: data.tenantId,
 			level: data.level,
 			name: data.name,
 			description: data.description,

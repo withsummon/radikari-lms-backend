@@ -1,4 +1,4 @@
-import { PrismaClient, Roles } from "../../generated/prisma/client"
+import { PrismaClient } from "../../generated/prisma/client"
 import { ulid } from "ulid"
 
 /**
@@ -29,87 +29,114 @@ import { ulid } from "ulid"
  * - CONSUMER ACL = AGENT ACL (view-only access)
  */
 
+const ROLE_TEMPLATES = [
+	{
+		identifier: "CHECKER",
+		name: "Checker",
+		description: "Tenant Admin with full access",
+		level: 5,
+	},
+	{
+		identifier: "HEAD_OF_OFFICE",
+		name: "Head of Office",
+		description: "Head of Office with highest level access",
+		level: 5,
+	},
+	{
+		identifier: "OPS_MANAGER",
+		name: "Ops Manager",
+		description: "Operations Manager",
+		level: 4,
+	},
+	{
+		identifier: "SUPERVISOR",
+		name: "Supervisor",
+		description: "Supervisor Role",
+		level: 3,
+	},
+	{
+		identifier: "TEAM_LEADER",
+		name: "Team Leader",
+		description: "Team Leader Role",
+		level: 2,
+	},
+	{
+		identifier: "QUALITY_ASSURANCE",
+		name: "Quality Assurance",
+		description: "QA Role with admin access",
+		level: 1,
+	},
+	{
+		identifier: "MAKER",
+		name: "Maker",
+		description: "Maker Role",
+		level: 1,
+	},
+	{
+		identifier: "CONSUMER",
+		name: "Consumer",
+		description: "Consumer Role",
+		level: 1,
+	},
+	{
+		identifier: "AGENT",
+		name: "Agent",
+		description: "Agent Role",
+		level: 1,
+	},
+	{
+		identifier: "TRAINER",
+		name: "Trainer",
+		description: "Trainer Role",
+		level: 1,
+	},
+]
+
 export async function seedGlobalRoles(prisma: PrismaClient) {
-	console.log("🌱 Seeding global roles...")
+	console.log("🌱 Seeding roles for all tenants...")
 
-	const globalRoles = [
-		{
-			id: ulid(),
-			identifier: "CHECKER",
-			name: "Checker",
-			description: "Tenant Admin with full access",
-			level: 5,
-		},
-		{
-			id: ulid(),
-			identifier: "HEAD_OF_OFFICE",
-			name: "Head of Office",
-			description: "Head of Office with highest level access",
-			level: 5,
-		},
-		{
-			id: ulid(),
-			identifier: "OPS_MANAGER",
-			name: "Ops Manager",
-			description: "Operations Manager",
-			level: 4,
-		},
-		{
-			id: ulid(),
-			identifier: "SUPERVISOR",
-			name: "Supervisor",
-			description: "Supervisor Role",
-			level: 3,
-		},
-		{
-			id: ulid(),
-			identifier: "TEAM_LEADER",
-			name: "Team Leader",
-			description: "Team Leader Role",
-			level: 2,
-		},
-		{
-			id: ulid(),
-			identifier: "QUALITY_ASSURANCE",
-			name: "Quality Assurance",
-			description: "QA Role with admin access",
-			level: 1,
-		},
-		{
-			id: ulid(),
-			identifier: "MAKER",
-			name: "Maker",
-			description: "Maker Role",
-			level: 1,
-		},
-		{
-			id: ulid(),
-			identifier: "CONSUMER",
-			name: "Consumer",
-			description: "Consumer Role",
-			level: 1,
-		},
-		{
-			id: ulid(),
-			identifier: "AGENT",
-			name: "Agent",
-			description: "Agent Role",
-			level: 1,
-		},
-		{
-			id: ulid(),
-			identifier: "TRAINER",
-			name: "Trainer",
-			description: "Trainer Role",
-			level: 1,
-		},
-	]
-
-	// Use createMany with skipDuplicates to handle upsert behavior
-	await prisma.tenantRole.createMany({
-		data: globalRoles,
-		skipDuplicates: true,
+	// Get all existing tenants
+	const tenants = await prisma.tenant.findMany({
+		select: { id: true, name: true },
 	})
 
-	console.log("✨ Global roles seeding completed!")
+	if (tenants.length === 0) {
+		console.log("⚠️ No tenants found, skipping role seeding")
+		return
+	}
+
+	console.log(`📋 Found ${tenants.length} tenant(s)`)
+
+	// For each tenant, create roles if they don't exist
+	for (const tenant of tenants) {
+		console.log(`  Creating roles for tenant: ${tenant.name}`)
+
+		for (const roleTemplate of ROLE_TEMPLATES) {
+			// Check if role already exists for this tenant
+			const existingRole = await prisma.tenantRole.findFirst({
+				where: {
+					identifier: roleTemplate.identifier,
+					tenantId: tenant.id,
+				},
+			})
+
+			if (!existingRole) {
+				await prisma.tenantRole.create({
+					data: {
+						id: ulid(),
+						identifier: roleTemplate.identifier,
+						name: roleTemplate.name,
+						description: roleTemplate.description,
+						level: roleTemplate.level,
+						tenantId: tenant.id,
+					},
+				})
+				console.log(`    ✅ Created role: ${roleTemplate.identifier}`)
+			} else {
+				console.log(`    ⏭️ Role exists: ${roleTemplate.identifier}`)
+			}
+		}
+	}
+
+	console.log("✨ Roles seeding completed!")
 }
