@@ -1,7 +1,6 @@
 import { PrismaClient } from "../../generated/prisma/client"
 import { seedAdmin } from "./seedAdmin"
 import { seedGlobalRoles } from "./seedGlobalRoles"
-import { seedTenant, seedTenantUsers } from "./seedTenant"
 import { seedTrainerAndQA } from "./seedTrainerAndQA"
 import { seedKnowledge } from "./seedKnowledge"
 import { seedOperation } from "./seedOperation"
@@ -12,6 +11,7 @@ import { seedAnnouncement } from "./seedAnnoucement"
 import { seedForum } from "./seedForum"
 import { seedAiPrompt } from "./seedAiPrompt"
 import { seedBroadcast } from "./seedBroadcast"
+import { seedTenant } from "./seedTenant"
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -26,7 +26,6 @@ async function seed() {
 			await seedOperation(prisma)
 			await seedTenant(prisma)           // Create tenant first
 			await seedGlobalRoles(prisma)      // Then create roles for that tenant
-			await seedTenantUsers(prisma)      // Assign users to tenant (needs roles)
 			await seedTrainerAndQA(prisma)
 			await seedAccessControlList(prisma)
 			await seedMasterKnowledgeCategorySubCategoryAndCase(prisma)

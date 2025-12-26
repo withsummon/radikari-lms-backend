@@ -4,15 +4,36 @@ import {
 	handleServiceErrorWithResponse,
 	response_bad_request,
 	response_created,
+	response_forbidden,
 	response_success,
 } from "$utils/response.utils"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { UserJWTDAO } from "$entities/User"
 import { AccessControlListDTO } from "$entities/AccessControlList"
 import { TenantRoleDTO } from "$entities/TenantRole"
+import { Roles } from "../../../generated/prisma/client"
+import { prisma } from "$pkg/prisma"
 
 export async function createRole(c: Context): Promise<TypedResponse> {
 	const data: TenantRoleDTO = await c.req.json()
+	const user: UserJWTDAO = c.get("jwtPayload")
+
+	// Security Check: Non-admins (Checkers) can only create roles for their own tenant
+	if (user.role !== Roles.ADMIN) {
+		const tenantUser = await prisma.tenantUser.findFirst({
+			where: {
+				userId: user.id,
+				tenantId: data.tenantId,
+			},
+		})
+
+		if (!tenantUser) {
+			return response_forbidden(
+				c,
+				"You are not authorized to create roles for this tenant!",
+			)
+		}
+	}
 
 	const serviceResponse = await AccessControlListService.createRole(data)
 
