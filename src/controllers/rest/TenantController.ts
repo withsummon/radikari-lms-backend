@@ -170,7 +170,8 @@ export async function getAllByUser(c: Context): Promise<TypedResponse> {
 }
 
 export async function getAllRoles(c: Context): Promise<TypedResponse> {
-	const serviceResponse = await TenantRoleService.getAll()
+	const tenantId = c.req.query("tenantId")
+	const serviceResponse = await TenantRoleService.getAll(tenantId)
 
 	if (!serviceResponse.status) {
 		return handleServiceErrorWithResponse(c, serviceResponse)

@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient, Roles } from "../../generated/prisma/client"
+import { PrismaClient, Roles } from "../../generated/prisma/client"
 import { ulid } from "ulid"
 
 export async function seedTenant(prisma: PrismaClient) {

@@ -29,4 +29,8 @@ export const AccessControlListCreateRoleSchema = z.object({
 		error: (issue) =>
 			issue.input === undefined ? "identifier is required" : undefined,
 	}),
+	tenantId: z.string({
+		error: (issue) =>
+			issue.input === undefined ? "tenantId is required" : undefined,
+	}),
 })

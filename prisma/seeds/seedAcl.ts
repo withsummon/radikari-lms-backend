@@ -124,37 +124,37 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 		qualityAssuranceRole,
 		agentRole,
 	] = await Promise.all([
-		prisma.tenantRole.findUnique({
+		prisma.tenantRole.findFirst({
 			where: {
 				identifier: "HEAD_OF_OFFICE",
 			},
 		}),
-		prisma.tenantRole.findUnique({
+		prisma.tenantRole.findFirst({
 			where: {
 				identifier: "OPS_MANAGER",
 			},
 		}),
-		prisma.tenantRole.findUnique({
+		prisma.tenantRole.findFirst({
 			where: {
 				identifier: "SUPERVISOR",
 			},
 		}),
-		prisma.tenantRole.findUnique({
+		prisma.tenantRole.findFirst({
 			where: {
 				identifier: "TEAM_LEADER",
 			},
 		}),
-		prisma.tenantRole.findUnique({
+		prisma.tenantRole.findFirst({
 			where: {
 				identifier: "TRAINER",
 			},
 		}),
-		prisma.tenantRole.findUnique({
+		prisma.tenantRole.findFirst({
 			where: {
 				identifier: "QUALITY_ASSURANCE",
 			},
 		}),
-		prisma.tenantRole.findUnique({
+		prisma.tenantRole.findFirst({
 			where: {
 				identifier: "AGENT",
 			},
