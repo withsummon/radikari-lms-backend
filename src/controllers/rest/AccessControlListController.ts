@@ -21,6 +21,10 @@ export async function createRole(c: Context): Promise<TypedResponse> {
 	// Security Check: Non-admins (Checkers) can only create roles for their own tenant
 	// and must have the ACCESS_CONTROL_LIST.CREATE permission
 	if (user.role !== Roles.ADMIN) {
+		if (!data.tenantId) {
+			return response_bad_request(c, "tenantId is required for role creation!")
+		}
+
 		const tenantUser = await prisma.tenantUser.findFirst({
 			where: {
 				userId: user.id,
@@ -82,6 +86,13 @@ export async function updateRoleAccess(c: Context): Promise<TypedResponse> {
 
 		if (!targetRole) {
 			return response_bad_request(c, "Target role not found!")
+		}
+
+		if (!targetRole.tenantId) {
+			return response_forbidden(
+				c,
+				"You are not authorized to update global roles!",
+			)
 		}
 
 		// Check if the user is a member of that tenant
@@ -180,10 +191,12 @@ export async function getAllRoles(c: Context): Promise<TypedResponse> {
 		const f = filters as any
 		if (!f.where) f.where = {}
 
+		const tenantIds = myTenantIds as string[]
+
 		// If they provided a tenantId filter, ensure they belong to it
 		if (f.where.tenantId) {
 			if (typeof f.where.tenantId === "string") {
-				if (!myTenantIds.includes(f.where.tenantId)) {
+				if (!tenantIds.includes(f.where.tenantId)) {
 					return response_forbidden(
 						c,
 						"You are not authorized to view roles for this tenant!",
@@ -195,11 +208,11 @@ export async function getAllRoles(c: Context): Promise<TypedResponse> {
 			) {
 				// Handle complex filters if necessary, but keep it simple for now
 				// Force myTenantIds if it's too complex or missing
-				f.where.tenantId = { in: myTenantIds }
+				f.where.tenantId = { in: tenantIds }
 			}
 		} else {
 			// Force filter to only their tenants
-			f.where.tenantId = { in: myTenantIds }
+			f.where.tenantId = { in: tenantIds }
 		}
 	}
 
