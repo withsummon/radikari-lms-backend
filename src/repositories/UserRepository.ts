@@ -81,6 +81,12 @@ export async function getAll(filters: EzFilter.FilteringQuery) {
 				where.tenantUser = { some: { tenantId: value } }
 			} else if (key === "tenantRoleId") {
 				where.tenantUser = { some: { tenantRoleId: value } }
+			} else if (key === "isJoined") {
+				if (String(value) === "true" || value === true) {
+					where.tenantUser = { some: {} }
+				} else {
+					where.tenantUser = { none: {} }
+				}
 			}
 		}
 	}
