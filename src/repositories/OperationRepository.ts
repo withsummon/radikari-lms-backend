@@ -17,7 +17,8 @@ export async function findByName(name: string) {
 
 export async function getAll(filters: EzFilter.FilteringQuery) {
 	const queryBuilder = new EzFilter.BuildQueryFilter()
-	const usedFilters = queryBuilder.build(filters)
+	const { filters: rawFilters, ...rest } = filters
+	const usedFilters = queryBuilder.build(rest as any)
 
 	const [operation, totalData] = await Promise.all([
 		prisma.operation.findMany(usedFilters.query as any),

@@ -96,7 +96,20 @@ export async function deleteById(id: string): Promise<ServiceResponse<{}>> {
 		await UserRepository.deleteById(id)
 		return { status: true, data: {} }
 	} catch (err) {
-		Logger.error(`UserService.deleteByIds`, { error: err })
+		Logger.error(`UserService.deleteById`, { error: err })
+		return HandleServiceResponseCustomError(
+			"Internal Server Error",
+			ResponseStatus.INTERNAL_SERVER_ERROR,
+		)
+	}
+}
+
+export async function restoreById(id: string): Promise<ServiceResponse<{}>> {
+	try {
+		await UserRepository.restoreById(id)
+		return { status: true, data: {} }
+	} catch (err) {
+		Logger.error(`UserService.restoreById`, { error: err })
 		return HandleServiceResponseCustomError(
 			"Internal Server Error",
 			ResponseStatus.INTERNAL_SERVER_ERROR,

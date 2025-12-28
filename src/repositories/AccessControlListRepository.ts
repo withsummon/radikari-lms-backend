@@ -1,5 +1,5 @@
 import { prisma } from "$pkg/prisma"
-import { Prisma, TenantRole } from "../../generated/prisma/client"
+import { Prisma } from "../../generated/prisma/client"
 import { ulid } from "ulid"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { TenantRoleDTO } from "$entities/TenantRole"
@@ -22,11 +22,10 @@ export async function findAllFeatures() {
 	return aclFeatures
 }
 
-export async function findAllRoles(
-	filters: EzFilter.FilteringQuery,
-): Promise<EzFilter.PaginatedResult<TenantRole[]>> {
-	const builder = new EzFilter.BuildQueryFilter()
-	const usedFilters = builder.build(filters)
+export async function findAllRoles(filters: EzFilter.FilteringQuery) {
+	const queryBuilder = new EzFilter.BuildQueryFilter()
+	const { filters: rawFilters, ...rest } = filters
+	const usedFilters = queryBuilder.build(rest as any)
 
 	const [roles, totalData] = await Promise.all([
 		prisma.tenantRole.findMany(usedFilters.query as any),

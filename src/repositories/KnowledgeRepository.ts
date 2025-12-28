@@ -87,7 +87,8 @@ export async function getAll(
 	filters: EzFilter.FilteringQuery,
 ) {
 	const queryBuilder = new EzFilter.BuildQueryFilter()
-	let usedFilters = queryBuilder.build(filters)
+	const { filters: rawFilters, ...rest } = filters
+	const usedFilters = queryBuilder.build(rest as any)
 	// usedFilters = await TenantRoleHelpers.buildFilterTenantRole(usedFilters, user, tenantId)
 
 	usedFilters.query.include = {
@@ -156,7 +157,8 @@ export async function getAllArchived(
 	filters: EzFilter.FilteringQuery,
 ) {
 	const queryBuilder = new EzFilter.BuildQueryFilter()
-	let usedFilters = queryBuilder.build(filters)
+	const { filters: rawFilters, ...rest } = filters
+	const usedFilters = queryBuilder.build(rest as any)
 	// usedFilters = await TenantRoleHelpers.buildFilterTenantRole(usedFilters, user, tenantId)
 
 	usedFilters.query.include = {
@@ -215,7 +217,8 @@ export async function getSummary(
 	filters: EzFilter.FilteringQuery,
 ) {
 	const queryBuilder = new EzFilter.BuildQueryFilter()
-	let usedFilters = queryBuilder.build(filters)
+	const { filters: rawFilters, ...rest } = filters
+	const usedFilters = queryBuilder.build(rest as any)
 	// usedFilters = await TenantRoleHelpers.buildFilterTenantRole(usedFilters, user, tenantId)
 
 	usedFilters.query.include = {

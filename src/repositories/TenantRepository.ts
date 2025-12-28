@@ -165,7 +165,8 @@ export async function create(data: TenantCreateUpdateDTO) {
 
 export async function getAll(filters: EzFilter.FilteringQuery) {
 	const queryBuilder = new EzFilter.BuildQueryFilter()
-	const usedFilters = queryBuilder.build(filters)
+	const { filters: rawFilters, ...rest } = filters
+	const usedFilters = queryBuilder.build(rest as any)
 
 	usedFilters.query.include = {
 		tenantUser: {
@@ -228,7 +229,8 @@ export async function getAllByUserId(
 	user: UserJWTDAO,
 ) {
 	const queryBuilder = new EzFilter.BuildQueryFilter()
-	const usedFilters = queryBuilder.build(filters)
+	const { filters: rawFilters, ...rest } = filters
+	const usedFilters = queryBuilder.build(rest as any)
 
 	if (user.role !== Roles.ADMIN) {
 		usedFilters.query.where.AND.push({

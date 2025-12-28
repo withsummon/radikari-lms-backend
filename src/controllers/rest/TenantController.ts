@@ -11,6 +11,9 @@ import { TenantUserUpdateDTO } from "$entities/TenantUser"
 import * as TenanUserService from "$services/TenanUserService"
 import { UserJWTDAO } from "$entities/User"
 import * as TenantRoleService from "$services/TenantRoleService"
+import { Roles } from "../../../generated/prisma/client"
+import { prisma } from "$pkg/prisma"
+import { response_forbidden } from "$utils/response.utils"
 
 export async function create(c: Context): Promise<TypedResponse> {
 	const data: TenantCreateUpdateDTO = await c.req.json()
@@ -113,9 +116,51 @@ export async function getUserInTenant(c: Context): Promise<TypedResponse> {
 }
 
 export async function getAllTenantUsers(c: Context): Promise<TypedResponse> {
+	const user: UserJWTDAO = c.get("jwtPayload")
 	const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(
 		c.req.query(),
 	)
+
+	// [SECURITY] If not global ADMIN, must filter by own tenant
+	if (user.role !== Roles.ADMIN) {
+		let tenantIdFilter = ""
+		let parsedFilters: any = []
+
+		if (filters.filters) {
+			try {
+				parsedFilters =
+					typeof filters.filters === "string"
+						? JSON.parse(filters.filters as string)
+						: filters.filters
+				
+				// Handle both Object and Array formats
+				if (Array.isArray(parsedFilters)) {
+					const found = parsedFilters.find((f: any) => f.key === "tenantId")
+					tenantIdFilter = found?.value
+				} else if (typeof parsedFilters === "object" && parsedFilters !== null) {
+					tenantIdFilter = (parsedFilters as any).tenantId
+				}
+			} catch (e) {
+				/* ignore */
+			}
+		}
+
+		if (!tenantIdFilter) {
+			return response_forbidden(c, "Tenant ID filter is required for non-admins!")
+		}
+
+		// Verify membership
+		const membership = await prisma.tenantUser.findFirst({
+			where: { userId: user.id, tenantId: tenantIdFilter },
+		})
+
+		if (!membership) {
+			return response_forbidden(
+				c,
+				"You are not authorized to view users in this tenant!",
+			)
+		}
+	}
 
 	const serviceResponse = await TenanUserService.getAll(filters)
 
