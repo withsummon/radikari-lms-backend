@@ -17,4 +17,6 @@ export const TenantRoleIdentifier = {
 	TRAINER: "TRAINER",
 	QUALITY_ASSURANCE: "QUALITY_ASSURANCE",
 	AGENT: "AGENT",
+	CHECKER: "CHECKER",
+	MAKER: "MAKER",
 }

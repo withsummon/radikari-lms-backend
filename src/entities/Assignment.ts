@@ -13,6 +13,7 @@ export interface AssignmentCreateDTO {
 	access: AssignmentAccess
 	roleAccesses: string[]
 	userEmails: string[]
+	isRandomized: boolean
 	questions: AssignmentQuestionDTO[]
 }
 
@@ -24,6 +25,7 @@ export interface AssignmentDTO {
 	createdByUserId: string
 	expiredDate: string
 	access: AssignmentAccess
+	isRandomized: boolean
 }
 
 export interface AssignmentQuestionDTO {
