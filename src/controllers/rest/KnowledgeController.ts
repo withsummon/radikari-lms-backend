@@ -13,6 +13,9 @@ import {
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { UserJWTDAO } from "$entities/User"
 
+// ✅ util baru
+import { attachOverdueToKnowledgeList } from "$utils/knowledgeOverdue.utils"
+
 export async function create(c: Context): Promise<TypedResponse> {
 	const data: KnowledgeDTO = await c.req.json()
 	const user: UserJWTDAO = c.get("jwtPayload")
@@ -45,9 +48,12 @@ export async function getAll(c: Context): Promise<TypedResponse> {
 		return handleServiceErrorWithResponse(c, serviceResponse)
 	}
 
+	// ✅ Tambahkan warning flag overdue > 24 jam untuk yang PENDING
+	const dataWithOverdue = attachOverdueToKnowledgeList(serviceResponse.data, 24)
+
 	return response_success(
 		c,
-		serviceResponse.data,
+		dataWithOverdue,
 		"Successfully fetched all Knowledge!",
 	)
 }
@@ -69,9 +75,12 @@ export async function getAllArchived(c: Context): Promise<TypedResponse> {
 		return handleServiceErrorWithResponse(c, serviceResponse)
 	}
 
+	// ✅ Opsional: tetap kasih overdue flag (kalau archived masih bisa PENDING)
+	const dataWithOverdue = attachOverdueToKnowledgeList(serviceResponse.data, 24)
+
 	return response_success(
 		c,
-		serviceResponse.data,
+		dataWithOverdue,
 		"Successfully fetched all Archived Knowledge!",
 	)
 }

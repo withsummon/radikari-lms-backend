@@ -4,39 +4,29 @@ import { prisma } from "$pkg/prisma"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 
 export async function create(data: CreateUserDTO) {
-	return await prisma.user.create({
-		data,
-	})
+	return await prisma.user.create({ data })
 }
 
 export async function createGoogleUser(data: CreateGoogleUserDTO) {
-	return await prisma.user.create({
-		data,
-	})
+	return await prisma.user.create({ data })
 }
 
 export async function getById(id: string) {
 	return await prisma.user.findUnique({
-		where: {
-			id,
-		},
+		where: { id },
 	})
 }
 
 export async function update(id: string, data: UpdateUserDTO) {
 	return await prisma.user.update({
-		where: {
-			id,
-		},
+		where: { id },
 		data,
 	})
 }
 
 export async function deleteById(id: string) {
 	return await prisma.user.delete({
-		where: {
-			id,
-		},
+		where: { id },
 	})
 }
 
@@ -56,7 +46,7 @@ export async function getAll(filters: EzFilter.FilteringQuery) {
 		totalPage = Math.ceil(totalData / usedFilters.query.take)
 
 	return {
-		entries: user.map((user) => exclude(user, "password")),
+		entries: user.map((u) => exclude(u, "password")),
 		totalData,
 		totalPage,
 	}
@@ -64,19 +54,28 @@ export async function getAll(filters: EzFilter.FilteringQuery) {
 
 export async function getByEmail(email: string) {
 	return await prisma.user.findUnique({
-		where: {
-			email,
-		},
+		where: { email },
 	})
 }
 
 export async function updatePassword(id: string, password: string) {
 	return await prisma.user.update({
-		where: {
-			id,
-		},
-		data: {
-			password,
+		where: { id },
+		data: { password },
+	})
+}
+
+export async function getMe(userId: string) {
+	return await prisma.user.findUnique({
+		where: { id: userId },
+		include: {
+			tenantUser: {
+				select: {
+					id: true,
+					tenantId: true,
+					tenantRoleId: true,
+				},
+			},
 		},
 	})
 }

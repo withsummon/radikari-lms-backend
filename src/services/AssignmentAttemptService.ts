@@ -340,10 +340,14 @@ export async function calculateAssignmentScore(
 					aiConfidence: result.confidence,
 				})
 
+				// Serialize the complete AI feedback to JSON for storage
+				const aiGradingReasoning = JSON.stringify(result)
+
 				await AssignmentAttemptRepository.setCorrectAnswer(
 					assignmentUserAttemptId,
 					questionId,
 					isCorrect,
+					aiGradingReasoning,
 				)
 			}
 		}
@@ -435,6 +439,7 @@ export async function getAllQuestionsAndAnswers(
 					content: question.content,
 					type: question.type,
 					userAnswer: assignmentUserAttemptAnswer?.essayAnswer,
+					aiGradingReasoning: assignmentUserAttemptAnswer?.aiGradingReasoning,
 				}
 			} else if (question.type === AssignmentQuestionType.TRUE_FALSE) {
 				return {
@@ -527,6 +532,7 @@ export async function getHistoryUserAssignmentAttempts(
 						type: question.type,
 						isCorrect: assignmentUserAttemptAnswer?.isAnswerCorrect,
 						userAnswer: assignmentUserAttemptAnswer?.essayAnswer,
+						aiGradingReasoning: assignmentUserAttemptAnswer?.aiGradingReasoning,
 					}
 				} else if (question.type === AssignmentQuestionType.TRUE_FALSE) {
 					return {
@@ -644,6 +650,186 @@ export async function getTimeStatus(
 		})
 	} catch (err) {
 		Logger.error(`AssignmentAttemptService.getTimeStatus`, {
+			error: err,
+		})
+		return HandleServiceResponseCustomError("Internal Server Error", 500)
+	}
+}
+
+export async function getAssignmentExportData(
+	tenantId: string,
+	assignmentId: string,
+): Promise<
+	ServiceResponse<
+		| {
+				assignment: {
+					id: string
+					title: string
+					durationInMinutes: number
+				}
+				questions: {
+					id: string
+					order: number
+					content: string
+					type: "MULTIPLE_CHOICE" | "ESSAY" | "TRUE_FALSE"
+					options?: {
+						id: string
+						content: string
+					}[]
+					correctAnswer?: boolean
+					referenceAnswer?: string
+				}[]
+				studentAttempts: {
+					student: {
+						id: string
+						fullName: string
+						email: string
+					}
+					attempt: {
+						id: string
+						score: number
+						percentageScore: number
+						submittedAt: string
+						durationInMinutes?: number
+					}
+					answers: {
+						questionId: string
+						userAnswer: string | boolean | null
+						isCorrect: boolean
+						aiGradingReasoning?: string
+					}[]
+				}[]
+		  }
+		| {}
+	>
+> {
+	try {
+		// Get assignment details
+		const assignment = await AssignmentRepository.getById(
+			assignmentId,
+			tenantId,
+		)
+		if (!assignment) {
+			return HandleServiceResponseCustomError(
+				"Assignment not found",
+				ResponseStatus.NOT_FOUND,
+			)
+		}
+
+		// Get all submitted attempts for this assignment
+		const allAttempts =
+			await AssignmentAttemptRepository.getAllSubmittedAttemptsByAssignmentId(
+				assignmentId,
+			)
+
+		// Get all questions for this assignment
+		const questions =
+			await AssignmentQuestionRepository.getAllQuestions(assignmentId)
+
+		// Transform questions data
+		const transformedQuestions = questions.map((question) => {
+			const baseQuestion = {
+				id: question.id,
+				order: question.order,
+				content: question.content,
+				type: question.type,
+			}
+
+			if (question.type === AssignmentQuestionType.MULTIPLE_CHOICE) {
+				return {
+					...baseQuestion,
+					options: question.assignmentQuestionOptions.map((option) => ({
+						id: option.id,
+						content: option.content,
+					})),
+				}
+			} else if (question.type === AssignmentQuestionType.TRUE_FALSE) {
+				return {
+					...baseQuestion,
+					correctAnswer:
+						question.assignmentQuestionTrueFalseAnswer?.correctAnswer,
+				}
+			} else if (question.type === AssignmentQuestionType.ESSAY) {
+				return {
+					...baseQuestion,
+					referenceAnswer:
+						question.assignmentQuestionEssayReferenceAnswer?.content,
+				}
+			}
+
+			return baseQuestion
+		})
+
+		// Transform student attempts data
+		const studentAttempts = await Promise.all(
+			allAttempts.map(async (attempt) => {
+				// Get all answers for this attempt
+				const userAnswers =
+					await AssignmentAttemptRepository.getAllUserAttemptAnswers(attempt.id)
+
+				// Get user details
+				const user = await AssignmentAttemptRepository.getUserById(
+					attempt.userId,
+				)
+
+				// Transform answers
+				const answers = userAnswers.map((answer) => {
+					let userAnswer: string | boolean | null = null
+
+					if (answer.type === AssignmentQuestionType.MULTIPLE_CHOICE) {
+						// Find the option content
+						const question = questions.find(
+							(q) => q.id === answer.assignmentQuestionId,
+						)
+						const option = question?.assignmentQuestionOptions.find(
+							(o) => o.id === answer.assignmentQuestionOptionId,
+						)
+						userAnswer = option?.content || null
+					} else if (answer.type === AssignmentQuestionType.ESSAY) {
+						userAnswer = answer.essayAnswer || null
+					} else if (answer.type === AssignmentQuestionType.TRUE_FALSE) {
+						userAnswer = answer.trueFalseAnswer ?? null
+					}
+
+					return {
+						questionId: answer.assignmentQuestionId,
+						userAnswer,
+						isCorrect: !!answer.isAnswerCorrect,
+						aiGradingReasoning: (answer as any).aiGradingReasoning,
+					}
+				})
+
+				return {
+					student: {
+						id: user.id,
+						fullName: user.fullName,
+						email: user.email,
+					},
+					attempt: {
+						id: attempt.id,
+						score: attempt.score ?? 0,
+						percentageScore: attempt.percentageScore ?? 0,
+						submittedAt: attempt.submittedAt?.toISOString() || "",
+						durationInMinutes: (attempt as any).durationInMinutes,
+					},
+					answers,
+				}
+			}),
+		)
+
+		const exportData = {
+			assignment: {
+				id: assignment.id,
+				title: assignment.title,
+				durationInMinutes: assignment.durationInMinutes,
+			},
+			questions: transformedQuestions,
+			studentAttempts,
+		}
+
+		return HandleServiceResponseSuccess(exportData)
+	} catch (err) {
+		Logger.error(`AssignmentAttemptService.getAssignmentExportData`, {
 			error: err,
 		})
 		return HandleServiceResponseCustomError("Internal Server Error", 500)

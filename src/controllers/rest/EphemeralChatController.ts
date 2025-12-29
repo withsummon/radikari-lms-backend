@@ -42,7 +42,7 @@ export async function createThread(c: Context): Promise<TypedResponse> {
 
 		// Validate origin (CORS + allowlist)
 		const origin = c.req.header("origin")
-		if (!validateOrigin(tenantId, origin)) {
+		if (!(await validateOrigin(tenantId, origin))) {
 			Logger.info("EphemeralChatController.createThread.invalidOrigin", {
 				tenantId,
 				origin,
@@ -78,7 +78,7 @@ export async function sendMessage(c: Context): Promise<any> {
 
 		// Validate origin
 		const origin = c.req.header("origin")
-		if (!validateOrigin(tenantId, origin)) {
+		if (!(await validateOrigin(tenantId, origin))) {
 			Logger.info("EphemeralChatController.sendMessage.invalidOrigin", {
 				tenantId,
 				threadId,
@@ -140,21 +140,33 @@ async function validateOrigin(
 		// First, try to get dynamic whitelisted domains from tenant settings
 		const settingsResponse = await TenantService.getSettings(tenantId)
 
-		if (settingsResponse.status && settingsResponse.data) {
-			const responseData = settingsResponse.data as {
-				content?: Array<{
-					id: string
-					key: string
-					value: string
-					tenantId: string
-				}>
-				message?: string
-				errors?: any[]
-			}
+		Logger.info("EphemeralChatController.validateOrigin.settingsResponse", {
+			tenantId,
+			status: settingsResponse.status,
+			hasData: !!settingsResponse.data,
+		})
 
-			const whitelistSetting = (responseData.content || []).find(
+		if (settingsResponse.status && settingsResponse.data) {
+			const responseData = settingsResponse.data as Array<{
+				id: string
+				key: string
+				value: string
+				tenantId: string
+			}>
+
+			Logger.info("EphemeralChatController.validateOrigin.responseData", {
+				contentLength: responseData?.length,
+				contentKeys: responseData?.map((c) => c.key),
+			})
+
+			const whitelistSetting = (responseData || []).find(
 				(setting: any) => setting.key === "WHITELISTED_DOMAINS",
 			)
+
+			Logger.info("EphemeralChatController.validateOrigin.whitelistSetting", {
+				found: !!whitelistSetting,
+				hasValue: !!whitelistSetting?.value,
+			})
 
 			if (whitelistSetting?.value) {
 				try {
@@ -163,7 +175,43 @@ async function validateOrigin(
 						const allowedDomains = whitelistedDomains.map(
 							(item: any) => item.domain,
 						)
-						return allowedDomains.includes(origin)
+						Logger.info(
+							"EphemeralChatController.validateOrigin.checkingWhitelist",
+							{
+								tenantId,
+								origin,
+								allowedDomains,
+								whitelistedDomains,
+							},
+						)
+
+						// Normalize origin to hostname for comparison
+						// Origin can be "https://example.com" or "example.com"
+						let originHostname = origin
+						try {
+							const url = new URL(origin)
+							originHostname = url.hostname
+						} catch {
+							// If URL parsing fails, use origin as-is
+						}
+
+						// Check if origin hostname matches any whitelisted domain
+						// Both should be normalized to hostname for comparison
+						for (const domain of allowedDomains) {
+							let normalizedDomain = domain
+							try {
+								const url = new URL(domain)
+								normalizedDomain = url.hostname
+							} catch {
+								// If URL parsing fails, use domain as-is
+							}
+
+							if (originHostname === normalizedDomain) {
+								return true
+							}
+						}
+
+						return false
 					}
 				} catch (parseError) {
 					Logger.info("EphemeralChatController.validateOrigin.parseError", {

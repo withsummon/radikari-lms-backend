@@ -120,3 +120,166 @@ export async function getByTenantRoleId(tenantRoleId: string) {
 		},
 	})
 }
+
+export async function getAll(filters: any) {
+	const { page, rows, orderKey, orderRule } = filters
+
+	// Determine skip and take: prefer explicit page/rows, fallback to filters.skip/take (from EzFilter)
+	let skip: number | undefined
+	let take: number | undefined
+
+	if (page && rows) {
+		skip = (Number(page) - 1) * Number(rows)
+		take = Number(rows)
+	} else {
+		skip = filters.skip
+		take = filters.take
+	}
+
+	// Determine orderBy
+	let orderBy: any = undefined
+	if (orderKey && orderRule) {
+		if (orderKey.includes(".")) {
+			const parts = orderKey.split(".")
+			let current: Record<string, any> = (orderBy = {})
+			for (let i = 0; i < parts.length - 1; i++) {
+				current[parts[i]] = {}
+				current = current[parts[i]] as Record<string, any>
+			}
+			current[parts[parts.length - 1]] = orderRule
+		} else {
+			orderBy = { [orderKey]: orderRule }
+		}
+	} else if (filters.orderBy) {
+		orderBy = filters.orderBy
+	}
+	// Unflatten helper
+	const unflatten = (obj: Record<string, any>) => {
+		const result: Record<string, any> = {}
+		for (const key in obj) {
+			const parts = key.split(".")
+			let current: Record<string, any> = result
+			for (let i = 0; i < parts.length - 1; i++) {
+				current[parts[i]] = current[parts[i]] || {}
+				current = current[parts[i]]
+			}
+			current[parts[parts.length - 1]] = obj[key]
+		}
+		return result
+	}
+
+	// Initialize where object
+	let where: any = {}
+
+	// Handle searchFilters
+	if (filters.searchFilters) {
+		let parsedSearchFilters: Record<string, any> = {}
+		if (typeof filters.searchFilters === "string") {
+			try {
+				parsedSearchFilters = JSON.parse(filters.searchFilters)
+			} catch (e) {
+				/* ignore */
+			}
+		} else if (typeof filters.searchFilters === "object") {
+			parsedSearchFilters = filters.searchFilters
+		}
+
+		const keys = Object.keys(parsedSearchFilters)
+		if (keys.length > 0) {
+			const orConditions: any[] = []
+
+			for (const key of keys) {
+				const value = parsedSearchFilters[key]
+				// Construct { key: { contains: value, mode: 'insensitive' } } then unflatten
+				// Note: unflatten expects path "user.fullName" -> value.
+				// We want "user.fullName" -> { contains: value, mode: 'insensitive' }
+
+				const condition = unflatten({
+					[key]: { contains: value, mode: "insensitive" },
+				})
+				orConditions.push(condition)
+			}
+
+			// Use AND to combine with existing where, but OR inside for the search keys
+			if (!where.AND) {
+				where.AND = []
+			}
+			if (!Array.isArray(where.AND)) {
+				where.AND = [where.AND]
+			}
+			where.AND.push({ OR: orConditions })
+		}
+	}
+
+	// Handle filters (exact match for specific fields)
+	if (filters.filters) {
+		let parsedFilters: Array<{ key: string; value: string }> = []
+		if (typeof filters.filters === "string") {
+			try {
+				parsedFilters = JSON.parse(filters.filters)
+			} catch (e) {
+				/* ignore */
+			}
+		} else if (Array.isArray(filters.filters)) {
+			parsedFilters = filters.filters
+		}
+
+		for (const filter of parsedFilters) {
+			const { key, value } = filter
+			if (!key || !value) continue
+
+			// Handle different filter keys
+			if (key === "tenantId") {
+				where.tenantId = value
+			} else if (key === "tenantRoleId") {
+				where.tenantRoleId = value
+			} else if (key === "user.email") {
+				// For user.email, use contains for partial match
+				if (!where.user) where.user = {}
+				where.user.email = { contains: value, mode: "insensitive" }
+			} else if (key.includes(".")) {
+				// For nested keys, unflatten and use contains
+				const condition = unflatten({
+					[key]: { contains: value, mode: "insensitive" },
+				})
+				if (!where.AND) where.AND = []
+				if (!Array.isArray(where.AND)) where.AND = [where.AND]
+				where.AND.push(condition)
+			} else {
+				// For direct keys, exact match
+				where[key] = value
+			}
+		}
+	}
+
+	const [entries, count] = await prisma.$transaction([
+		prisma.tenantUser.findMany({
+			where,
+			...(typeof skip !== "undefined" && { skip }),
+			...(typeof take !== "undefined" && { take }),
+			...(orderBy && { orderBy }),
+			include: {
+				user: {
+					select: {
+						id: true,
+						fullName: true,
+						email: true,
+						phoneNumber: true,
+					},
+				},
+				tenant: {
+					select: {
+						id: true,
+						name: true,
+					},
+				},
+				tenantRole: true,
+			},
+		}),
+		prisma.tenantUser.count({
+			where,
+		}),
+	])
+
+	return { entries, count }
+}

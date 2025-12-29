@@ -218,6 +218,7 @@ export async function setCorrectAnswer(
 	assignmentUserAttemptId: string,
 	assignmentQuestionId: string,
 	isCorrect: boolean,
+	aiGradingReasoning?: string,
 ) {
 	return await prisma.assignmentUserAttemptQuestionAnswer.update({
 		where: {
@@ -228,6 +229,7 @@ export async function setCorrectAnswer(
 		},
 		data: {
 			isAnswerCorrect: isCorrect,
+			...(aiGradingReasoning && { aiGradingReasoning }),
 		},
 	})
 }
@@ -341,6 +343,25 @@ export async function getSubmittedAttemptsByAssignmentId(assignmentId: string) {
 		where: {
 			assignmentId,
 			isSubmitted: true,
+		},
+	})
+}
+
+export async function getAllSubmittedAttemptsByAssignmentId(
+	assignmentId: string,
+) {
+	return await prisma.assignmentUserAttempt.findMany({
+		where: {
+			assignmentId,
+			isSubmitted: true,
+		},
+	})
+}
+
+export async function getUserById(userId: string) {
+	return await prisma.user.findUniqueOrThrow({
+		where: {
+			id: userId,
 		},
 	})
 }

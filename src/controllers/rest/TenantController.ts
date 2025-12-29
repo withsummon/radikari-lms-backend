@@ -112,6 +112,24 @@ export async function getUserInTenant(c: Context): Promise<TypedResponse> {
 	)
 }
 
+export async function getAllTenantUsers(c: Context): Promise<TypedResponse> {
+	const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(
+		c.req.query(),
+	)
+
+	const serviceResponse = await TenanUserService.getAll(filters)
+
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
+
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully fetched all tenant users!",
+	)
+}
+
 export async function assignUserToTenant(c: Context): Promise<TypedResponse> {
 	const data: TenantUserUpdateDTO[] = await c.req.json()
 	const id = c.req.param("id")
@@ -152,7 +170,8 @@ export async function getAllByUser(c: Context): Promise<TypedResponse> {
 }
 
 export async function getAllRoles(c: Context): Promise<TypedResponse> {
-	const serviceResponse = await TenantRoleService.getAll()
+	const tenantId = c.req.query("tenantId")
+	const serviceResponse = await TenantRoleService.getAll(tenantId)
 
 	if (!serviceResponse.status) {
 		return handleServiceErrorWithResponse(c, serviceResponse)

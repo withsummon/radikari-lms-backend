@@ -7,8 +7,10 @@ export async function createMany(data: Prisma.TenantRoleCreateManyInput[]) {
 	})
 }
 
-export async function getAll() {
-	return await prisma.tenantRole.findMany()
+export async function getAll(tenantId?: string) {
+	return await prisma.tenantRole.findMany({
+		where: tenantId ? { tenantId } : undefined,
+	})
 }
 
 export async function getById(id: string) {
@@ -19,13 +21,12 @@ export async function getById(id: string) {
 	})
 }
 
-export async function getByUserId(userId: string, tenantId: string) {
+export async function getByUserId(userId: string) {
 	return await prisma.tenantRole.findMany({
 		where: {
 			tenantUser: {
 				some: {
 					userId,
-					tenantId,
 				},
 			},
 		},

@@ -7,11 +7,12 @@ import {
 } from "$utils/response.utils"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { Context, TypedResponse } from "hono"
+import { UserJWTDAO } from "$entities/User"
+
 export async function create(c: Context): Promise<TypedResponse> {
 	const data: CreateUserDTO = await c.req.json()
 
 	const serviceResponse = await UserService.create(data)
-
 	if (!serviceResponse.status) {
 		return handleServiceErrorWithResponse(c, serviceResponse)
 	}
@@ -29,7 +30,6 @@ export async function getAll(c: Context): Promise<TypedResponse> {
 	)
 
 	const serviceResponse = await UserService.getAll(filters)
-
 	if (!serviceResponse.status) {
 		return handleServiceErrorWithResponse(c, serviceResponse)
 	}
@@ -45,7 +45,6 @@ export async function getById(c: Context): Promise<TypedResponse> {
 	const id = c.req.param("id")
 
 	const serviceResponse = await UserService.getById(id)
-
 	if (!serviceResponse.status) {
 		return handleServiceErrorWithResponse(c, serviceResponse)
 	}
@@ -53,7 +52,7 @@ export async function getById(c: Context): Promise<TypedResponse> {
 	return response_success(
 		c,
 		serviceResponse.data,
-		"Successfully fetched indikator kerja by id!",
+		"Successfully fetched user by id!",
 	)
 }
 
@@ -62,7 +61,6 @@ export async function update(c: Context): Promise<TypedResponse> {
 	const id = c.req.param("id")
 
 	const serviceResponse = await UserService.update(id, data)
-
 	if (!serviceResponse.status) {
 		return handleServiceErrorWithResponse(c, serviceResponse)
 	}
@@ -74,10 +72,24 @@ export async function deleteById(c: Context): Promise<TypedResponse> {
 	const id = c.req.param("id")
 
 	const serviceResponse = await UserService.deleteById(id)
-
 	if (!serviceResponse.status) {
 		return handleServiceErrorWithResponse(c, serviceResponse)
 	}
 
 	return response_success(c, serviceResponse.data, "Successfully deleted User!")
+}
+
+export async function me(c: Context): Promise<TypedResponse> {
+	const jwtPayload: UserJWTDAO = c.get("jwtPayload")
+
+	const serviceResponse = await UserService.getMe(jwtPayload.id)
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
+
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully fetched current user!",
+	)
 }

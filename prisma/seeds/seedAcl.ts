@@ -124,37 +124,37 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 		qualityAssuranceRole,
 		agentRole,
 	] = await Promise.all([
-		prisma.tenantRole.findUnique({
+		prisma.tenantRole.findFirst({
 			where: {
 				identifier: "HEAD_OF_OFFICE",
 			},
 		}),
-		prisma.tenantRole.findUnique({
+		prisma.tenantRole.findFirst({
 			where: {
 				identifier: "OPS_MANAGER",
 			},
 		}),
-		prisma.tenantRole.findUnique({
+		prisma.tenantRole.findFirst({
 			where: {
 				identifier: "SUPERVISOR",
 			},
 		}),
-		prisma.tenantRole.findUnique({
+		prisma.tenantRole.findFirst({
 			where: {
 				identifier: "TEAM_LEADER",
 			},
 		}),
-		prisma.tenantRole.findUnique({
+		prisma.tenantRole.findFirst({
 			where: {
 				identifier: "TRAINER",
 			},
 		}),
-		prisma.tenantRole.findUnique({
+		prisma.tenantRole.findFirst({
 			where: {
 				identifier: "QUALITY_ASSURANCE",
 			},
 		}),
-		prisma.tenantRole.findUnique({
+		prisma.tenantRole.findFirst({
 			where: {
 				identifier: "AGENT",
 			},
@@ -411,6 +411,17 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 		}
 	}
 
+	/**
+	 * ACL MAPPING - NEW vs LEGACY ROLES
+	 *
+	 * The following ACL permissions are shared between new and legacy roles:
+	 * - CHECKER ACL = QUALITY_ASSURANCE ACL (full admin access to all features)
+	 * - MAKER ACL = TRAINER ACL (content creation, assignments, knowledge management)
+	 * - CONSUMER ACL = AGENT ACL (view-only access)
+	 *
+	 * This ensures users with new roles (CHECKER, MAKER, CONSUMER) have the same
+	 * permissions as their legacy equivalents, maintaining backward compatibility.
+	 */
 	if (qualityAssuranceRole || trainerRole) {
 		const qualityAssuranceAndTrainerFeature = [
 			{

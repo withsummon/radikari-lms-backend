@@ -79,7 +79,7 @@ export async function seedTrainerAndQA(prisma: PrismaClient) {
 	}
 
 	// Create trainer if needed
-	if (countTrainer === 1) {
+	if (countTrainer === 0) {
 		try {
 			const hashedPassword = await Bun.password.hash("trainer1234", "argon2id")
 			console.log("Creating trainer user...")
@@ -113,7 +113,7 @@ export async function seedTrainerAndQA(prisma: PrismaClient) {
 	}
 
 	// Create quality assurance if needed
-	if (countQualityAssurance === 1) {
+	if (countQualityAssurance === 0) {
 		try {
 			const hashedPassword = await Bun.password.hash("qa1234", "argon2id")
 			console.log("Creating quality assurance user...")

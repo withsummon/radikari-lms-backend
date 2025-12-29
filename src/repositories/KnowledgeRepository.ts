@@ -228,13 +228,16 @@ export async function getSummary(
 	}
 
 	usedFilters.query.where.AND.push({
+		tenantId, // Filter by tenant first
+	})
+
+	usedFilters.query.where.AND.push({
 		OR: [
 			{
 				access: KnowledgeAccess.PUBLIC,
 			},
 			{
 				access: KnowledgeAccess.TENANT,
-				tenantId,
 			},
 			{
 				access: KnowledgeAccess.EMAIL,
@@ -307,6 +310,7 @@ export async function getById(id: string) {
 			isArchived: true,
 			version: true,
 			parentId: true,
+			rejectionComment: true,
 			userKnowledge: {
 				select: {
 					user: {
@@ -335,6 +339,18 @@ export async function getById(id: string) {
 				},
 			},
 			knowledgeActivityLog: {
+				select: {
+					id: true,
+					action: true,
+					createdAt: true,
+					createdByUser: {
+						select: {
+							id: true,
+							fullName: true,
+							profilePictureUrl: true,
+						},
+					},
+				},
 				orderBy: {
 					createdAt: "desc",
 				},
@@ -373,6 +389,7 @@ export async function getByIds(ids: string[]) {
 			isArchived: true,
 			version: true,
 			parentId: true,
+			rejectionComment: true,
 			userKnowledge: {
 				select: {
 					user: {
@@ -401,6 +418,18 @@ export async function getByIds(ids: string[]) {
 				},
 			},
 			knowledgeActivityLog: {
+				select: {
+					id: true,
+					action: true,
+					createdAt: true,
+					createdByUser: {
+						select: {
+							id: true,
+							fullName: true,
+							profilePictureUrl: true,
+						},
+					},
+				},
 				orderBy: {
 					createdAt: "desc",
 				},

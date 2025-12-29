@@ -72,7 +72,9 @@ export function googleLogin(c: Context) {
 
 export async function googleCallback(c: Context): Promise<TypedResponse> {
 	const { code } = c.req.query()
-	const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000"
+	const frontendUrl = (
+		process.env.FRONTEND_URL || "http://localhost:3000"
+	).replace(/\/$/, "")
 
 	const serviceResponse = await AuthService.googleCallback(code)
 

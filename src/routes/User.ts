@@ -6,19 +6,16 @@ import { Roles } from "../../generated/prisma/client"
 
 const UserRoutes = new Hono()
 
+UserRoutes.get("/me", AuthMiddleware.checkJwt, UserController.me)
+
 UserRoutes.get(
 	"/",
 	AuthMiddleware.checkJwt,
-	AuthMiddleware.checkRole([Roles.ADMIN]),
+	// Allow all authenticated users to view user list (needed for tenant member management)
 	UserController.getAll,
 )
 
-UserRoutes.get(
-	"/:id",
-	AuthMiddleware.checkJwt,
-	AuthMiddleware.checkRole([Roles.ADMIN]),
-	UserController.getById,
-)
+UserRoutes.get("/:id", AuthMiddleware.checkJwt, UserController.getById)
 
 UserRoutes.post(
 	"/",

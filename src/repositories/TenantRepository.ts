@@ -3,11 +3,122 @@ import { prisma } from "$pkg/prisma"
 import { TenantCreateUpdateDTO } from "$entities/Tenant"
 import { ulid } from "ulid"
 import { exclude, UserJWTDAO } from "$entities/User"
-import { Roles } from "../../generated/prisma/client"
+import { Roles, Prisma } from "../../generated/prisma/client"
+
+/**
+ * Default role templates for new tenants
+ * ACL Mapping:
+ * - CHECKER = QUALITY_ASSURANCE (full admin access)
+ * - MAKER = TRAINER (content creation)
+ * - CONSUMER = AGENT (view-only)
+ */
+const DEFAULT_ROLE_TEMPLATES = [
+	{
+		identifier: "CHECKER",
+		name: "Checker",
+		description: "Tenant Admin with full access (Quality Assurance)",
+		level: 5,
+	},
+	{
+		identifier: "MAKER",
+		name: "Maker",
+		description: "Content creator and trainer role",
+		level: 1,
+	},
+	{
+		identifier: "CONSUMER",
+		name: "Consumer",
+		description: "View-only user role (Agent)",
+		level: 1,
+	},
+]
+
+/**
+ * ACL permissions by role identifier
+ * CHECKER gets full admin access (same as QUALITY_ASSURANCE)
+ * MAKER gets content creation access (same as TRAINER)
+ * CONSUMER gets view-only access (same as AGENT)
+ */
+const ROLE_ACL_PERMISSIONS: Record<
+	string,
+	Array<{ featureName: string; actions: string[] }>
+> = {
+	CHECKER: [
+		{
+			featureName: "USER_MANAGEMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
+		{
+			featureName: "ACCESS_CONTROL_LIST",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
+		{ featureName: "TENANT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{
+			featureName: "KNOWLEDGE",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"],
+		},
+		{ featureName: "BULK_UPLOAD", actions: ["CREATE"] },
+		{
+			featureName: "ANNOUNCEMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
+		{
+			featureName: "ASSIGNMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
+		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "USER_ACTIVITY_LOG", actions: ["VIEW"] },
+		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "AI_PROMPT", actions: ["VIEW", "UPDATE"] },
+		{ featureName: "BROADCAST", actions: ["VIEW", "UPDATE"] },
+	],
+	MAKER: [
+		{
+			featureName: "USER_MANAGEMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
+		{
+			featureName: "ACCESS_CONTROL_LIST",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
+		{ featureName: "TENANT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{
+			featureName: "KNOWLEDGE",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"],
+		},
+		{ featureName: "BULK_UPLOAD", actions: ["CREATE"] },
+		{
+			featureName: "ANNOUNCEMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
+		{
+			featureName: "ASSIGNMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
+		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "USER_ACTIVITY_LOG", actions: ["VIEW"] },
+		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "AI_PROMPT", actions: ["VIEW", "UPDATE"] },
+		{ featureName: "BROADCAST", actions: ["VIEW", "UPDATE"] },
+	],
+	CONSUMER: [
+		{ featureName: "OPERATION", actions: ["VIEW"] },
+		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
+		{ featureName: "TENANT", actions: ["VIEW"] },
+		{ featureName: "ANNOUNCEMENT", actions: ["VIEW"] },
+		{ featureName: "ASSIGNMENT", actions: ["VIEW"] },
+		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
+		{ featureName: "BROADCAST", actions: ["VIEW"] },
+	],
+}
 
 export async function create(data: TenantCreateUpdateDTO) {
 	return await prisma.$transaction(async (tx) => {
 		const { headOfTenantUserId, ...rest } = data
+
+		// 1. Create the tenant
 		const tenant = await tx.tenant.create({
 			data: {
 				name: rest.name,
@@ -18,42 +129,61 @@ export async function create(data: TenantCreateUpdateDTO) {
 			},
 		})
 
-		// Create default roles for the tenant
-		const checkerRole = await tx.tenantRole.create({
-			data: {
-				id: ulid(),
-				identifier: "CHECKER",
-				name: "Checker",
-				description: "Checker Role",
-				level: 1,
-				tenantId: tenant.id,
-			},
-		})
+		// 2. Create default roles for the new tenant
+		const createdRoles: Record<string, { id: string }> = {}
+		for (const roleTemplate of DEFAULT_ROLE_TEMPLATES) {
+			const role = await tx.tenantRole.create({
+				data: {
+					id: ulid(),
+					identifier: roleTemplate.identifier,
+					name: roleTemplate.name,
+					description: roleTemplate.description,
+					level: roleTemplate.level,
+					tenantId: tenant.id,
+				},
+			})
+			createdRoles[roleTemplate.identifier] = role
+		}
 
-		await tx.tenantRole.create({
-			data: {
-				id: ulid(),
-				identifier: "MAKER",
-				name: "Maker",
-				description: "Maker Role",
-				level: 1,
-				tenantId: tenant.id,
-			},
-		})
+		// 3. Create ACL entries for each role
+		// We need a user ID for createdById/updatedById - use headOfTenantUserId or find admin
+		let aclCreatorId: string | undefined = headOfTenantUserId
+		if (!aclCreatorId) {
+			const admin = await tx.user.findFirst({ where: { role: "ADMIN" } })
+			aclCreatorId = admin?.id
+		}
 
-		await tx.tenantRole.create({
-			data: {
-				id: ulid(),
-				identifier: "CONSUMER",
-				name: "Consumer",
-				description: "Consumer Role",
-				level: 1,
-				tenantId: tenant.id,
-			},
-		})
+		if (aclCreatorId) {
+			const aclEntries: Prisma.AccessControlListCreateManyInput[] = []
 
-		// Assign CHECKER role to the head of tenant (admin)
-		if (headOfTenantUserId) {
+			for (const [roleIdentifier, permissions] of Object.entries(
+				ROLE_ACL_PERMISSIONS,
+			)) {
+				const role = createdRoles[roleIdentifier]
+				if (!role) continue
+
+				for (const perm of permissions) {
+					for (const action of perm.actions) {
+						aclEntries.push({
+							id: ulid(),
+							featureName: perm.featureName,
+							actionName: action,
+							tenantRoleId: role.id,
+							createdById: aclCreatorId,
+							updatedById: aclCreatorId,
+						})
+					}
+				}
+			}
+
+			if (aclEntries.length > 0) {
+				await tx.accessControlList.createMany({ data: aclEntries })
+			}
+		}
+
+		// 4. Assign CHECKER role to the head of tenant
+		const checkerRole = createdRoles["CHECKER"]
+		if (headOfTenantUserId && checkerRole) {
 			await tx.tenantUser.create({
 				data: {
 					id: ulid(),
@@ -63,6 +193,7 @@ export async function create(data: TenantCreateUpdateDTO) {
 				},
 			})
 		}
+
 		return tenant
 	})
 }
@@ -216,7 +347,7 @@ export async function update(id: string, data: TenantCreateUpdateDTO) {
 			},
 		})
 
-		// Try to find the tenant specific CHECKER role
+		// Find the CHECKER role specific to this tenant
 		let adminRole = await tx.tenantRole.findFirst({
 			where: {
 				identifier: "CHECKER",
@@ -229,14 +360,16 @@ export async function update(id: string, data: TenantCreateUpdateDTO) {
 			adminRole = await tx.tenantRole.findFirst({
 				where: {
 					identifier: "HEAD_OF_OFFICE",
+					tenantId: id,
 				},
 			})
 		}
 
 		if (!adminRole) {
 			// If neither exists, we can't assign an admin properly.
-			// But creating one might be safer? For now, throw error as before.
-			throw new Error("Admin role (CHECKER or HEAD_OF_OFFICE) not found")
+			throw new Error(
+				"Admin role (CHECKER or HEAD_OF_OFFICE) not found for this tenant",
+			)
 		}
 
 		// Remove existing admin users (checking both roles to be safe/thorough)
@@ -256,7 +389,7 @@ export async function update(id: string, data: TenantCreateUpdateDTO) {
 				data: {
 					id: ulid(),
 					userId: headOfTenantUserId,
-					tenantRoleId: adminRole.id, // Use the found role (CHECKER preferred)
+					tenantRoleId: adminRole.id,
 					tenantId: id,
 				},
 			})
