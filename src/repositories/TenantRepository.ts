@@ -39,15 +39,33 @@ const DEFAULT_ROLE_TEMPLATES = [
  * MAKER gets content creation access (same as TRAINER)
  * CONSUMER gets view-only access (same as AGENT)
  */
-const ROLE_ACL_PERMISSIONS: Record<string, Array<{ featureName: string; actions: string[] }>> = {
+const ROLE_ACL_PERMISSIONS: Record<
+	string,
+	Array<{ featureName: string; actions: string[] }>
+> = {
 	CHECKER: [
-		{ featureName: "USER_MANAGEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "ACCESS_CONTROL_LIST", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{
+			featureName: "USER_MANAGEMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
+		{
+			featureName: "ACCESS_CONTROL_LIST",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
 		{ featureName: "TENANT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "KNOWLEDGE", actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"] },
+		{
+			featureName: "KNOWLEDGE",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"],
+		},
 		{ featureName: "BULK_UPLOAD", actions: ["CREATE"] },
-		{ featureName: "ANNOUNCEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "ASSIGNMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{
+			featureName: "ANNOUNCEMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
+		{
+			featureName: "ASSIGNMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
 		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "USER_ACTIVITY_LOG", actions: ["VIEW"] },
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
@@ -55,13 +73,28 @@ const ROLE_ACL_PERMISSIONS: Record<string, Array<{ featureName: string; actions:
 		{ featureName: "BROADCAST", actions: ["VIEW", "UPDATE"] },
 	],
 	MAKER: [
-		{ featureName: "USER_MANAGEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "ACCESS_CONTROL_LIST", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{
+			featureName: "USER_MANAGEMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
+		{
+			featureName: "ACCESS_CONTROL_LIST",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
 		{ featureName: "TENANT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "KNOWLEDGE", actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"] },
+		{
+			featureName: "KNOWLEDGE",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"],
+		},
 		{ featureName: "BULK_UPLOAD", actions: ["CREATE"] },
-		{ featureName: "ANNOUNCEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "ASSIGNMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{
+			featureName: "ANNOUNCEMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
+		{
+			featureName: "ASSIGNMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
 		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "USER_ACTIVITY_LOG", actions: ["VIEW"] },
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
@@ -84,7 +117,7 @@ const ROLE_ACL_PERMISSIONS: Record<string, Array<{ featureName: string; actions:
 export async function create(data: TenantCreateUpdateDTO) {
 	return await prisma.$transaction(async (tx) => {
 		const { headOfTenantUserId, ...rest } = data
-		
+
 		// 1. Create the tenant
 		const tenant = await tx.tenant.create({
 			data: {
@@ -122,8 +155,10 @@ export async function create(data: TenantCreateUpdateDTO) {
 
 		if (aclCreatorId) {
 			const aclEntries: Prisma.AccessControlListCreateManyInput[] = []
-			
-			for (const [roleIdentifier, permissions] of Object.entries(ROLE_ACL_PERMISSIONS)) {
+
+			for (const [roleIdentifier, permissions] of Object.entries(
+				ROLE_ACL_PERMISSIONS,
+			)) {
 				const role = createdRoles[roleIdentifier]
 				if (!role) continue
 
@@ -332,7 +367,9 @@ export async function update(id: string, data: TenantCreateUpdateDTO) {
 
 		if (!adminRole) {
 			// If neither exists, we can't assign an admin properly.
-			throw new Error("Admin role (CHECKER or HEAD_OF_OFFICE) not found for this tenant")
+			throw new Error(
+				"Admin role (CHECKER or HEAD_OF_OFFICE) not found for this tenant",
+			)
 		}
 
 		// Remove existing admin users (checking both roles to be safe/thorough)

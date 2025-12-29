@@ -21,10 +21,8 @@ export async function getAll(c: Context) {
 	const tenantId = c.req.param("id")
 	const rawQuery = c.req.query()
 
-	// FIX: Buat object baru yang sudah di-parse
 	const queryParams = {
 		...rawQuery,
-		// Parse manual field-field yang dikirim sebagai JSON string oleh frontend
 		filters: rawQuery.filters ? safeParse(rawQuery.filters) : undefined,
 		searchFilters: rawQuery.searchFilters
 			? safeParse(rawQuery.searchFilters)

@@ -23,15 +23,13 @@ TenantRoutes.get(
 TenantRoutes.get(
 	"/:id/knowledge-reads",
 	AuthMiddleware.checkJwt,
-	//   AuthMiddleware.checkRole([Roles.ADMIN]),
 	UserKnowledgeReadLogController.getAll,
 )
 
-// User mark viewed in tenant (must be member)
 TenantRoutes.post(
 	"/:id/knowledge-reads/view",
 	AuthMiddleware.checkJwt,
-	AuthMiddleware.checkRoleInTenant,
+	// AuthMiddleware.checkRoleInTenant,
 	UserKnowledgeReadLogController.markViewed,
 )
 
