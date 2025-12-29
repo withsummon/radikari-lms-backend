@@ -18,4 +18,5 @@ export interface CreateGoogleUserDTO {
 	type: UserType
 	profilePictureUrl: string
 	lastLoginAt: Date
+	isActive: boolean
 }

@@ -73,7 +73,7 @@ export async function getAll(filters: EzFilter.FilteringQuery) {
 			if (!key) continue
 
 			if (key === "isActive") {
-				where.isActive = (String(value) === "true" || value === true)
+				where.isActive = String(value) === "true" || value === true
 			} else if (key === "email") {
 				where.email = { contains: value, mode: "insensitive" }
 			} else if (key === "tenantId") {
