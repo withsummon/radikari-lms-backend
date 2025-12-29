@@ -40,4 +40,11 @@ UserRoutes.delete(
 	UserController.deleteById,
 )
 
+UserRoutes.post(
+	"/restore/:id",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRole([Roles.ADMIN]),
+	UserController.restoreById,
+)
+
 export default UserRoutes

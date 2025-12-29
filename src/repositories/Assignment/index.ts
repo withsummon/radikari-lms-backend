@@ -77,7 +77,8 @@ export async function getAll(
 	tenantId: string,
 ) {
 	const queryBuilder = new EzFilter.BuildQueryFilter()
-	let usedFilters = queryBuilder.build(filters)
+	const { filters: rawFilters, ...rest } = filters
+	let usedFilters = queryBuilder.build(rest as any)
 
 	usedFilters.query.include = {
 		createdByUser: {

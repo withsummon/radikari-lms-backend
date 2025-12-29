@@ -237,6 +237,10 @@ export async function getAll(filters: any) {
 				// For user.email, use contains for partial match
 				if (!where.user) where.user = {}
 				where.user.email = { contains: value, mode: "insensitive" }
+			} else if (key === "isActive") {
+				const isActive = (String(value) === "true");
+				if (!where.user) where.user = {}
+				where.user.isActive = isActive;
 			} else if (key.includes(".")) {
 				// For nested keys, unflatten and use contains
 				const condition = unflatten({

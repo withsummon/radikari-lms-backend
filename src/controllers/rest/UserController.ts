@@ -79,6 +79,17 @@ export async function deleteById(c: Context): Promise<TypedResponse> {
 	return response_success(c, serviceResponse.data, "Successfully deleted User!")
 }
 
+export async function restoreById(c: Context): Promise<TypedResponse> {
+	const id = c.req.param("id")
+
+	const serviceResponse = await UserService.restoreById(id)
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
+
+	return response_success(c, serviceResponse.data, "Successfully restored User!")
+}
+
 export async function me(c: Context): Promise<TypedResponse> {
 	const jwtPayload: UserJWTDAO = c.get("jwtPayload")
 

@@ -44,7 +44,6 @@ TenantRoutes.get(
 TenantRoutes.get(
 	"/users/all",
 	AuthMiddleware.checkJwt,
-	AuthMiddleware.checkRole([Roles.ADMIN]),
 	TenantController.getAllTenantUsers,
 )
 

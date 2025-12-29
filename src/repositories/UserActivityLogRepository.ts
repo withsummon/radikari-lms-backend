@@ -14,7 +14,8 @@ export async function create(userId: string, action: string) {
 
 export async function getAll(filters: EzFilter.FilteringQuery) {
 	const queryBuilder = new EzFilter.BuildQueryFilter()
-	const usedFilters = queryBuilder.build(filters)
+	const { filters: rawFilters, ...rest } = filters
+	const usedFilters = queryBuilder.build(rest as any)
 
 	usedFilters.query.include = {
 		user: {
