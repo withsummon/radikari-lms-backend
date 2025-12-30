@@ -404,16 +404,39 @@ export async function getAllQuestionsAndAnswers(
 			)
 		}
 
-		const [questions, assignmentUserAttemptAnswers] = await Promise.all([
-			AssignmentQuestionRepository.getAllQuestions(
-				assignmentAttempt.assignmentId,
-			),
-			AssignmentAttemptRepository.getAllUserAttemptAnswers(
-				assignmentAttempt.id,
-			),
-		])
+		const [assignment, questions, assignmentUserAttemptAnswers] =
+			await Promise.all([
+				AssignmentRepository.getByIdDefault(assignmentAttempt.assignmentId),
+				AssignmentQuestionRepository.getAllQuestions(
+					assignmentAttempt.assignmentId,
+				),
+				AssignmentAttemptRepository.getAllUserAttemptAnswers(
+					assignmentAttempt.id,
+				),
+			])
 
-		const mappedQuestions = questions.map((question) => {
+		let sortedQuestions = questions
+		if (assignment?.isRandomized && assignmentAttempt.randomSeed !== 0) {
+			const seed = assignmentAttempt.randomSeed
+			// Deterministic shuffle using a simple seeded random
+			sortedQuestions = [...questions].sort((a, b) => {
+				const valA =
+					Math.sin(
+						seed +
+							a.id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0),
+					) * 10000
+				const valB =
+					Math.sin(
+						seed +
+							b.id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0),
+					) * 10000
+				return valA - Math.floor(valA) - (valB - Math.floor(valB))
+			})
+		} else {
+			sortedQuestions = [...questions].sort((a, b) => a.order - b.order)
+		}
+
+		const mappedQuestions = sortedQuestions.map((question) => {
 			const assignmentUserAttemptAnswer = assignmentUserAttemptAnswers.find(
 				(answer) => answer.assignmentQuestionId === question.id,
 			)

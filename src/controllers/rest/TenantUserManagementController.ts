@@ -24,6 +24,7 @@ type UpdateUserInTenantDTO = {
 	email?: string
 	phoneNumber?: string
 	password?: string
+	tenantRoleId?: string
 }
 
 const userSelect = {
@@ -194,17 +195,39 @@ export async function updateUserInTenant(c: Context) {
 			payload.password = await Bun.password.hash(data.password, "argon2id")
 		}
 
-		if (Object.keys(payload).length === 0) {
-			return response_bad_request(c, "No fields to update")
-		}
+		const result = await prisma.$transaction(async (tx) => {
+			if (Object.keys(payload).length > 0) {
+				await tx.user.update({
+					where: { id: userId },
+					data: payload,
+				})
+			}
 
-		const updated = await prisma.user.update({
-			where: { id: userId },
-			data: payload,
-			select: userSelect,
+			if (data.tenantRoleId) {
+				// Verify role exists
+				const role = await tx.tenantRole.findUnique({
+					where: { id: data.tenantRoleId },
+				})
+				if (!role) {
+					throw new Error("Tenant role not found")
+				}
+
+				await tx.tenantUser.update({
+					where: { userId_tenantId: { userId, tenantId } },
+					data: { tenantRoleId: data.tenantRoleId },
+				})
+			}
+
+			return await tx.tenantUser.findUnique({
+				where: { userId_tenantId: { userId, tenantId } },
+				include: {
+					user: { select: userSelect },
+					tenantRole: true,
+				},
+			})
 		})
 
-		return response_success(c, updated, "User updated")
+		return response_success(c, result, "User updated")
 	} catch (err) {
 		return prismaToHttpError(c, err)
 	}

@@ -75,6 +75,8 @@ AssignmentRoutes.post(
 	AuthMiddleware.checkRoleAssignmentAccess([
 		TenantRoleIdentifier.TRAINER,
 		TenantRoleIdentifier.QUALITY_ASSURANCE,
+		TenantRoleIdentifier.MAKER,
+		TenantRoleIdentifier.CHECKER,
 	]),
 	AssignmentValidation.validateAssignmentSchema,
 	AssignmentController.create,
@@ -86,6 +88,8 @@ AssignmentRoutes.post(
 	AuthMiddleware.checkRoleAssignmentAccess([
 		TenantRoleIdentifier.TRAINER,
 		TenantRoleIdentifier.QUALITY_ASSURANCE,
+		TenantRoleIdentifier.MAKER,
+		TenantRoleIdentifier.CHECKER,
 	]),
 	AssignmentController.generateQuestionsStream,
 )
@@ -96,6 +100,8 @@ AssignmentRoutes.put(
 	AuthMiddleware.checkRoleAssignmentAccess([
 		TenantRoleIdentifier.TRAINER,
 		TenantRoleIdentifier.QUALITY_ASSURANCE,
+		TenantRoleIdentifier.MAKER,
+		TenantRoleIdentifier.CHECKER,
 	]),
 	AssignmentValidation.validateAssignmentSchema,
 	AssignmentController.update,
@@ -107,6 +113,8 @@ AssignmentRoutes.delete(
 	AuthMiddleware.checkRoleAssignmentAccess([
 		TenantRoleIdentifier.TRAINER,
 		TenantRoleIdentifier.QUALITY_ASSURANCE,
+		TenantRoleIdentifier.MAKER,
+		TenantRoleIdentifier.CHECKER,
 	]),
 	AssignmentController.deleteById,
 )

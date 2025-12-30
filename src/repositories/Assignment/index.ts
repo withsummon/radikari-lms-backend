@@ -19,6 +19,8 @@ export async function create(data: AssignmentCreateDTO) {
 			const assignment = await tx.assignment.create({
 				data: {
 					...rest,
+					id: data.id || ulid(),
+					isRandomized: data.isRandomized,
 				},
 			})
 
@@ -92,6 +94,22 @@ export async function getAll(
 				userId: user.id,
 			},
 		},
+		assignmentTenantRoleAccesses: {
+			where: {
+				tenantRole: {
+					tenantUser: {
+						some: {
+							userId: user.id,
+						},
+					},
+				},
+			},
+		},
+		assignmentUserAccesses: {
+			where: {
+				userId: user.id,
+			},
+		},
 	}
 
 	usedFilters.query.where.AND.push({
@@ -158,13 +176,13 @@ export async function update(id: string, data: AssignmentCreateDTO) {
 				[]
 			const assignmentTenantRoleAccesses: Prisma.AssignmentTenantRoleAccessCreateManyInput[] =
 				[]
-
 			const assignment = await tx.assignment.update({
 				where: {
 					id,
 				},
 				data: {
 					...rest,
+					isRandomized: data.isRandomized,
 				},
 			})
 

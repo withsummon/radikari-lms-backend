@@ -6,12 +6,12 @@ import * as TenantUserController from "$controllers/rest/TenantUserManagementCon
 const TenantUserManagementRoutes = new Hono()
 
 // ==========================
-// READ (SUDAH BISA)
+// READ
 // ==========================
 TenantUserManagementRoutes.get(
 	"/",
 	AuthMiddleware.checkJwt,
-	AuthMiddleware.checkRoleInTenant, // cukup member tenant
+	AuthMiddleware.checkAccessTenantRole("USER_MANAGEMENT", "VIEW"),
 	TenantUserController.getAllByTenant,
 )
 
@@ -21,7 +21,7 @@ TenantUserManagementRoutes.get(
 TenantUserManagementRoutes.post(
 	"/",
 	AuthMiddleware.checkJwt,
-	AuthMiddleware.checkRoleInTenant, // cukup member tenant
+	AuthMiddleware.checkAccessTenantRole("USER_MANAGEMENT", "CREATE"),
 	TenantUserController.createAndAssignToTenant,
 )
 
@@ -31,7 +31,7 @@ TenantUserManagementRoutes.post(
 TenantUserManagementRoutes.put(
 	"/:userId",
 	AuthMiddleware.checkJwt,
-	AuthMiddleware.checkRoleInTenant, // cukup member tenant
+	AuthMiddleware.checkAccessTenantRole("USER_MANAGEMENT", "UPDATE"),
 	TenantUserController.updateUserInTenant,
 )
 
@@ -41,7 +41,7 @@ TenantUserManagementRoutes.put(
 TenantUserManagementRoutes.delete(
 	"/:userId",
 	AuthMiddleware.checkJwt,
-	AuthMiddleware.checkRoleInTenant, // cukup member tenant
+	AuthMiddleware.checkAccessTenantRole("USER_MANAGEMENT", "DELETE"),
 	TenantUserController.removeUserFromTenant,
 )
 

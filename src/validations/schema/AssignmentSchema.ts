@@ -22,6 +22,7 @@ export const AssignmentSchema = z
 			error: (issue) =>
 				issue.input === undefined ? "access is required" : undefined,
 		}),
+		isRandomized: z.boolean().optional(),
 	})
 	.strict()
 
@@ -49,6 +50,7 @@ export const AssignmentQuestionSchema = z
 			error: (issue) =>
 				issue.input === undefined ? "order is required" : undefined,
 		}),
+		id: z.string().optional(),
 	})
 	.strict()
 
@@ -63,6 +65,7 @@ export const AssignmentQuestionOptionSchema = z.array(
 				error: (issue) =>
 					issue.input === undefined ? "isCorrectAnswer is required" : undefined,
 			}),
+			id: z.string().optional(),
 		})
 		.strict(),
 )
@@ -73,6 +76,7 @@ export const AssignmentQuestionTrueFalseAnswerSchema = z
 			error: (issue) =>
 				issue.input === undefined ? "correctAnswer is required" : undefined,
 		}),
+		id: z.string().optional(),
 	})
 	.strict()
 
@@ -82,6 +86,7 @@ export const AssignmentQuestionEssayReferenceAnswerSchema = z
 			error: (issue) =>
 				issue.input === undefined ? "content is required" : undefined,
 		}),
+		id: z.string().optional(),
 	})
 	.strict()
 
