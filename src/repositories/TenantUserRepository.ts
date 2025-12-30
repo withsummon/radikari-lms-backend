@@ -41,6 +41,9 @@ export async function getByTenantId(tenantId: string) {
 	return await prisma.tenantUser.findMany({
 		where: {
 			tenantId,
+			user: {
+				isActive: true,
+			},
 		},
 		include: {
 			user: {
@@ -238,9 +241,9 @@ export async function getAll(filters: any) {
 				if (!where.user) where.user = {}
 				where.user.email = { contains: value, mode: "insensitive" }
 			} else if (key === "isActive") {
-				const isActive = (String(value) === "true");
+				const isActive = String(value) === "true"
 				if (!where.user) where.user = {}
-				where.user.isActive = isActive;
+				where.user.isActive = isActive
 			} else if (key.includes(".")) {
 				// For nested keys, unflatten and use contains
 				const condition = unflatten({

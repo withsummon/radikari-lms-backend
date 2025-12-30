@@ -132,12 +132,15 @@ export async function getAllTenantUsers(c: Context): Promise<TypedResponse> {
 					typeof filters.filters === "string"
 						? JSON.parse(filters.filters as string)
 						: filters.filters
-				
+
 				// Handle both Object and Array formats
 				if (Array.isArray(parsedFilters)) {
 					const found = parsedFilters.find((f: any) => f.key === "tenantId")
 					tenantIdFilter = found?.value
-				} else if (typeof parsedFilters === "object" && parsedFilters !== null) {
+				} else if (
+					typeof parsedFilters === "object" &&
+					parsedFilters !== null
+				) {
 					tenantIdFilter = (parsedFilters as any).tenantId
 				}
 			} catch (e) {
@@ -146,7 +149,10 @@ export async function getAllTenantUsers(c: Context): Promise<TypedResponse> {
 		}
 
 		if (!tenantIdFilter) {
-			return response_forbidden(c, "Tenant ID filter is required for non-admins!")
+			return response_forbidden(
+				c,
+				"Tenant ID filter is required for non-admins!",
+			)
 		}
 
 		// Verify membership

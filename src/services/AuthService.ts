@@ -26,7 +26,7 @@ export async function logIn(data: UserLoginDTO): Promise<ServiceResponse<any>> {
 
 		const user = await UserRepository.getByEmail(email)
 
-		if (!user || user.type !== "INTERNAL") {
+		if (!user || user.type !== "INTERNAL" || !user.isActive) {
 			return HandleServiceResponseCustomError("Invalid credential!", 404)
 		}
 
@@ -157,8 +157,15 @@ export async function googleCallback(
 				type: UserType.GOOGLE,
 				profilePictureUrl: data.data.picture ?? "",
 				lastLoginAt: new Date(),
+				isActive: true,
 			})
 		} else {
+			if (!user.isActive) {
+				return HandleServiceResponseCustomError(
+					"Your account is inactive. Please contact administrator.",
+					403,
+				)
+			}
 			user = await UserRepository.update(user.id, {
 				lastLoginAt: new Date(),
 				email: data.data.email!,

@@ -87,7 +87,11 @@ export async function restoreById(c: Context): Promise<TypedResponse> {
 		return handleServiceErrorWithResponse(c, serviceResponse)
 	}
 
-	return response_success(c, serviceResponse.data, "Successfully restored User!")
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully restored User!",
+	)
 }
 
 export async function me(c: Context): Promise<TypedResponse> {
