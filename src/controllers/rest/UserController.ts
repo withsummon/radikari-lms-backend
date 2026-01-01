@@ -29,7 +29,9 @@ export async function getAll(c: Context): Promise<TypedResponse> {
 		c.req.query(),
 	)
 
-	const serviceResponse = await UserService.getAll(filters)
+	const jwtPayload: UserJWTDAO = c.get("jwtPayload")
+
+	const serviceResponse = await UserService.getAll(filters, jwtPayload)
 	if (!serviceResponse.status) {
 		return handleServiceErrorWithResponse(c, serviceResponse)
 	}

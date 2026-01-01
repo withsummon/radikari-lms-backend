@@ -13,7 +13,6 @@ import { seedAiPrompt } from "./seedAiPrompt"
 import { seedBroadcast } from "./seedBroadcast"
 import { seedTenant } from "./seedTenant"
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 async function seed() {
 	console.log("🚀 Starting seeder...")

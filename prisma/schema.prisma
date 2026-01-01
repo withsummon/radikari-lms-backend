@@ -437,6 +437,8 @@ model Assignment {
   status            AssignmentStatus @default(PUBLISHED)
   access            AssignmentAccess
   isRandomized      Boolean          @default(false)
+  showQuestion      Boolean          @default(false)
+  showAnswer        Boolean          @default(false)
   expiredDate       String
   tenantId          String
   createdAt         DateTime         @default(now())

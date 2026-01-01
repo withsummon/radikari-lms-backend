@@ -201,9 +201,20 @@ export async function submitAssignment(
 			)
 		}
 
-		await pubsub.sendToQueue(PUBSUB_TOPICS.ASSIGNMENT_ATTEMPT_SUBMIT, {
-			assignmentUserAttemptId: assignmentAttempt.id,
-		})
+		try {
+			await AssignmentAttemptRepository.markAsSubmitted(assignmentAttempt.id)
+			await pubsub.sendToQueue(PUBSUB_TOPICS.ASSIGNMENT_ATTEMPT_SUBMIT, {
+				assignmentUserAttemptId: assignmentAttempt.id,
+			})
+		} catch (mqError) {
+			Logger.warning(
+				"AssignmentAttemptService.submitAssignment: Failed to publish submit event",
+				{
+					error: mqError,
+					assignmentUserAttemptId: assignmentAttempt.id,
+				},
+			)
+		}
 
 		return HandleServiceResponseSuccess({})
 	} catch (err) {
@@ -495,9 +506,19 @@ export async function getAssignmentsByExpiredDate() {
 					assignment.assignment.durationInMinutes * 60000 <
 				Date.now()
 			) {
-				await pubsub.sendToQueue(PUBSUB_TOPICS.ASSIGNMENT_ATTEMPT_SUBMIT, {
-					assignmentUserAttemptId: assignment.id,
-				})
+				try {
+					await pubsub.sendToQueue(PUBSUB_TOPICS.ASSIGNMENT_ATTEMPT_SUBMIT, {
+						assignmentUserAttemptId: assignment.id,
+					})
+				} catch (mqError) {
+					Logger.warning(
+						"AssignmentAttemptService.getAssignmentsByExpiredDate: Failed to publish submit event",
+						{
+							error: mqError,
+							assignmentUserAttemptId: assignment.id,
+						},
+					)
+				}
 			}
 		}
 	} catch (err) {
@@ -542,10 +563,14 @@ export async function getHistoryUserAssignmentAttempts(
 							return {
 								id: option.id,
 								content: option.content,
+								isCorrectAnswer: option.isCorrectAnswer,
 							}
 						}),
 						isCorrect: assignmentUserAttemptAnswer?.isAnswerCorrect,
 						userAnswer: assignmentUserAttemptAnswer?.assignmentQuestionOptionId,
+						correctChoice: question.assignmentQuestionOptions.find(
+							(option) => option.isCorrectAnswer,
+						),
 					}
 				} else if (question.type === AssignmentQuestionType.ESSAY) {
 					return {
@@ -555,7 +580,8 @@ export async function getHistoryUserAssignmentAttempts(
 						type: question.type,
 						isCorrect: assignmentUserAttemptAnswer?.isAnswerCorrect,
 						userAnswer: assignmentUserAttemptAnswer?.essayAnswer,
-						aiGradingReasoning: assignmentUserAttemptAnswer?.aiGradingReasoning,
+						aiGradingFeedback: assignmentUserAttemptAnswer?.aiGradingReasoning,
+						correctAnswer: question.assignmentQuestionEssayReferenceAnswer?.content,
 					}
 				} else if (question.type === AssignmentQuestionType.TRUE_FALSE) {
 					return {
@@ -565,6 +591,7 @@ export async function getHistoryUserAssignmentAttempts(
 						type: question.type,
 						isCorrect: assignmentUserAttemptAnswer?.isAnswerCorrect,
 						userAnswer: assignmentUserAttemptAnswer?.trueFalseAnswer,
+						correctAnswer: question.assignmentQuestionTrueFalseAnswer?.correctAnswer,
 					}
 				}
 			})
@@ -583,6 +610,8 @@ export async function getHistoryUserAssignmentAttempts(
 				id: assignmentAttempt.assignment.id,
 				title: assignmentAttempt.assignment.title,
 				durationInMinutes: assignmentAttempt.assignment.durationInMinutes,
+				showAnswer: assignmentAttempt.assignment.showAnswer,
+				showQuestion: assignmentAttempt.assignment.showQuestion,
 			},
 			questions: mappedQuestions,
 		})

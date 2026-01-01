@@ -23,6 +23,8 @@ export const AssignmentSchema = z
 				issue.input === undefined ? "access is required" : undefined,
 		}),
 		isRandomized: z.boolean().optional(),
+		showQuestion: z.boolean().optional(),
+		showAnswer: z.boolean().optional(),
 	})
 	.strict()
 

@@ -75,145 +75,190 @@ export async function updateMany(
 	data: AssignmentQuestionDTO[],
 	assignmentId: string,
 ) {
+	// 1. Validate / Get existing questions to map by ID
 	const existingQuestions = await tx.assignmentQuestion.findMany({
 		where: {
 			assignmentId,
 		},
-	})
-
-	const incomingQuestionOrders = data
-		.filter((question) => question.id !== undefined)
-		.map((question) => question.order)
-	const toDeleteQuestionOrders = existingQuestions
-		.filter((question) => !incomingQuestionOrders.includes(question.order))
-		.map((question) => question.order)
-	const toUpdateQuestionOrders = existingQuestions
-		.filter((question) => incomingQuestionOrders.includes(question.order))
-		.map((question) => question.order)
-
-	await tx.assignmentQuestion.deleteMany({
-		where: {
-			assignmentId,
-			order: {
-				in: toDeleteQuestionOrders,
-			},
+		include: {
+			assignmentQuestionOptions: true, // Need options to do smart diffing
 		},
 	})
 
-	const questionCreateManyInput: Prisma.AssignmentQuestionCreateManyInput[] = []
-	const questionOptionCreateManyInput: Prisma.AssignmentQuestionOptionCreateManyInput[] =
-		[]
-	const questionTrueFalseAnswerCreateManyInput: Prisma.AssignmentQuestionTrueFalseAnswerCreateManyInput[] =
-		[]
-	const questionEssayReferenceAnswerCreateManyInput: Prisma.AssignmentQuestionEssayReferenceAnswerCreateManyInput[] =
-		[]
+	const existingQuestionMap = new Map<string, typeof existingQuestions[0]>()
+	existingQuestions.forEach((q) => existingQuestionMap.set(q.id, q))
 
-	for (const question of data) {
-		if (toUpdateQuestionOrders.includes(question.order)) {
+	// 2. Identify Questions to Keep/Update vs Delete
+	// Incoming IDs that strictly match existing DB IDs
+	const incomingIds = data
+		.map((d) => d.id)
+		.filter((id): id is string => id !== undefined && existingQuestionMap.has(id))
+	
+	// Questions in DB not present in incoming payload -> DELETE
+	const questionsToDelete = existingQuestions.filter(
+		(q) => !incomingIds.includes(q.id),
+	)
+
+	// DELETE removed questions (and cascading children)
+	if (questionsToDelete.length > 0) {
+		await tx.assignmentQuestion.deleteMany({
+			where: {
+				id: { in: questionsToDelete.map((q) => q.id) },
+			},
+		})
+	}
+
+	// 3. Process Upserts (Update existing or Create new)
+	for (const questionData of data) {
+		// A. UPDATE Existing Question
+		if (questionData.id && existingQuestionMap.has(questionData.id)) {
+			const existingQ = existingQuestionMap.get(questionData.id)!
+
+			// Update base fields
 			const updatedQuestion = await tx.assignmentQuestion.update({
-				where: {
-					assignmentId_order: {
-						assignmentId,
-						order: question.order,
-					},
-				},
+				where: { id: questionData.id },
 				data: {
-					content: question.content,
-					type: question.type,
+					content: questionData.content,
+					type: questionData.type,
+					order: questionData.order, // Allow reordering
 				},
 			})
 
-			switch (question.type) {
-				case AssignmentQuestionType.MULTIPLE_CHOICE:
-					await tx.assignmentQuestionOption.deleteMany({
-						where: {
-							assignmentQuestionId: updatedQuestion.id,
-						},
-					})
-					questionOptionCreateManyInput.push(
-						...question.options.map((option) => ({
-							...option,
-							assignmentQuestionId: updatedQuestion.id,
-							id: ulid(),
-						})),
+			// Handle Relation Updates based on Type
+			switch (questionData.type) {
+				case AssignmentQuestionType.MULTIPLE_CHOICE: {
+					// Smart Update Options to preserve IDs (and User Answers!)
+					const incomingOptions = questionData.options || []
+					const existingOptions = existingQ.assignmentQuestionOptions
+					const existingOptionMap = new Map(existingOptions.map((o) => [o.id, o]))
+
+					const incomingOptionIds = incomingOptions
+						.map((o) => o.id)
+						.filter((id): id is string => id !== undefined && existingOptionMap.has(id))
+
+					// Delete removed options
+					const optionsToDelete = existingOptions.filter(
+						(o) => !incomingOptionIds.includes(o.id),
 					)
+					if (optionsToDelete.length > 0) {
+						await tx.assignmentQuestionOption.deleteMany({
+							where: { id: { in: optionsToDelete.map((o) => o.id) } },
+						})
+					}
+
+					// Upsert Options
+					for (const opt of incomingOptions) {
+						if (opt.id && existingOptionMap.has(opt.id)) {
+							// Update
+							await tx.assignmentQuestionOption.update({
+								where: { id: opt.id },
+								data: {
+									content: opt.content,
+									isCorrectAnswer: opt.isCorrectAnswer,
+								},
+							})
+						} else {
+							// Create New Option
+							await tx.assignmentQuestionOption.create({
+								data: {
+									id: ulid(),
+									assignmentQuestionId: updatedQuestion.id,
+									content: opt.content,
+									isCorrectAnswer: opt.isCorrectAnswer,
+								},
+							})
+						}
+					}
+					break
+				}
+				case AssignmentQuestionType.TRUE_FALSE:
+					// True/False usually has 1-to-1 relation, straightforward update or create if missing
+					// The previous logic assumed update if Question exists. 
+					// But if type changed from something else to TF, we might need to create.
+					// Prisma's upsert is useful here.
+					if (questionData.trueFalseAnswer) {
+                        await tx.assignmentQuestionTrueFalseAnswer.upsert({
+                            where: { assignmentQuestionId: updatedQuestion.id },
+                            create: {
+                                id: ulid(),
+                                assignmentQuestionId: updatedQuestion.id,
+                                correctAnswer: questionData.trueFalseAnswer.correctAnswer,
+                            },
+                            update: {
+                                correctAnswer: questionData.trueFalseAnswer.correctAnswer,
+                            }
+                        })
+					}
 					break
 				case AssignmentQuestionType.ESSAY:
-					await tx.assignmentQuestionEssayReferenceAnswer.update({
-						where: {
-							assignmentQuestionId: updatedQuestion.id,
-						},
-						data: {
-							content: question.essayReferenceAnswer!.content,
-						},
-					})
-					break
-				case AssignmentQuestionType.TRUE_FALSE:
-					await tx.assignmentQuestionTrueFalseAnswer.update({
-						where: {
-							assignmentQuestionId: updatedQuestion.id,
-						},
-						data: {
-							correctAnswer: question.trueFalseAnswer!.correctAnswer,
-						},
-					})
-					break
-				default:
+					if (questionData.essayReferenceAnswer) {
+                        await tx.assignmentQuestionEssayReferenceAnswer.upsert({
+                            where: { assignmentQuestionId: updatedQuestion.id },
+                            create: {
+                                id: ulid(),
+                                assignmentQuestionId: updatedQuestion.id,
+                                content: questionData.essayReferenceAnswer.content,
+                            },
+                            update: {
+                                content: questionData.essayReferenceAnswer.content,
+                            }
+                        })
+					}
 					break
 			}
-		} else {
-			const questionId = ulid()
-
-			questionCreateManyInput.push({
-				content: question.content,
-				type: question.type,
-				order: question.order,
-				assignmentId,
-				id: questionId,
+		} 
+		// B. CREATE New Question
+		else {
+			const newQuestionId = ulid()
+			await tx.assignmentQuestion.create({
+				data: {
+					id: newQuestionId,
+					assignmentId,
+					content: questionData.content,
+					type: questionData.type,
+					order: questionData.order,
+				},
 			})
 
-			switch (question.type) {
+			// Create Relations
+			switch (questionData.type) {
 				case AssignmentQuestionType.MULTIPLE_CHOICE:
-					questionOptionCreateManyInput.push(
-						...question.options.map((option) => ({
-							...option,
-							assignmentQuestionId: questionId,
-							id: ulid(),
-						})),
-					)
-					break
-				case AssignmentQuestionType.ESSAY:
-					questionEssayReferenceAnswerCreateManyInput.push({
-						...question.essayReferenceAnswer!,
-						assignmentQuestionId: questionId,
-						id: ulid(),
-					})
+					if (questionData.options?.length) {
+						await tx.assignmentQuestionOption.createMany({
+							data: questionData.options.map((o) => ({
+								id: ulid(),
+								assignmentQuestionId: newQuestionId,
+								content: o.content,
+								isCorrectAnswer: o.isCorrectAnswer,
+							})),
+						})
+					}
 					break
 				case AssignmentQuestionType.TRUE_FALSE:
-					questionTrueFalseAnswerCreateManyInput.push({
-						...question.trueFalseAnswer!,
-						assignmentQuestionId: questionId,
-						id: ulid(),
-					})
+					if (questionData.trueFalseAnswer) {
+						await tx.assignmentQuestionTrueFalseAnswer.create({
+							data: {
+								id: ulid(),
+								assignmentQuestionId: newQuestionId,
+								correctAnswer: questionData.trueFalseAnswer.correctAnswer,
+							},
+						})
+					}
 					break
-				default:
+				case AssignmentQuestionType.ESSAY:
+					if (questionData.essayReferenceAnswer) {
+						await tx.assignmentQuestionEssayReferenceAnswer.create({
+							data: {
+								id: ulid(),
+								assignmentQuestionId: newQuestionId,
+								content: questionData.essayReferenceAnswer.content,
+							},
+						})
+					}
 					break
 			}
 		}
 	}
-
-	await tx.assignmentQuestion.createMany({
-		data: questionCreateManyInput,
-	})
-	await tx.assignmentQuestionOption.createMany({
-		data: questionOptionCreateManyInput,
-	})
-	await tx.assignmentQuestionTrueFalseAnswer.createMany({
-		data: questionTrueFalseAnswerCreateManyInput,
-	})
-	await tx.assignmentQuestionEssayReferenceAnswer.createMany({
-		data: questionEssayReferenceAnswerCreateManyInput,
-	})
 }
 
 export async function getAllQuestions(assignmentId: string) {
