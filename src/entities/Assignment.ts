@@ -33,6 +33,7 @@ export interface AssignmentQuestionDTO {
 	order: number
 	assignmentId: string
 	content: string
+	points: number
 	type: AssignmentQuestionType
 	options: AssignmentQuestionOptionDTO[]
 	trueFalseAnswer?: AssignmentQuestionTrueFalseAnswerDTO

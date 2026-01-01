@@ -4,7 +4,7 @@ services:
   postgres:
     image: "postgres:16-alpine"
     environment:
-      POSTGRES_DB: "radikari_lms"
+      POSTGRES_DB: "radikari"
       POSTGRES_PASSWORD: "radikari123"
       POSTGRES_USER: "radikari"
       PGUSER: "radikari"
@@ -44,7 +44,7 @@ services:
       - "8081:8081"
     environment:
       - REDIS_HOST=redis
-      - REDIS_PORT=6378
+      - REDIS_PORT=6379
       - REDIS_PASSWORD=localredis
     depends_on:
       - redis

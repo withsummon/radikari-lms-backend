@@ -79,6 +79,13 @@ export async function getAll(filters: EzFilter.FilteringQuery) {
 			} else if (key === "tenantId") {
 				// For UserRepository.getAll, tenantId filtering is via tenantUser association
 				where.tenantUser = { some: { tenantId: value } }
+			} else if (key === "_scopedTenantId") {
+				// If user manually filters by tenantId on top of scope, we respect it (AND logic)
+				// But base visibility is: (In Tenant OR No Tenant)
+				where.OR = [
+					{ tenantUser: { some: { tenantId: value } } },
+					{ tenantUser: { none: {} } },
+				]
 			} else if (key === "tenantRoleId") {
 				where.tenantUser = { some: { tenantRoleId: value } }
 			} else if (key === "isJoined") {

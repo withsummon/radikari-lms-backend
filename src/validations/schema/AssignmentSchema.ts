@@ -23,6 +23,8 @@ export const AssignmentSchema = z
 				issue.input === undefined ? "access is required" : undefined,
 		}),
 		isRandomized: z.boolean().optional(),
+		showQuestion: z.boolean().optional(),
+		showAnswer: z.boolean().optional(),
 	})
 	.strict()
 
@@ -39,6 +41,7 @@ export const AssignmentQuestionSchema = z
 			error: (issue) =>
 				issue.input === undefined ? "content is required" : undefined,
 		}),
+		points: z.number().default(1),
 		type: z.enum(
 			Object.values(AssignmentQuestionType) as [string, ...string[]],
 			{

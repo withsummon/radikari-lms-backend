@@ -8,21 +8,12 @@ import { AssignmentUserAttemptAnswerDTO } from "$entities/Assignment"
 
 export async function create(assignmentId: string, userId: string) {
 	return await prisma.$transaction(async (tx) => {
-		const assignment = await tx.assignment.findUnique({
-			where: { id: assignmentId },
-			select: { isRandomized: true },
-		})
-
-		const randomSeed = assignment?.isRandomized
-			? Math.floor(Math.random() * 1000000)
-			: 0
-
 		const assginmentAttempt = await tx.assignmentUserAttempt.create({
 			data: {
 				id: ulid(),
 				assignmentId,
 				userId,
-				randomSeed,
+				randomSeed: Math.floor(Math.random() * 1000000),
 			},
 		})
 
@@ -194,6 +185,18 @@ export async function getAllUserAttemptAnswers(
 		},
 		include: {
 			assignmentQuestionOption: true,
+		},
+	})
+}
+
+export async function markAsSubmitted(assignmentUserAttemptId: string) {
+	return await prisma.assignmentUserAttempt.update({
+		where: {
+			id: assignmentUserAttemptId,
+		},
+		data: {
+			isSubmitted: true,
+			submittedAt: new Date(),
 		},
 	})
 }

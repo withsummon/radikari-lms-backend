@@ -204,12 +204,22 @@ export async function update(
 			const knowledgeWithUserKnowledgeAndKnowledgeAttachment =
 				await KnowledgeRepository.getById(id)
 
-			await pubsub.sendToQueue(
-				PUBSUB_TOPICS.KNOWLEDGE_UPDATE,
-				generateKnowledgeQueueDTO(
-					knowledgeWithUserKnowledgeAndKnowledgeAttachment as any,
-				),
-			)
+			try {
+				await pubsub.sendToQueue(
+					PUBSUB_TOPICS.KNOWLEDGE_UPDATE,
+					generateKnowledgeQueueDTO(
+						knowledgeWithUserKnowledgeAndKnowledgeAttachment as any,
+					),
+				)
+			} catch (mqError) {
+				Logger.warning(
+					"KnowledgeService.update: Failed to publish update event",
+					{
+						error: mqError,
+						knowledgeId: id,
+					},
+				)
+			}
 		}
 
 		await UserActivityLogService.create(
@@ -244,9 +254,19 @@ export async function deleteById(
 
 		await KnowledgeRepository.deleteById(id)
 		const pubsub = GlobalPubSub.getInstance().getPubSub()
-		await pubsub.sendToQueue(PUBSUB_TOPICS.KNOWLEDGE_DELETE, {
-			knowledgeId: id,
-		})
+		try {
+			await pubsub.sendToQueue(PUBSUB_TOPICS.KNOWLEDGE_DELETE, {
+				knowledgeId: id,
+			})
+		} catch (mqError) {
+			Logger.warning(
+				"KnowledgeService.deleteById: Failed to publish delete event",
+				{
+					error: mqError,
+					knowledgeId: id,
+				},
+			)
+		}
 
 		await UserActivityLogService.create(
 			userId,
@@ -331,11 +351,24 @@ export async function approveById(
 
 			const pubsub = GlobalPubSub.getInstance().getPubSub()
 
-			await pubsub.sendToQueue(PUBSUB_TOPICS.KNOWLEDGE_CREATE, payload)
-			await pubsub.sendToQueue(PUBSUB_TOPICS.KNOWLEDGE_APPROVAL_NOTIFICATION, {
-				knowledgeId: knowledge.id,
-				excludeUserId: userId,
-			})
+			try {
+				await pubsub.sendToQueue(PUBSUB_TOPICS.KNOWLEDGE_CREATE, payload)
+				await pubsub.sendToQueue(
+					PUBSUB_TOPICS.KNOWLEDGE_APPROVAL_NOTIFICATION,
+					{
+						knowledgeId: knowledge.id,
+						excludeUserId: userId,
+					},
+				)
+			} catch (mqError) {
+				Logger.warning(
+					"KnowledgeService.approveById: Failed to publish approval events",
+					{
+						error: mqError,
+						knowledgeId: knowledge.id,
+					},
+				)
+			}
 		}
 
 		await UserActivityLogService.create(
@@ -585,7 +618,17 @@ export async function bulkCreate(data: KnowledgeBulkCreateDTO, userId: string) {
 
 		for (const knowledge of createdKnowledges) {
 			const payload = generateKnowledgeQueueDTO(knowledge as any)
-			await pubsub.sendToQueue(PUBSUB_TOPICS.KNOWLEDGE_CREATE, payload)
+			try {
+				await pubsub.sendToQueue(PUBSUB_TOPICS.KNOWLEDGE_CREATE, payload)
+			} catch (mqError) {
+				Logger.warning(
+					"KnowledgeService.bulkCreate: Failed to publish create event",
+					{
+						error: mqError,
+						knowledgeId: knowledge.id,
+					},
+				)
+			}
 		}
 
 		return HandleServiceResponseSuccess({})
@@ -771,7 +814,17 @@ export async function bulkCreateTypeCase(
 
 		for (const knowledge of createdKnowledges) {
 			const payload = generateKnowledgeQueueDTO(knowledge as any)
-			await pubsub.sendToQueue(PUBSUB_TOPICS.KNOWLEDGE_CREATE, payload)
+			try {
+				await pubsub.sendToQueue(PUBSUB_TOPICS.KNOWLEDGE_CREATE, payload)
+			} catch (mqError) {
+				Logger.warning(
+					"KnowledgeService.bulkCreateTypeCase: Failed to publish create event",
+					{
+						error: mqError,
+						knowledgeId: knowledge.id,
+					},
+				)
+			}
 		}
 
 		return HandleServiceResponseSuccess({})

@@ -39,10 +39,18 @@ export async function create(
 			`dengan judul "${createdData.title}"`,
 		)
 
-		await pubsub.sendToQueue(PUBSUB_TOPICS.ASSIGNMENT_ASSIGNED_NOTIFICATION, {
-			assignmentId: createdData.id,
-			tenantId: tenantId,
-		})
+		try {
+			await pubsub.sendToQueue(PUBSUB_TOPICS.ASSIGNMENT_ASSIGNED_NOTIFICATION, {
+				assignmentId: createdData.id,
+				tenantId: tenantId,
+			})
+		} catch (mqError) {
+			Logger.warning("AssignmentService.create: Failed to publish notification", {
+				error: mqError,
+				assignmentId: createdData.id,
+			})
+			// Proceed without failing the request
+		}
 
 		return HandleServiceResponseSuccess(createdData)
 	} catch (err) {
@@ -409,6 +417,18 @@ export async function getDetailUserAssignmentByUserIdAndTenantId(
 						content: question.content,
 						type: question.type,
 						isCorrect: assignmentUserAttemptAnswer?.isAnswerCorrect ?? null,
+						correctAnswer:
+							question.type === "ESSAY"
+								? question.assignmentQuestionEssayReferenceAnswer?.content
+								: question.type === "TRUE_FALSE"
+								? question.assignmentQuestionTrueFalseAnswer?.correctAnswer
+								: null,
+						correctChoice:
+							question.type === "MULTIPLE_CHOICE"
+								? question.assignmentQuestionOptions.find(
+										(opt: any) => opt.isCorrectAnswer,
+								  )
+								: null,
 					}
 
 					if (question.type === "MULTIPLE_CHOICE") {
@@ -422,16 +442,23 @@ export async function getDetailUserAssignmentByUserIdAndTenantId(
 							),
 							userAnswer:
 								assignmentUserAttemptAnswer?.assignmentQuestionOptionId ?? null,
+							correctChoice: question.assignmentQuestionOptions.find(
+								(option: any) => option.isCorrectAnswer,
+							),
 						}
 					} else if (question.type === "ESSAY") {
 						return {
 							...baseQuestion,
 							userAnswer: assignmentUserAttemptAnswer?.essayAnswer ?? null,
+							aiGradingFeedback: assignmentUserAttemptAnswer?.aiGradingReasoning ?? null,
+							correctAnswer:
+								question.assignmentQuestionEssayReferenceAnswer?.content,
 						}
 					} else if (question.type === "TRUE_FALSE") {
 						return {
 							...baseQuestion,
 							userAnswer: assignmentUserAttemptAnswer?.trueFalseAnswer ?? null,
+							correctAnswer: question.assignmentQuestionTrueFalseAnswer?.correctAnswer,
 						}
 					}
 
@@ -452,6 +479,8 @@ export async function getDetailUserAssignmentByUserIdAndTenantId(
 					updatedAt: assignment.updatedAt,
 					createdByUserId: assignment.createdByUserId,
 					isSubmitted: submittedAttempt.isSubmitted,
+					showAnswer: assignment.showAnswer,
+					showQuestion: assignment.showQuestion,
 				},
 				assignmentAttempt: {
 					id: submittedAttempt.id,
@@ -599,6 +628,8 @@ export async function getStatistics(assignmentId: string, tenantId: string) {
 		return HandleServiceResponseSuccess({
 			stats,
 			questions: questionsWithAnalytics,
+			showQuestion: assignment.showQuestion,
+			showAnswer: assignment.showAnswer,
 		})
 	} catch (error) {
 		Logger.error(`AssignmentService.getStatistics`, { error })

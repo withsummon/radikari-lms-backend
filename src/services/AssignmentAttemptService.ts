@@ -201,9 +201,20 @@ export async function submitAssignment(
 			)
 		}
 
-		await pubsub.sendToQueue(PUBSUB_TOPICS.ASSIGNMENT_ATTEMPT_SUBMIT, {
-			assignmentUserAttemptId: assignmentAttempt.id,
-		})
+		try {
+			await AssignmentAttemptRepository.markAsSubmitted(assignmentAttempt.id)
+			await pubsub.sendToQueue(PUBSUB_TOPICS.ASSIGNMENT_ATTEMPT_SUBMIT, {
+				assignmentUserAttemptId: assignmentAttempt.id,
+			})
+		} catch (mqError) {
+			Logger.warning(
+				"AssignmentAttemptService.submitAssignment: Failed to publish submit event",
+				{
+					error: mqError,
+					assignmentUserAttemptId: assignmentAttempt.id,
+				},
+			)
+		}
 
 		return HandleServiceResponseSuccess({})
 	} catch (err) {
@@ -250,16 +261,21 @@ export async function calculateAssignmentScore(
 		])
 
 		let score = 0
+		const totalPossibleScore = correctAnswers.reduce(
+			(acc, q) => acc + (q.points || 0),
+			0,
+		)
 
 		// Separate essay questions for AI scoring
 		const essayQuestions = []
 		const nonEssayQuestions = []
 
 		for (const userAttemptAnswer of assignmentUserAttemptAnswers) {
+			const question = correctAnswers.find(
+				(answer) => answer.id === userAttemptAnswer.assignmentQuestionId,
+			)
+
 			if (userAttemptAnswer.type === AssignmentQuestionType.ESSAY) {
-				const question = correctAnswers.find(
-					(answer) => answer.id === userAttemptAnswer.assignmentQuestionId,
-				)
 				essayQuestions.push({
 					id: userAttemptAnswer.assignmentQuestionId,
 					question: question?.content || "",
@@ -267,9 +283,13 @@ export async function calculateAssignmentScore(
 					expectedAnswer:
 						question?.assignmentQuestionEssayReferenceAnswer?.content,
 					context: question?.assignmentQuestionEssayReferenceAnswer?.content,
+					points: question?.points || 0,
 				})
 			} else {
-				nonEssayQuestions.push(userAttemptAnswer)
+				nonEssayQuestions.push({
+					...userAttemptAnswer,
+					points: question?.points || 0,
+				})
 			}
 		}
 
@@ -287,7 +307,7 @@ export async function calculateAssignmentScore(
 						userAttemptAnswer.assignmentQuestionOptionId
 					) {
 						isCorrect = true
-						score += 1
+						score += (userAttemptAnswer as any).points || 0
 					}
 					break
 				case AssignmentQuestionType.TRUE_FALSE:
@@ -297,7 +317,7 @@ export async function calculateAssignmentScore(
 
 					if (correctAnswer === userAttemptAnswer.trueFalseAnswer) {
 						isCorrect = true
-						score += 1
+						score += (userAttemptAnswer as any).points || 0
 					}
 					break
 				default:
@@ -330,7 +350,8 @@ export async function calculateAssignmentScore(
 			for (const { questionId, result } of essayResults) {
 				const isCorrect = result.isCorrect
 				if (isCorrect) {
-					score += 1
+					const question = essayQuestions.find((q) => q.id === questionId)
+					score += question?.points || 0
 				}
 
 				Logger.info(`AssignmentAttemptService.calculateAssignmentScore`, {
@@ -355,8 +376,8 @@ export async function calculateAssignmentScore(
 		// Calculate percentage score
 		const totalQuestions = assignmentUserAttemptAnswers.length
 		const percentageScore =
-			totalQuestions > 0
-				? Number(((score / totalQuestions) * 100).toFixed(2))
+			totalPossibleScore > 0
+				? Number(((score / totalPossibleScore) * 100).toFixed(2))
 				: 0
 
 		await AssignmentAttemptRepository.submitAssignment(
@@ -366,9 +387,10 @@ export async function calculateAssignmentScore(
 		)
 
 		Logger.info(`AssignmentAttemptService.calculateAssignmentScore`, {
-			message: `Assignment scored successfully. Total score: ${score}/${totalQuestions} (${percentageScore}%)`,
+			message: `Assignment scored successfully. Total score: ${score}/${totalPossibleScore} (${percentageScore}%)`,
 			totalScore: score,
 			totalQuestions: totalQuestions,
+			totalPossibleScore: totalPossibleScore,
 			percentageScore: percentageScore,
 			essayQuestionsCount: essayQuestions.length,
 			nonEssayQuestionsCount: nonEssayQuestions.length,
@@ -495,9 +517,19 @@ export async function getAssignmentsByExpiredDate() {
 					assignment.assignment.durationInMinutes * 60000 <
 				Date.now()
 			) {
-				await pubsub.sendToQueue(PUBSUB_TOPICS.ASSIGNMENT_ATTEMPT_SUBMIT, {
-					assignmentUserAttemptId: assignment.id,
-				})
+				try {
+					await pubsub.sendToQueue(PUBSUB_TOPICS.ASSIGNMENT_ATTEMPT_SUBMIT, {
+						assignmentUserAttemptId: assignment.id,
+					})
+				} catch (mqError) {
+					Logger.warning(
+						"AssignmentAttemptService.getAssignmentsByExpiredDate: Failed to publish submit event",
+						{
+							error: mqError,
+							assignmentUserAttemptId: assignment.id,
+						},
+					)
+				}
 			}
 		}
 	} catch (err) {
@@ -542,10 +574,14 @@ export async function getHistoryUserAssignmentAttempts(
 							return {
 								id: option.id,
 								content: option.content,
+								isCorrectAnswer: option.isCorrectAnswer,
 							}
 						}),
 						isCorrect: assignmentUserAttemptAnswer?.isAnswerCorrect,
 						userAnswer: assignmentUserAttemptAnswer?.assignmentQuestionOptionId,
+						correctChoice: question.assignmentQuestionOptions.find(
+							(option) => option.isCorrectAnswer,
+						),
 					}
 				} else if (question.type === AssignmentQuestionType.ESSAY) {
 					return {
@@ -555,7 +591,8 @@ export async function getHistoryUserAssignmentAttempts(
 						type: question.type,
 						isCorrect: assignmentUserAttemptAnswer?.isAnswerCorrect,
 						userAnswer: assignmentUserAttemptAnswer?.essayAnswer,
-						aiGradingReasoning: assignmentUserAttemptAnswer?.aiGradingReasoning,
+						aiGradingFeedback: assignmentUserAttemptAnswer?.aiGradingReasoning,
+						correctAnswer: question.assignmentQuestionEssayReferenceAnswer?.content,
 					}
 				} else if (question.type === AssignmentQuestionType.TRUE_FALSE) {
 					return {
@@ -565,6 +602,7 @@ export async function getHistoryUserAssignmentAttempts(
 						type: question.type,
 						isCorrect: assignmentUserAttemptAnswer?.isAnswerCorrect,
 						userAnswer: assignmentUserAttemptAnswer?.trueFalseAnswer,
+						correctAnswer: question.assignmentQuestionTrueFalseAnswer?.correctAnswer,
 					}
 				}
 			})
@@ -583,6 +621,8 @@ export async function getHistoryUserAssignmentAttempts(
 				id: assignmentAttempt.assignment.id,
 				title: assignmentAttempt.assignment.title,
 				durationInMinutes: assignmentAttempt.assignment.durationInMinutes,
+				showAnswer: assignmentAttempt.assignment.showAnswer,
+				showQuestion: assignmentAttempt.assignment.showQuestion,
 			},
 			questions: mappedQuestions,
 		})

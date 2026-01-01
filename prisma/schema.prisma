@@ -437,6 +437,8 @@ model Assignment {
   status            AssignmentStatus @default(PUBLISHED)
   access            AssignmentAccess
   isRandomized      Boolean          @default(false)
+  showQuestion      Boolean          @default(false)
+  showAnswer        Boolean          @default(false)
   expiredDate       String
   tenantId          String
   createdAt         DateTime         @default(now())
@@ -479,6 +481,7 @@ model AssignmentQuestion {
   assignmentId String
   content      String
   type         AssignmentQuestionType
+  points       Int                    @default(1)
   order        Int
 
   assignment                             Assignment                              @relation(fields: [assignmentId], references: [id], onDelete: Cascade)

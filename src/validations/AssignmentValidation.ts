@@ -80,7 +80,10 @@ export async function validateAssignmentSchema(c: Context, next: Next) {
 				}
 				break
 			case AssignmentQuestionType.TRUE_FALSE:
-				if (!question.trueFalseAnswer) {
+				if (
+					question.trueFalseAnswer === undefined ||
+					question.trueFalseAnswer === null
+				) {
 					invalidFields.push({
 						field: "questions",
 						message: "True false answer is required",
@@ -205,7 +208,7 @@ export async function validateAssignmentUserAttemptAnswerSchema(
 			}
 			break
 		case AssignmentQuestionType.TRUE_FALSE:
-			if (!data.trueFalseAnswer) {
+			if (data.trueFalseAnswer === undefined || data.trueFalseAnswer === null) {
 				invalidFields.push({
 					field: "trueFalseAnswer",
 					message: "True false answer is required for true false question",

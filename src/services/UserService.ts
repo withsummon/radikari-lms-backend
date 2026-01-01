@@ -3,11 +3,11 @@ import {
 	ResponseStatus,
 	ServiceResponse,
 } from "$entities/Service"
-import { exclude, CreateUserDTO, UpdateUserDTO } from "$entities/User"
+import { exclude, CreateUserDTO, UpdateUserDTO, UserJWTDAO } from "$entities/User"
 import Logger from "$pkg/logger"
 import * as UserRepository from "$repositories/UserRepository"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
-import { User } from "../../generated/prisma/client"
+import { User, Roles } from "../../generated/prisma/client"
 
 export type CreateResponse = User | {}
 
@@ -29,8 +29,34 @@ export async function create(
 
 export async function getAll(
 	filters: EzFilter.FilteringQuery,
+	currentUser?: UserJWTDAO,
 ): Promise<ServiceResponse<EzFilter.PaginatedResult<User[]> | {}>> {
 	try {
+		if (currentUser && currentUser.role !== Roles.ADMIN) {
+			const userDetails = await UserRepository.getMe(currentUser.id)
+			const tenantUsers = (userDetails as any)?.tenantUser || []
+
+			if (tenantUsers.length > 0) {
+				const tenantId = tenantUsers[0].tenantId
+
+				let newFilters: any[] = []
+				if (filters.filters) {
+					if (typeof filters.filters === "string") {
+						try {
+							newFilters = JSON.parse(filters.filters)
+						} catch {
+							/* ignore */
+						}
+					} else if (Array.isArray(filters.filters)) {
+						newFilters = [...filters.filters]
+					}
+				}
+
+				newFilters.push({ key: "_scopedTenantId", value: tenantId })
+				filters.filters = newFilters
+			}
+		}
+
 		const data = await UserRepository.getAll(filters)
 		return { status: true, data }
 	} catch (err) {
