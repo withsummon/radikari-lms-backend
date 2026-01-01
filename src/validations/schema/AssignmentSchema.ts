@@ -41,6 +41,7 @@ export const AssignmentQuestionSchema = z
 			error: (issue) =>
 				issue.input === undefined ? "content is required" : undefined,
 		}),
+		points: z.number().default(1),
 		type: z.enum(
 			Object.values(AssignmentQuestionType) as [string, ...string[]],
 			{

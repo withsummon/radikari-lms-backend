@@ -27,6 +27,7 @@ export async function createMany(
 			...rest,
 			id: questionId,
 			assignmentId,
+			points: item.points,
 		})
 
 		switch (item.type) {
@@ -120,6 +121,7 @@ export async function updateMany(
 				data: {
 					content: questionData.content,
 					type: questionData.type,
+					points: questionData.points,
 					order: questionData.order, // Allow reordering
 				},
 			})
@@ -216,6 +218,7 @@ export async function updateMany(
 					assignmentId,
 					content: questionData.content,
 					type: questionData.type,
+					points: questionData.points,
 					order: questionData.order,
 				},
 			})

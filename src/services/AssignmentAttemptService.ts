@@ -261,16 +261,21 @@ export async function calculateAssignmentScore(
 		])
 
 		let score = 0
+		const totalPossibleScore = correctAnswers.reduce(
+			(acc, q) => acc + (q.points || 0),
+			0,
+		)
 
 		// Separate essay questions for AI scoring
 		const essayQuestions = []
 		const nonEssayQuestions = []
 
 		for (const userAttemptAnswer of assignmentUserAttemptAnswers) {
+			const question = correctAnswers.find(
+				(answer) => answer.id === userAttemptAnswer.assignmentQuestionId,
+			)
+
 			if (userAttemptAnswer.type === AssignmentQuestionType.ESSAY) {
-				const question = correctAnswers.find(
-					(answer) => answer.id === userAttemptAnswer.assignmentQuestionId,
-				)
 				essayQuestions.push({
 					id: userAttemptAnswer.assignmentQuestionId,
 					question: question?.content || "",
@@ -278,9 +283,13 @@ export async function calculateAssignmentScore(
 					expectedAnswer:
 						question?.assignmentQuestionEssayReferenceAnswer?.content,
 					context: question?.assignmentQuestionEssayReferenceAnswer?.content,
+					points: question?.points || 0,
 				})
 			} else {
-				nonEssayQuestions.push(userAttemptAnswer)
+				nonEssayQuestions.push({
+					...userAttemptAnswer,
+					points: question?.points || 0,
+				})
 			}
 		}
 
@@ -298,7 +307,7 @@ export async function calculateAssignmentScore(
 						userAttemptAnswer.assignmentQuestionOptionId
 					) {
 						isCorrect = true
-						score += 1
+						score += (userAttemptAnswer as any).points || 0
 					}
 					break
 				case AssignmentQuestionType.TRUE_FALSE:
@@ -308,7 +317,7 @@ export async function calculateAssignmentScore(
 
 					if (correctAnswer === userAttemptAnswer.trueFalseAnswer) {
 						isCorrect = true
-						score += 1
+						score += (userAttemptAnswer as any).points || 0
 					}
 					break
 				default:
@@ -341,7 +350,8 @@ export async function calculateAssignmentScore(
 			for (const { questionId, result } of essayResults) {
 				const isCorrect = result.isCorrect
 				if (isCorrect) {
-					score += 1
+					const question = essayQuestions.find((q) => q.id === questionId)
+					score += question?.points || 0
 				}
 
 				Logger.info(`AssignmentAttemptService.calculateAssignmentScore`, {
@@ -366,8 +376,8 @@ export async function calculateAssignmentScore(
 		// Calculate percentage score
 		const totalQuestions = assignmentUserAttemptAnswers.length
 		const percentageScore =
-			totalQuestions > 0
-				? Number(((score / totalQuestions) * 100).toFixed(2))
+			totalPossibleScore > 0
+				? Number(((score / totalPossibleScore) * 100).toFixed(2))
 				: 0
 
 		await AssignmentAttemptRepository.submitAssignment(
@@ -377,9 +387,10 @@ export async function calculateAssignmentScore(
 		)
 
 		Logger.info(`AssignmentAttemptService.calculateAssignmentScore`, {
-			message: `Assignment scored successfully. Total score: ${score}/${totalQuestions} (${percentageScore}%)`,
+			message: `Assignment scored successfully. Total score: ${score}/${totalPossibleScore} (${percentageScore}%)`,
 			totalScore: score,
 			totalQuestions: totalQuestions,
+			totalPossibleScore: totalPossibleScore,
 			percentageScore: percentageScore,
 			essayQuestionsCount: essayQuestions.length,
 			nonEssayQuestionsCount: nonEssayQuestions.length,

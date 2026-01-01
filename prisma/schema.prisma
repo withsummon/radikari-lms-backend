@@ -481,6 +481,7 @@ model AssignmentQuestion {
   assignmentId String
   content      String
   type         AssignmentQuestionType
+  points       Int                    @default(1)
   order        Int
 
   assignment                             Assignment                              @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
