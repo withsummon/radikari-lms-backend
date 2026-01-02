@@ -56,7 +56,6 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 			featureName: "BROADCAST",
 			actions: ["VIEW", "UPDATE"],
 		},
-		// Add More Features
 	]
 
 	for (const feature of features) {
@@ -93,9 +92,11 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 				})
 			}
 		}
-		await prisma.aclAction.createMany({
-			data: actionCreateManyData,
-		})
+		if (actionCreateManyData.length > 0) {
+			await prisma.aclAction.createMany({
+				data: actionCreateManyData,
+			})
+		}
 	}
 
 	const allAction = await prisma.aclAction.findMany({
@@ -115,188 +116,119 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 		return
 	}
 
-	const [
-		headOfOfficeRole,
-		opsManagerRole,
-		supervisorRole,
-		teamLeaderRole,
-		trainerRole,
-		qualityAssuranceRole,
-		agentRole,
-	] = await Promise.all([
-		prisma.tenantRole.findFirst({
-			where: {
-				identifier: "HEAD_OF_OFFICE",
-			},
-		}),
-		prisma.tenantRole.findFirst({
-			where: {
-				identifier: "OPS_MANAGER",
-			},
-		}),
-		prisma.tenantRole.findFirst({
-			where: {
-				identifier: "SUPERVISOR",
-			},
-		}),
-		prisma.tenantRole.findFirst({
-			where: {
-				identifier: "TEAM_LEADER",
-			},
-		}),
-		prisma.tenantRole.findFirst({
-			where: {
-				identifier: "TRAINER",
-			},
-		}),
-		prisma.tenantRole.findFirst({
-			where: {
-				identifier: "QUALITY_ASSURANCE",
-			},
-		}),
-		prisma.tenantRole.findFirst({
-			where: {
-				identifier: "AGENT",
-			},
-		}),
-	])
+	// Fetch ALL roles from the database to handle multiple tenants
+	const allRoles = await prisma.tenantRole.findMany()
+	const rolesByIdentifier = allRoles.reduce((acc, role) => {
+		if (!acc[role.identifier]) acc[role.identifier] = []
+		acc[role.identifier].push(role)
+		return acc
+	}, {} as Record<string, typeof allRoles>)
 
-	const accessControlListCreateManyData: Prisma.AccessControlListCreateManyInput[] =
-		[]
+	const accessControlListCreateManyData: Prisma.AccessControlListCreateManyInput[] = []
 
-	if (headOfOfficeRole) {
-		const headOfOfficeFeature = [
-			{
-				featureName: "USER_MANAGEMENT",
-				actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
-			},
-			{
-				featureName: "TENANT",
-				actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
-			},
-			{
-				featureName: "KNOWLEDGE",
-				actions: ["VIEW"],
-			},
-			{
-				featureName: "OPERATION",
-				actions: ["VIEW"],
-			},
-			{
-				featureName: "ANNOUNCEMENT",
-				actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
-			},
-			{
-				featureName: "ASSIGNMENT",
-				actions: ["VIEW"],
-			},
-			{
-				featureName: "FORUM",
-				actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
-			},
-			{
-				featureName: "NOTIFICATION",
-				actions: ["VIEW", "UPDATE", "DELETE"],
-			},
-			{
-				featureName: "AI_PROMPT",
-				actions: ["VIEW"],
-			},
-			{
-				featureName: "BROADCAST",
-				actions: ["VIEW"],
-			},
-		]
-		for (const action of allAction) {
-			if (
-				headOfOfficeFeature.some(
-					(feature) =>
-						feature.featureName === action.feature.name &&
-						feature.actions.includes(action.name),
-				)
-			) {
-				const mappingExists = await prisma.accessControlList.findUnique({
-					where: {
-						featureName_actionName_tenantRoleId: {
-							featureName: action.feature.name,
-							actionName: action.name,
-							tenantRoleId: headOfOfficeRole.id,
-						},
-					},
-				})
+	// Define feature sets for each role type
+	const headOfOfficeFeatures = [
+		{ featureName: "USER_MANAGEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "TENANT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
+		{ featureName: "OPERATION", actions: ["VIEW"] },
+		{ featureName: "ANNOUNCEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "ASSIGNMENT", actions: ["VIEW"] },
+		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
+		{ featureName: "BROADCAST", actions: ["VIEW"] },
+	]
 
-				if (!mappingExists) {
-					accessControlListCreateManyData.push({
-						id: ulid(),
-						featureName: action.feature.name,
-						actionName: action.name,
-						tenantRoleId: headOfOfficeRole.id,
-						createdById: adminExist.id,
-						updatedById: adminExist.id,
-					})
-				}
-			}
-		}
+	const opsSupervisorFeatures = [
+		{ featureName: "USER_MANAGEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "TENANT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
+		{ featureName: "OPERATION", actions: ["VIEW"] },
+		{ featureName: "ANNOUNCEMENT", actions: ["VIEW"] },
+		{ featureName: "ASSIGNMENT", actions: ["VIEW"] },
+		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
+		{ featureName: "BROADCAST", actions: ["VIEW"] },
+	]
+
+	const teamLeaderFeatures = [
+		{ featureName: "TENANT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
+		{ featureName: "OPERATION", actions: ["VIEW"] },
+		{ featureName: "ANNOUNCEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "ASSIGNMENT", actions: ["VIEW"] },
+		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
+		{ featureName: "BROADCAST", actions: ["VIEW"] },
+	]
+
+	const qaTrainerMakerFeatures = [
+		{ featureName: "USER_MANAGEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "ACCESS_CONTROL_LIST", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "TENANT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "KNOWLEDGE", actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"] },
+		{ featureName: "BULK_UPLOAD", actions: ["CREATE"] },
+		{ featureName: "ANNOUNCEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "ASSIGNMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "USER_ACTIVITY_LOG", actions: ["VIEW"] },
+		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "AI_PROMPT", actions: ["VIEW", "UPDATE"] },
+		{ featureName: "BROADCAST", actions: ["VIEW", "UPDATE"] },
+	]
+
+	const agentConsumerFeatures = [
+		{ featureName: "OPERATION", actions: ["VIEW"] },
+		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
+		{ featureName: "TENANT", actions: ["VIEW"] },
+		{ featureName: "ANNOUNCEMENT", actions: ["VIEW"] },
+		{ featureName: "ASSIGNMENT", actions: ["VIEW"] },
+		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
+		{ featureName: "BROADCAST", actions: ["VIEW"] },
+	]
+
+	const roleMapping: Record<string, { featureName: string; actions: string[] }[]> = {
+		HEAD_OF_OFFICE: headOfOfficeFeatures,
+		OPS_MANAGER: opsSupervisorFeatures,
+		SUPERVISOR: opsSupervisorFeatures,
+		TEAM_LEADER: teamLeaderFeatures,
+		QUALITY_ASSURANCE: qaTrainerMakerFeatures,
+		CHECKER: qaTrainerMakerFeatures,
+		TRAINER: qaTrainerMakerFeatures,
+		MAKER: qaTrainerMakerFeatures,
+		AGENT: agentConsumerFeatures,
+		CONSUMER: agentConsumerFeatures,
 	}
 
-	if (opsManagerRole || supervisorRole) {
-		const opsManagerAndSupervisorFeature = [
-			{
-				featureName: "USER_MANAGEMENT",
-				actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
-			},
-			{
-				featureName: "TENANT",
-				actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
-			},
-			{
-				featureName: "KNOWLEDGE",
-				actions: ["VIEW"],
-			},
-			{
-				featureName: "OPERATION",
-				actions: ["VIEW"],
-			},
-			{
-				featureName: "ANNOUNCEMENT",
-				actions: ["VIEW"],
-			},
-			{
-				featureName: "ASSIGNMENT",
-				actions: ["VIEW"],
-			},
-			{
-				featureName: "FORUM",
-				actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
-			},
-			{
-				featureName: "NOTIFICATION",
-				actions: ["VIEW", "UPDATE", "DELETE"],
-			},
-			{
-				featureName: "AI_PROMPT",
-				actions: ["VIEW"],
-			},
-			{
-				featureName: "BROADCAST",
-				actions: ["VIEW"],
-			},
-		]
-		for (const action of allAction) {
-			if (
-				opsManagerAndSupervisorFeature.some(
-					(feature) =>
-						feature.featureName === action.feature.name &&
-						feature.actions.includes(action.name),
+	for (const [identifier, allowedFeatures] of Object.entries(roleMapping)) {
+		const roles = rolesByIdentifier[identifier] || []
+		if (roles.length === 0) continue
+
+		console.log(`  Mapping features for identifier: ${identifier} (${roles.length} roles found)`)
+
+		for (const role of roles) {
+			for (const action of allAction) {
+				const isAllowed = allowedFeatures.some(
+					(f) => f.featureName === action.feature.name && f.actions.includes(action.name)
 				)
-			) {
-				if (opsManagerRole) {
+
+				if (isAllowed) {
+					// Special rule: Deny OPERATION for QA and CHECKER
+					if ((identifier === "QUALITY_ASSURANCE" || identifier === "CHECKER") && action.feature.name === "OPERATION") {
+						continue
+					}
+
 					const mappingExists = await prisma.accessControlList.findUnique({
 						where: {
 							featureName_actionName_tenantRoleId: {
 								featureName: action.feature.name,
 								actionName: action.name,
-								tenantRoleId: opsManagerRole.id,
+								tenantRoleId: role.id,
 							},
 						},
 					})
@@ -306,30 +238,7 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 							id: ulid(),
 							featureName: action.feature.name,
 							actionName: action.name,
-							tenantRoleId: opsManagerRole.id,
-							createdById: adminExist.id,
-							updatedById: adminExist.id,
-						})
-					}
-				}
-
-				if (supervisorRole) {
-					const mappingExists = await prisma.accessControlList.findUnique({
-						where: {
-							featureName_actionName_tenantRoleId: {
-								featureName: action.feature.name,
-								actionName: action.name,
-								tenantRoleId: supervisorRole.id,
-							},
-						},
-					})
-
-					if (!mappingExists) {
-						accessControlListCreateManyData.push({
-							id: ulid(),
-							featureName: action.feature.name,
-							actionName: action.name,
-							tenantRoleId: supervisorRole.id,
+							tenantRoleId: role.id,
 							createdById: adminExist.id,
 							updatedById: adminExist.id,
 						})
@@ -339,286 +248,12 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 		}
 	}
 
-	if (teamLeaderRole) {
-		const teamLeaderFeature = [
-			{
-				featureName: "TENANT",
-				actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
-			},
-			{
-				featureName: "KNOWLEDGE",
-				actions: ["VIEW"],
-			},
-			{
-				featureName: "OPERATION",
-				actions: ["VIEW"],
-			},
-			{
-				featureName: "ANNOUNCEMENT",
-				actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
-			},
-			{
-				featureName: "ASSIGNMENT",
-				actions: ["VIEW"],
-			},
-			{
-				featureName: "FORUM",
-				actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
-			},
-			{
-				featureName: "NOTIFICATION",
-				actions: ["VIEW", "UPDATE", "DELETE"],
-			},
-			{
-				featureName: "AI_PROMPT",
-				actions: ["VIEW"],
-			},
-			{
-				featureName: "BROADCAST",
-				actions: ["VIEW"],
-			},
-		]
-
-		for (const action of allAction) {
-			if (
-				teamLeaderFeature.some(
-					(feature) =>
-						feature.featureName === action.feature.name &&
-						feature.actions.includes(action.name),
-				)
-			) {
-				const mappingExists = await prisma.accessControlList.findUnique({
-					where: {
-						featureName_actionName_tenantRoleId: {
-							featureName: action.feature.name,
-							actionName: action.name,
-							tenantRoleId: teamLeaderRole.id,
-						},
-					},
-				})
-
-				if (!mappingExists) {
-					accessControlListCreateManyData.push({
-						id: ulid(),
-						featureName: action.feature.name,
-						actionName: action.name,
-						tenantRoleId: teamLeaderRole.id,
-						createdById: adminExist.id,
-						updatedById: adminExist.id,
-					})
-				}
-			}
-		}
+	if (accessControlListCreateManyData.length > 0) {
+		const result = await prisma.accessControlList.createMany({
+			data: accessControlListCreateManyData,
+		})
+		console.log(`Access Control List created: ${result.count} mappings added`)
+	} else {
+		console.log("Access Control List is up to date (no new mappings needed)")
 	}
-
-	/**
-	 * ACL MAPPING - NEW vs LEGACY ROLES
-	 *
-	 * The following ACL permissions are shared between new and legacy roles:
-	 * - CHECKER ACL = QUALITY_ASSURANCE ACL (full admin access to all features)
-	 * - MAKER ACL = TRAINER ACL (content creation, assignments, knowledge management)
-	 * - CONSUMER ACL = AGENT ACL (view-only access)
-	 *
-	 * This ensures users with new roles (CHECKER, MAKER, CONSUMER) have the same
-	 * permissions as their legacy equivalents, maintaining backward compatibility.
-	 */
-	if (qualityAssuranceRole || trainerRole) {
-		const qualityAssuranceAndTrainerFeature = [
-			{
-				featureName: "USER_MANAGEMENT",
-				actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
-			},
-			{
-				featureName: "ACCESS_CONTROL_LIST",
-				actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
-			},
-			{
-				featureName: "TENANT",
-				actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
-			},
-			{
-				featureName: "KNOWLEDGE",
-				actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"],
-			},
-			{
-				featureName: "BULK_UPLOAD",
-				actions: ["CREATE"],
-			},
-			{
-				featureName: "ANNOUNCEMENT",
-				actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
-			},
-			{
-				featureName: "ASSIGNMENT",
-				actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
-			},
-			{
-				featureName: "FORUM",
-				actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
-			},
-			{
-				featureName: "USER_ACTIVITY_LOG",
-				actions: ["VIEW"],
-			},
-			{
-				featureName: "NOTIFICATION",
-				actions: ["VIEW", "UPDATE", "DELETE"],
-			},
-			{
-				featureName: "AI_PROMPT",
-				actions: ["VIEW", "UPDATE"],
-			},
-			{
-				featureName: "BROADCAST",
-				actions: ["VIEW", "UPDATE"],
-			},
-		]
-
-		for (const action of allAction) {
-			if (
-				qualityAssuranceAndTrainerFeature.some(
-					(feature) =>
-						feature.featureName === action.feature.name &&
-						feature.actions.includes(action.name),
-				)
-			) {
-				if (qualityAssuranceRole) {
-					const mappingExists = await prisma.accessControlList.findUnique({
-						where: {
-							featureName_actionName_tenantRoleId: {
-								featureName: action.feature.name,
-								actionName: action.name,
-								tenantRoleId: qualityAssuranceRole.id,
-							},
-						},
-					})
-
-					if (!mappingExists) {
-						if (action.feature.name !== "OPERATION") {
-							accessControlListCreateManyData.push({
-								id: ulid(),
-								featureName: action.feature.name,
-								actionName: action.name,
-								tenantRoleId: qualityAssuranceRole.id,
-								createdById: adminExist.id,
-								updatedById: adminExist.id,
-							})
-						}
-					} else {
-						if (action.feature.name === "OPERATION") {
-							await prisma.accessControlList.delete({
-								where: {
-									featureName_actionName_tenantRoleId: {
-										featureName: action.feature.name,
-										actionName: action.name,
-										tenantRoleId: qualityAssuranceRole.id,
-									},
-								},
-							})
-						}
-					}
-				}
-
-				if (trainerRole) {
-					const mappingExists = await prisma.accessControlList.findUnique({
-						where: {
-							featureName_actionName_tenantRoleId: {
-								featureName: action.feature.name,
-								actionName: action.name,
-								tenantRoleId: trainerRole.id,
-							},
-						},
-					})
-
-					if (!mappingExists) {
-						accessControlListCreateManyData.push({
-							id: ulid(),
-							featureName: action.feature.name,
-							actionName: action.name,
-							tenantRoleId: trainerRole.id,
-							createdById: adminExist.id,
-							updatedById: adminExist.id,
-						})
-					}
-				}
-			}
-		}
-	}
-
-	if (agentRole) {
-		const agentFeature = [
-			{
-				featureName: "OPERATION",
-				actions: ["VIEW"],
-			},
-			{
-				featureName: "KNOWLEDGE",
-				actions: ["VIEW"],
-			},
-			{
-				featureName: "TENANT",
-				actions: ["VIEW"],
-			},
-			{
-				featureName: "ANNOUNCEMENT",
-				actions: ["VIEW"],
-			},
-			{
-				featureName: "ASSIGNMENT",
-				actions: ["VIEW"],
-			},
-			{
-				featureName: "FORUM",
-				actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
-			},
-			{
-				featureName: "NOTIFICATION",
-				actions: ["VIEW", "UPDATE", "DELETE"],
-			},
-			{
-				featureName: "AI_PROMPT",
-				actions: ["VIEW"],
-			},
-			{
-				featureName: "BROADCAST",
-				actions: ["VIEW"],
-			},
-		]
-
-		for (const action of allAction) {
-			if (
-				agentFeature.some(
-					(feature) =>
-						feature.featureName === action.feature.name &&
-						feature.actions.includes(action.name),
-				)
-			) {
-				const mappingExists = await prisma.accessControlList.findUnique({
-					where: {
-						featureName_actionName_tenantRoleId: {
-							featureName: action.feature.name,
-							actionName: action.name,
-							tenantRoleId: agentRole.id,
-						},
-					},
-				})
-
-				if (!mappingExists) {
-					accessControlListCreateManyData.push({
-						id: ulid(),
-						featureName: action.feature.name,
-						actionName: action.name,
-						tenantRoleId: agentRole.id,
-						createdById: adminExist.id,
-						updatedById: adminExist.id,
-					})
-				}
-			}
-		}
-	}
-
-	const accessControlList = await prisma.accessControlList.createMany({
-		data: accessControlListCreateManyData,
-	})
-	console.log(`Access Control List created: ${accessControlList.count}`)
 }
