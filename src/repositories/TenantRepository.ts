@@ -33,12 +33,6 @@ const DEFAULT_ROLE_TEMPLATES = [
 	},
 ]
 
-/**
- * ACL permissions by role identifier
- * CHECKER gets full admin access (same as QUALITY_ASSURANCE)
- * MAKER gets content creation access (same as TRAINER)
- * CONSUMER gets view-only access (same as AGENT)
- */
 const ROLE_ACL_PERMISSIONS: Record<
 	string,
 	Array<{ featureName: string; actions: string[] }>
