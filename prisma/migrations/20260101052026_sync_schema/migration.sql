@@ -14,5 +14,5 @@ ALTER TABLE "AssignmentUserAttempt" ADD COLUMN     "randomSeed" INTEGER NOT NULL
 ALTER COLUMN "score" SET NOT NULL,
 ALTER COLUMN "score" SET DEFAULT 0;
 
--- AlterTable
-ALTER TABLE "User" ADD COLUMN     "isActive" BOOLEAN NOT NULL DEFAULT true;
+-- Note: The "isActive" column on "User" table already exists in the database
+-- This migration was updated to skip adding it since it's already present
