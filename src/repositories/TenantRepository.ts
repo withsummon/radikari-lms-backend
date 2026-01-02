@@ -33,12 +33,6 @@ const DEFAULT_ROLE_TEMPLATES = [
 	},
 ]
 
-/**
- * ACL permissions by role identifier
- * CHECKER gets full admin access (same as QUALITY_ASSURANCE)
- * MAKER gets content creation access (same as TRAINER)
- * CONSUMER gets view-only access (same as AGENT)
- */
 const ROLE_ACL_PERMISSIONS: Record<
 	string,
 	Array<{ featureName: string; actions: string[] }>
@@ -52,65 +46,34 @@ const ROLE_ACL_PERMISSIONS: Record<
 			featureName: "ACCESS_CONTROL_LIST",
 			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
 		},
-		{ featureName: "TENANT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{
 			featureName: "KNOWLEDGE",
 			actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"],
-		},
-		{ featureName: "BULK_UPLOAD", actions: ["CREATE"] },
-		{
-			featureName: "ANNOUNCEMENT",
-			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
 		},
 		{
 			featureName: "ASSIGNMENT",
 			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
 		},
 		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "USER_ACTIVITY_LOG", actions: ["VIEW"] },
-		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "AI_PROMPT", actions: ["VIEW", "UPDATE"] },
+		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "BROADCAST", actions: ["VIEW", "UPDATE"] },
+		{ featureName: "BULK_UPLOAD", actions: ["CREATE"] },
 	],
 	MAKER: [
-		{
-			featureName: "USER_MANAGEMENT",
-			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
-		},
-		{
-			featureName: "ACCESS_CONTROL_LIST",
-			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
-		},
-		{ featureName: "TENANT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{
-			featureName: "KNOWLEDGE",
-			actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"],
-		},
-		{ featureName: "BULK_UPLOAD", actions: ["CREATE"] },
-		{
-			featureName: "ANNOUNCEMENT",
-			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
-		},
-		{
-			featureName: "ASSIGNMENT",
-			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
-		},
-		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "USER_ACTIVITY_LOG", actions: ["VIEW"] },
+		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
+		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
+		{ featureName: "ASSIGNMENT", actions: ["CREATE", "VIEW", "UPDATE"] },
+		{ featureName: "USER_MANAGEMENT", actions: ["VIEW"] },
+		{ featureName: "FORUM", actions: ["VIEW"] },
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "AI_PROMPT", actions: ["VIEW", "UPDATE"] },
-		{ featureName: "BROADCAST", actions: ["VIEW", "UPDATE"] },
 	],
 	CONSUMER: [
-		{ featureName: "OPERATION", actions: ["VIEW"] },
-		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
-		{ featureName: "TENANT", actions: ["VIEW"] },
-		{ featureName: "ANNOUNCEMENT", actions: ["VIEW"] },
-		{ featureName: "ASSIGNMENT", actions: ["VIEW"] },
-		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
-		{ featureName: "BROADCAST", actions: ["VIEW"] },
+		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
+		{ featureName: "ASSIGNMENT", actions: ["VIEW"] },
+		{ featureName: "FORUM", actions: ["VIEW"] },
+		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
 	],
 }
 
