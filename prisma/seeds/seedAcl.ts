@@ -165,7 +165,36 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 		{ featureName: "BROADCAST", actions: ["VIEW"] },
 	]
 
-	const qaTrainerMakerFeatures = [
+	const checkerFeatures = [
+		{ featureName: "USER_MANAGEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "ACCESS_CONTROL_LIST", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "KNOWLEDGE", actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"] },
+		{ featureName: "ASSIGNMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "AI_PROMPT", actions: ["VIEW", "UPDATE"] },
+		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "BROADCAST", actions: ["VIEW", "UPDATE"] },
+		{ featureName: "BULK_UPLOAD", actions: ["CREATE"] },
+	]
+
+	const makerFeatures = [
+		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
+		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
+		{ featureName: "ASSIGNMENT", actions: ["CREATE", "VIEW", "UPDATE"] },
+		{ featureName: "USER_MANAGEMENT", actions: ["VIEW"] },
+		{ featureName: "FORUM", actions: ["VIEW"] },
+		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
+	]
+
+	const consumerFeatures = [
+		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
+		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
+		{ featureName: "ASSIGNMENT", actions: ["VIEW"] },
+		{ featureName: "FORUM", actions: ["VIEW"] },
+		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
+	]
+
+	const qaTrainerFeatures = [
 		{ featureName: "USER_MANAGEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "ACCESS_CONTROL_LIST", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "TENANT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
@@ -176,20 +205,8 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "USER_ACTIVITY_LOG", actions: ["VIEW"] },
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "AI_PROMPT", actions: ["VIEW", "UPDATE"] },
-		{ featureName: "BROADCAST", actions: ["VIEW", "UPDATE"] },
-	]
-
-	const agentConsumerFeatures = [
-		{ featureName: "OPERATION", actions: ["VIEW"] },
-		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
-		{ featureName: "TENANT", actions: ["VIEW"] },
-		{ featureName: "ANNOUNCEMENT", actions: ["VIEW"] },
-		{ featureName: "ASSIGNMENT", actions: ["VIEW"] },
-		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
-		{ featureName: "BROADCAST", actions: ["VIEW"] },
+		{ featureName: "BROADCAST", actions: ["VIEW", "UPDATE"] },
 	]
 
 	const roleMapping: Record<string, { featureName: string; actions: string[] }[]> = {
@@ -197,12 +214,12 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 		OPS_MANAGER: opsSupervisorFeatures,
 		SUPERVISOR: opsSupervisorFeatures,
 		TEAM_LEADER: teamLeaderFeatures,
-		QUALITY_ASSURANCE: qaTrainerMakerFeatures,
-		CHECKER: qaTrainerMakerFeatures,
-		TRAINER: qaTrainerMakerFeatures,
-		MAKER: qaTrainerMakerFeatures,
-		AGENT: agentConsumerFeatures,
-		CONSUMER: agentConsumerFeatures,
+		QUALITY_ASSURANCE: qaTrainerFeatures,
+		CHECKER: checkerFeatures,
+		TRAINER: qaTrainerFeatures,
+		MAKER: makerFeatures,
+		AGENT: consumerFeatures,
+		CONSUMER: consumerFeatures,
 	}
 
 	for (const [identifier, allowedFeatures] of Object.entries(roleMapping)) {
