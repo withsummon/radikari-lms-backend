@@ -45,10 +45,13 @@ export async function create(
 				tenantId: tenantId,
 			})
 		} catch (mqError) {
-			Logger.warning("AssignmentService.create: Failed to publish notification", {
-				error: mqError,
-				assignmentId: createdData.id,
-			})
+			Logger.warning(
+				"AssignmentService.create: Failed to publish notification",
+				{
+					error: mqError,
+					assignmentId: createdData.id,
+				},
+			)
 			// Proceed without failing the request
 		}
 
@@ -117,15 +120,17 @@ export async function update(
 
 		const updatedAssginment = await AssignmentRepository.update(id, data)
 
-
 		// Trigger re-grading for existing attempts
-		const assignmentWithQuestions = await AssignmentRepository.getById(id, tenantId)
+		const assignmentWithQuestions = await AssignmentRepository.getById(
+			id,
+			tenantId,
+		)
 
 		if (assignmentWithQuestions) {
 			const attempts =
 				await AssignmentAttemptRepository.getSubmittedAttemptsByAssignmentId(id)
 
-			// We use map to trigger all recalculations via queue. 
+			// We use map to trigger all recalculations via queue.
 			// Fire and forget to ensure fast response.
 			attempts.map(async (attempt) => {
 				try {
@@ -506,13 +511,13 @@ export async function getDetailUserAssignmentByUserIdAndTenantId(
 							question.type === "ESSAY"
 								? question.assignmentQuestionEssayReferenceAnswer?.content
 								: question.type === "TRUE_FALSE"
-								? question.assignmentQuestionTrueFalseAnswer?.correctAnswer
-								: null,
+									? question.assignmentQuestionTrueFalseAnswer?.correctAnswer
+									: null,
 						correctChoice:
 							question.type === "MULTIPLE_CHOICE"
 								? question.assignmentQuestionOptions.find(
 										(opt: any) => opt.isCorrectAnswer,
-								  )
+									)
 								: null,
 					}
 
@@ -535,7 +540,8 @@ export async function getDetailUserAssignmentByUserIdAndTenantId(
 						return {
 							...baseQuestion,
 							userAnswer: assignmentUserAttemptAnswer?.essayAnswer ?? null,
-							aiGradingFeedback: assignmentUserAttemptAnswer?.aiGradingReasoning ?? null,
+							aiGradingFeedback:
+								assignmentUserAttemptAnswer?.aiGradingReasoning ?? null,
 							correctAnswer:
 								question.assignmentQuestionEssayReferenceAnswer?.content,
 						}
@@ -543,7 +549,8 @@ export async function getDetailUserAssignmentByUserIdAndTenantId(
 						return {
 							...baseQuestion,
 							userAnswer: assignmentUserAttemptAnswer?.trueFalseAnswer ?? null,
-							correctAnswer: question.assignmentQuestionTrueFalseAnswer?.correctAnswer,
+							correctAnswer:
+								question.assignmentQuestionTrueFalseAnswer?.correctAnswer,
 						}
 					}
 

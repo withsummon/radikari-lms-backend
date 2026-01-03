@@ -45,10 +45,10 @@ export async function seedTenant(prisma: PrismaClient) {
 					userId_tenantId: {
 						userId: adminUser.id,
 						tenantId: tenant.id,
-					}
+					},
 				},
 				update: {
-					tenantRoleId: headOfOfficeRole.id
+					tenantRoleId: headOfOfficeRole.id,
 				},
 				create: {
 					id: ulid(),
@@ -66,10 +66,10 @@ export async function seedTenant(prisma: PrismaClient) {
 					userId_tenantId: {
 						userId: regularUser.id,
 						tenantId: tenant.id,
-					}
+					},
 				},
 				update: {
-					tenantRoleId: agentRole.id
+					tenantRoleId: agentRole.id,
 				},
 				create: {
 					id: ulid(),
@@ -97,10 +97,10 @@ export async function seedTenant(prisma: PrismaClient) {
 						userId_tenantId: {
 							userId: adminUser.id,
 							tenantId: firstTenant.id,
-						}
+						},
 					},
 					update: {
-						tenantRoleId: headOfOfficeRole.id
+						tenantRoleId: headOfOfficeRole.id,
 					},
 					create: {
 						id: ulid(),

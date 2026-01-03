@@ -36,8 +36,11 @@ export async function seedTrainerAndQA(prisma: PrismaClient) {
 
 		// Create/Update trainer user
 		const trainerEmail = `trainer2_${tenant.id.toLowerCase()}@test.com` // Unique per tenant for testing
-		const hashedPasswordTrainer = await Bun.password.hash("trainer1234", "argon2id")
-		
+		const hashedPasswordTrainer = await Bun.password.hash(
+			"trainer1234",
+			"argon2id",
+		)
+
 		const trainerUser = await prisma.user.upsert({
 			where: { email: trainerEmail },
 			update: {},
@@ -57,10 +60,10 @@ export async function seedTrainerAndQA(prisma: PrismaClient) {
 				userId_tenantId: {
 					userId: trainerUser.id,
 					tenantId: tenant.id,
-				}
+				},
 			},
 			update: {
-				tenantRoleId: trainerRole.id
+				tenantRoleId: trainerRole.id,
 			},
 			create: {
 				id: ulid(),
@@ -93,10 +96,10 @@ export async function seedTrainerAndQA(prisma: PrismaClient) {
 				userId_tenantId: {
 					userId: qaUser.id,
 					tenantId: tenant.id,
-				}
+				},
 			},
 			update: {
-				tenantRoleId: qualityAssuranceRole.id
+				tenantRoleId: qualityAssuranceRole.id,
 			},
 			create: {
 				id: ulid(),
