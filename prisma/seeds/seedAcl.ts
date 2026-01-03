@@ -99,6 +99,14 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 		}
 	}
 
+	// [CLEANUP] Remove ACCESS_CONTROL_LIST from all non-admin roles to ensure strict restriction
+	console.log("  Cleaning up restricted features from existing roles...")
+	await prisma.accessControlList.deleteMany({
+		where: {
+			featureName: "ACCESS_CONTROL_LIST",
+		},
+	})
+
 	const allAction = await prisma.aclAction.findMany({
 		include: {
 			feature: true,
@@ -167,7 +175,6 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 
 	const checkerFeatures = [
 		{ featureName: "USER_MANAGEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "ACCESS_CONTROL_LIST", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "KNOWLEDGE", actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"] },
 		{ featureName: "ASSIGNMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
@@ -196,7 +203,6 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 
 	const qaTrainerFeatures = [
 		{ featureName: "USER_MANAGEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "ACCESS_CONTROL_LIST", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "TENANT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "KNOWLEDGE", actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"] },
 		{ featureName: "BULK_UPLOAD", actions: ["CREATE"] },

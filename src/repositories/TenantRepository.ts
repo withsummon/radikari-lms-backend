@@ -43,10 +43,6 @@ const ROLE_ACL_PERMISSIONS: Record<
 			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
 		},
 		{
-			featureName: "ACCESS_CONTROL_LIST",
-			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
-		},
-		{
 			featureName: "KNOWLEDGE",
 			actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"],
 		},
