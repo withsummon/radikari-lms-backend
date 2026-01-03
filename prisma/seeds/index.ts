@@ -12,7 +12,6 @@ import { seedForum } from "./seedForum"
 import { seedAiPrompt } from "./seedAiPrompt"
 import { seedBroadcast } from "./seedBroadcast"
 import { seedTenant } from "./seedTenant"
-import { seedTestUsers } from "./seedTestUsers"
 
 
 async function seed() {
@@ -35,7 +34,6 @@ async function seed() {
 			await seedForum(prisma)
 			await seedAiPrompt(prisma)
 			await seedBroadcast(prisma)
-			await seedTestUsers(prisma)
 		} catch (seedError) {
 			console.error("Seeding error:", seedError)
 			throw seedError
