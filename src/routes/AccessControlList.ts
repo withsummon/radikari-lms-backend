@@ -9,7 +9,7 @@ const AccessControlListRoutes = new Hono()
 AccessControlListRoutes.post(
 	"/tenant-roles",
 	AuthMiddleware.checkJwt,
-	AuthMiddleware.checkRole([Roles.ADMIN, Roles.USER]),
+	AuthMiddleware.checkRole([Roles.ADMIN]),
 	AccessControlListValidation.validateAccessControlListCreateRoleSchema,
 	AccessControlListController.createRole,
 )
@@ -17,7 +17,7 @@ AccessControlListRoutes.post(
 AccessControlListRoutes.put(
 	"/tenant-roles/:tenantRoleId/access",
 	AuthMiddleware.checkJwt,
-	AuthMiddleware.checkRole([Roles.ADMIN, Roles.USER]),
+	AuthMiddleware.checkRole([Roles.ADMIN]),
 	AccessControlListValidation.validateAccessControlListUpdateAccessSchema,
 	AccessControlListController.updateRoleAccess,
 )

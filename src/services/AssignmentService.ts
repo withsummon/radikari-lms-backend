@@ -117,6 +117,33 @@ export async function update(
 
 		const updatedAssginment = await AssignmentRepository.update(id, data)
 
+
+		// Trigger re-grading for existing attempts
+		const assignmentWithQuestions = await AssignmentRepository.getById(id, tenantId)
+
+		if (assignmentWithQuestions) {
+			const attempts =
+				await AssignmentAttemptRepository.getSubmittedAttemptsByAssignmentId(id)
+
+			// We use map to trigger all recalculations via queue. 
+			// Fire and forget to ensure fast response.
+			attempts.map(async (attempt) => {
+				try {
+					await pubsub.sendToQueue(PUBSUB_TOPICS.ASSIGNMENT_REGRADE_ATTEMPT, {
+						assignmentUserAttemptId: attempt.id,
+					})
+				} catch (mqError) {
+					Logger.warning(
+						"AssignmentService.update: Failed to publish regrade event",
+						{
+							error: mqError,
+							assignmentUserAttemptId: attempt.id,
+						},
+					)
+				}
+			})
+		}
+
 		await UserActivityLogService.create(
 			userId,
 			"Mengedit tugas",
@@ -158,6 +185,50 @@ export async function deleteById(
 		return HandleServiceResponseSuccess({})
 	} catch (err) {
 		Logger.error(`AssignmentService.deleteById`, {
+			error: err,
+		})
+		return HandleServiceResponseCustomError("Internal Server Error", 500)
+	}
+}
+
+export async function approveById(
+	id: string,
+	tenantId: string,
+	userId: string,
+	data: { action: "APPROVE" | "REVISION" | "REJECT"; comment?: string },
+) {
+	try {
+		const assignment = await AssignmentRepository.getById(id, tenantId)
+
+		if (!assignment)
+			return HandleServiceResponseCustomError(
+				"Invalid ID",
+				ResponseStatus.NOT_FOUND,
+			)
+
+		const updatedAssignment = await AssignmentRepository.approveById(
+			id,
+			tenantId,
+			userId,
+			data,
+		)
+
+		const actionMap = {
+			APPROVE: "Menyetujui",
+			REVISION: "Meminta revisi",
+			REJECT: "Menolak (Freeze)",
+		}
+
+		await UserActivityLogService.create(
+			userId,
+			`${actionMap[data.action]} tugas`,
+			tenantId,
+			`dengan judul "${updatedAssignment.title}"`,
+		)
+
+		return HandleServiceResponseSuccess(updatedAssignment)
+	} catch (err) {
+		Logger.error(`AssignmentService.approveById`, {
 			error: err,
 		})
 		return HandleServiceResponseCustomError("Internal Server Error", 500)
@@ -209,14 +280,24 @@ export async function getSummaryByUserIdAndTenantId(
 
 export async function getSummaryByTenantId(tenantId: string) {
 	try {
-		const [AssignmentCount, CompletedAssignmentCount]: [any, any] =
-			await Promise.all([
-				AssignmentRepository.getTotalAssignmentByTenantId(tenantId),
-				AssignmentRepository.getTotalCompletedAssignmentByTenantId(tenantId),
-			])
+		const [
+			AssignmentCount,
+			CompletedAssignmentCount,
+			pendingCount,
+			approvedCount,
+			revisionCount,
+			rejectedCount,
+		]: [any, any, any, any, any, any] = await Promise.all([
+			AssignmentRepository.getTotalAssignmentByTenantId(tenantId),
+			AssignmentRepository.getTotalCompletedAssignmentByTenantId(tenantId),
+			AssignmentRepository.getTotalAssignmentByStatus(tenantId, "PENDING"),
+			AssignmentRepository.getTotalAssignmentByStatus(tenantId, "APPROVED"),
+			AssignmentRepository.getTotalAssignmentByStatus(tenantId, "REVISION"),
+			AssignmentRepository.getTotalAssignmentByStatus(tenantId, "REJECTED"),
+		])
 
-		const totalAssignment = Number(AssignmentCount[0].count)
-		const totalCompletedAssignment = Number(CompletedAssignmentCount[0].count)
+		const totalAssignment = AssignmentCount
+		const totalCompletedAssignment = CompletedAssignmentCount
 		const totalUncompletedAssignment =
 			totalAssignment - totalCompletedAssignment
 
@@ -224,6 +305,10 @@ export async function getSummaryByTenantId(tenantId: string) {
 			totalAssignment,
 			totalCompletedAssignment,
 			totalUncompletedAssignment,
+			pending: pendingCount,
+			approved: approvedCount,
+			revision: revisionCount,
+			rejected: rejectedCount,
 		})
 	} catch (err) {
 		Logger.error(`AssignmentService.getSummaryByTenantId`, {

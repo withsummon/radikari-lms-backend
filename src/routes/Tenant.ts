@@ -86,6 +86,7 @@ TenantRoutes.get(
 TenantRoutes.post(
 	"/:id/users",
 	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRole([Roles.ADMIN]),
 	TenantController.addMember,
 )
 
