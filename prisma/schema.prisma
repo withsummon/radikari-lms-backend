@@ -69,6 +69,10 @@ model User {
 
   // ✅ FIX: opposite relation for UserKnowledgeReadLog.user
   userKnowledgeReadLogs UserKnowledgeReadLog[]
+
+  // ✅ [NEW FEATURE]: Share Knowledge Relations
+  sentKnowledgeShares     KnowledgeShare[]          @relation("SharedBy")
+  receivedKnowledgeShares KnowledgeShareRecipient[] @relation("SharedTo")
 }
 
 model Operation {
@@ -94,16 +98,16 @@ model Tenant {
 
   operation Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
 
-  tenantUser    TenantUser[]
-  tenantSetting TenantSetting[]
-  knowledge     Knowledge[]
-  aiChatRooms   AiChatRoom[]
-  announcements Announcement[]
-  forums        Forum[]
-  aiPrompt      AiPrompt?
-  broadcast     Broadcast?
-  aiUsageLogs   AiUsageLog[]
-  tenantRoles   TenantRole[]
+  tenantUser      TenantUser[]
+  tenantSetting   TenantSetting[]
+  knowledge       Knowledge[]
+  aiChatRooms     AiChatRoom[]
+  announcements   Announcement[]
+  forums          Forum[]
+  aiPrompt        AiPrompt?
+  broadcast       Broadcast?
+  aiUsageLogs     AiUsageLog[]
+  tenantRoles     TenantRole[]
 }
 
 model TenantRole {
@@ -242,9 +246,9 @@ model Knowledge {
   version          Int             @default(1)
   parentId         String?
 
-  tenant        Tenant?     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  createdByUser User        @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
-  parent        Knowledge?  @relation(name: "parent", fields: [parentId], references: [id], onDelete: Cascade)
+  tenant        Tenant?    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdByUser User       @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  parent        Knowledge? @relation(name: "parent", fields: [parentId], references: [id], onDelete: Cascade)
   children      Knowledge[] @relation("parent")
 
   knowledgeAttachment        KnowledgeAttachment[]
@@ -256,6 +260,9 @@ model Knowledge {
 
   // ✅ FIX: opposite relation for UserKnowledgeReadLog.knowledge
   userKnowledgeReadLogs UserKnowledgeReadLog[]
+
+  // ✅ [NEW FEATURE]: Share Knowledge Relation
+  knowledgeShares KnowledgeShare[]
 
   @@unique([parentId, version])
   @@index([tenantId, access])
@@ -386,10 +393,10 @@ model AccessControlList {
   createdById  String
   updatedById  String
 
-  feature    AclFeature @relation(fields: [featureName], references: [name], onDelete: Cascade)
-  tenantRole TenantRole @relation(fields: [tenantRoleId], references: [id], onDelete: Cascade)
-  createdBy  User       @relation("AclCreator", fields: [createdById], references: [id], onDelete: Cascade)
-  updatedBy  User       @relation("AclUpdater", fields: [updatedById], references: [id], onDelete: Cascade)
+  feature      AclFeature @relation(fields: [featureName], references: [name], onDelete: Cascade)
+  tenantRole   TenantRole @relation(fields: [tenantRoleId], references: [id], onDelete: Cascade)
+  createdBy    User       @relation("AclCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  updatedBy    User       @relation("AclUpdater", fields: [updatedById], references: [id], onDelete: Cascade)
 
   @@unique([featureName, actionName, tenantRoleId])
 }
@@ -521,15 +528,15 @@ model AssignmentQuestionEssayReferenceAnswer {
 
 model AssignmentUserAttempt {
   id              String    @id @unique
-  userId               String
-  assignmentId         String
-  score                Int       @default(0)
-  percentageScore      Float?
-  isSubmitted          Boolean   @default(false)
-  randomSeed           Int       @default(0)
-  submittedAt          DateTime?
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  userId          String
+  assignmentId    String
+  score           Int       @default(0)
+  percentageScore Float?
+  isSubmitted     Boolean   @default(false)
+  randomSeed      Int       @default(0)
+  submittedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   user                                 User                                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   assignment                           Assignment                            @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
@@ -742,4 +749,34 @@ model AiUsageLog {
   tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   user              User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
   aiChatRoomMessage AiChatRoomMessage? @relation(fields: [aiChatRoomMessageId], references: [id], onDelete: SetNull)
+}
+
+model KnowledgeShare {
+  id             String   @id @unique @default(uuid())
+  knowledgeId    String
+  sharedByUserId String
+  note           String?  @db.Text
+  createdAt      DateTime @default(now())
+
+  // Relations
+  knowledge    Knowledge                 @relation(fields: [knowledgeId], references: [id], onDelete: Cascade)
+  sharedByUser User                      @relation("SharedBy", fields: [sharedByUserId], references: [id], onDelete: Cascade)
+  recipients   KnowledgeShareRecipient[]
+
+  @@index([sharedByUserId])
+  @@index([knowledgeId])
+}
+
+model KnowledgeShareRecipient {
+  id               String  @id @unique @default(uuid())
+  knowledgeShareId String
+  recipientEmail   String
+  recipientUserId  String?
+
+  // Relations
+  knowledgeShare KnowledgeShare @relation(fields: [knowledgeShareId], references: [id], onDelete: Cascade)
+  recipientUser  User?          @relation("SharedTo", fields: [recipientUserId], references: [id], onDelete: Cascade)
+
+  @@index([knowledgeShareId])
+  @@index([recipientUserId])
 }

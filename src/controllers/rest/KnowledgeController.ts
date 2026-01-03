@@ -12,6 +12,7 @@ import {
 } from "$entities/Knowledge"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { UserJWTDAO } from "$entities/User"
+import { KnowledgeShareDTO } from "$entities/Knowledge"
 
 // ✅ util baru
 import { attachOverdueToKnowledgeList } from "$utils/knowledgeOverdue.utils"
@@ -271,4 +272,56 @@ export async function archiveOrUnarchiveKnowledge(
 		serviceResponse.data,
 		"Successfully archived or unarchived Knowledge!",
 	)
+}
+
+export async function shareKnowledge(c: Context): Promise<TypedResponse> {
+    const id = c.req.param("id") 
+    const tenantId = c.req.param("tenantId")
+    const user: UserJWTDAO = c.get("jwtPayload")
+    const data: KnowledgeShareDTO = await c.req.json()
+
+    if (!data.emails || data.emails.length === 0) {
+        return response_created(c, {}, "Emails are required") 
+    }
+
+    const serviceResponse = await KnowledgeService.shareKnowledge(
+        user.id,
+        tenantId,
+        id,
+        data
+    )
+
+    if (!serviceResponse.status) {
+        return handleServiceErrorWithResponse(c, serviceResponse)
+    }
+
+    return response_success(
+        c,
+        serviceResponse.data,
+        "Successfully shared knowledge!"
+    )
+}
+
+export async function getShareHistory(c: Context): Promise<TypedResponse> {
+    const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(
+        c.req.query()
+    )
+    const tenantId = c.req.param("tenantId")
+    const user: UserJWTDAO = c.get("jwtPayload")
+
+    const serviceResponse = await KnowledgeService.getShareHistory(
+        user.id,
+        tenantId,
+        filters
+    )
+
+    if (!serviceResponse.status) {
+        return handleServiceErrorWithResponse(c, serviceResponse)
+    }
+
+    return response_success(
+        c,
+        serviceResponse.data,
+        "Successfully fetched share history!"
+    )
 }

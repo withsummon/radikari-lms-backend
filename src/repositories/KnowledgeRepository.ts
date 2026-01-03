@@ -671,3 +671,79 @@ export async function getAllVersionsById(id: string) {
 
 	return versions
 }
+
+// ... imports prisma dan lain-lain
+
+// 1. Function untuk menyimpan data Share
+export async function createShare(
+    knowledgeId: string,
+    senderUserId: string,
+    note: string | undefined,
+    recipientsData: { email: string; userId: string | null }[]
+) {
+    return prisma.knowledgeShare.create({
+        data: {
+            knowledgeId,
+            sharedByUserId: senderUserId,
+            note,
+            recipients: {
+                create: recipientsData.map((r) => ({
+                    recipientEmail: r.email,
+                    recipientUserId: r.userId,
+                })),
+            },
+        },
+        include: {
+            knowledge: {
+                select: { headline: true },
+            },
+            recipients: true,
+        },
+    })
+}
+
+export async function getShareHistory(
+    userId: string,
+    filters: EzFilter.FilteringQuery
+) {
+    return prisma.knowledgeShare.findMany({
+        where: {
+            sharedByUserId: userId,
+        },
+        include: {
+            knowledge: {
+                select: {
+                    id: true,
+                    headline: true,
+                    status: true,
+                },
+            },
+            recipients: {
+                include: {
+                    recipientUser: {
+                        select: {
+                            fullName: true,
+                            profilePictureUrl: true,
+                        },
+                    },
+                },
+            },
+        },
+        orderBy: {
+            createdAt: "desc",
+        },
+    })
+}
+
+export async function findUsersByEmails(emails: string[]) {
+    return prisma.user.findMany({
+        where: {
+            email: { in: emails },
+            isActive: true,
+        },
+        select: {
+            id: true,
+            email: true,
+        },
+    })
+}

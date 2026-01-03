@@ -95,3 +95,20 @@ export interface KnowledgeBulkCreateTypeCaseDataRow {
 	Assign: string
 	Keterangan: string
 }
+
+export interface KnowledgeShareDTO {
+    emails: string[]
+    note?: string
+}
+
+export interface KnowledgeShareHistoryDTO {
+    id: string
+    sharedAt: Date
+    note?: string
+    articleTitle: string
+    recipients: {
+        email: string
+        name?: string
+        avatar?: string
+    }[]
+}

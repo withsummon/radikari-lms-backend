@@ -35,6 +35,7 @@ import * as TenantRepository from "$repositories/TenantRepository"
 import * as OperationRepository from "$repositories/OperationRepository"
 import * as UserActivityLogService from "$services/UserActivityLogService"
 import * as NotificationService from "$services/NotificationService"
+import { KnowledgeShareDTO } from "$entities/Knowledge"
 
 export async function create(
 	userId: string,
@@ -867,4 +868,65 @@ export async function archiveOrUnarchiveKnowledge(
 		})
 		return HandleServiceResponseCustomError("Internal Server Error", 500)
 	}
+}
+
+
+export async function shareKnowledge(
+    userId: string,
+    tenantId: string,
+    knowledgeId: string,
+    data: KnowledgeShareDTO
+): Promise<ServiceResponse<{}>> {
+    try {
+        const knowledge = await KnowledgeRepository.getById(knowledgeId)
+        if (!knowledge) {
+            return HandleServiceResponseCustomError(
+                "Knowledge not found",
+                ResponseStatus.NOT_FOUND
+            )
+        }
+
+        const existingUsers = await KnowledgeRepository.findUsersByEmails(data.emails)
+
+        const recipientsPayload = data.emails.map((email) => {
+            const matchedUser = existingUsers.find((u) => u.email === email)
+            return {
+                email: email,
+                userId: matchedUser ? matchedUser.id : null, // Null jika external
+            }
+        })
+
+        const shareRecord = await KnowledgeRepository.createShare(
+            knowledgeId,
+            userId,
+            data.note,
+            recipientsPayload
+        )
+
+        await UserActivityLogService.create(
+            userId,
+            "Membagikan pengetahuan",
+            tenantId,
+            `berjudul "${knowledge.headline}" kepada ${data.emails.length} orang`
+        )
+
+        return HandleServiceResponseSuccess(shareRecord)
+    } catch (err) {
+        Logger.error(`KnowledgeService.shareKnowledge`, { error: err })
+        return HandleServiceResponseCustomError("Internal Server Error", 500)
+    }
+}
+
+export async function getShareHistory(
+    userId: string,
+    tenantId: string,
+    filters: EzFilter.FilteringQuery
+): Promise<ServiceResponse<{}>> {
+    try {
+        const history = await KnowledgeRepository.getShareHistory(userId, filters)
+        return HandleServiceResponseSuccess(history)
+    } catch (err) {
+        Logger.error(`KnowledgeService.getShareHistory`, { error: err })
+        return HandleServiceResponseCustomError("Internal Server Error", 500)
+    }
 }
