@@ -99,11 +99,13 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 		}
 	}
 
-	// [CLEANUP] Remove ACCESS_CONTROL_LIST from all non-admin roles to ensure strict restriction
+	// [CLEANUP] Remove restricted system features from all non-admin roles to ensure strict restriction
 	console.log("  Cleaning up restricted features from existing roles...")
 	await prisma.accessControlList.deleteMany({
 		where: {
-			featureName: "ACCESS_CONTROL_LIST",
+			featureName: {
+				in: ["ACCESS_CONTROL_LIST", "TENANT", "USER_ACTIVITY_LOG"],
+			},
 		},
 	})
 
@@ -137,7 +139,6 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 	// Define feature sets for each role type
 	const headOfOfficeFeatures = [
 		{ featureName: "USER_MANAGEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "TENANT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
 		{ featureName: "OPERATION", actions: ["VIEW"] },
 		{ featureName: "ANNOUNCEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
@@ -150,7 +151,6 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 
 	const opsSupervisorFeatures = [
 		{ featureName: "USER_MANAGEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "TENANT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
 		{ featureName: "OPERATION", actions: ["VIEW"] },
 		{ featureName: "ANNOUNCEMENT", actions: ["VIEW"] },
@@ -162,7 +162,6 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 	]
 
 	const teamLeaderFeatures = [
-		{ featureName: "TENANT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
 		{ featureName: "OPERATION", actions: ["VIEW"] },
 		{ featureName: "ANNOUNCEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
@@ -203,13 +202,11 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 
 	const qaTrainerFeatures = [
 		{ featureName: "USER_MANAGEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "TENANT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "KNOWLEDGE", actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"] },
 		{ featureName: "BULK_UPLOAD", actions: ["CREATE"] },
 		{ featureName: "ANNOUNCEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "ASSIGNMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "USER_ACTIVITY_LOG", actions: ["VIEW"] },
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
 		{ featureName: "BROADCAST", actions: ["VIEW", "UPDATE"] },
