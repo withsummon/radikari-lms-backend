@@ -16,6 +16,3 @@ ALTER TABLE "Assignment" ADD COLUMN     "rejectionComment" TEXT;
 
 -- AlterTable
 ALTER TABLE "AssignmentQuestion" ADD COLUMN     "points" INTEGER NOT NULL DEFAULT 1;
-
--- AlterTable
-ALTER TABLE "User" ADD COLUMN     "isActive" BOOLEAN NOT NULL DEFAULT true;
