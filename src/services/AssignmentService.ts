@@ -117,6 +117,33 @@ export async function update(
 
 		const updatedAssginment = await AssignmentRepository.update(id, data)
 
+
+		// Trigger re-grading for existing attempts
+		const assignmentWithQuestions = await AssignmentRepository.getById(id, tenantId)
+
+		if (assignmentWithQuestions) {
+			const attempts =
+				await AssignmentAttemptRepository.getSubmittedAttemptsByAssignmentId(id)
+
+			// We use map to trigger all recalculations via queue. 
+			// Fire and forget to ensure fast response.
+			attempts.map(async (attempt) => {
+				try {
+					await pubsub.sendToQueue(PUBSUB_TOPICS.ASSIGNMENT_REGRADE_ATTEMPT, {
+						assignmentUserAttemptId: attempt.id,
+					})
+				} catch (mqError) {
+					Logger.warning(
+						"AssignmentService.update: Failed to publish regrade event",
+						{
+							error: mqError,
+							assignmentUserAttemptId: attempt.id,
+						},
+					)
+				}
+			})
+		}
+
 		await UserActivityLogService.create(
 			userId,
 			"Mengedit tugas",
