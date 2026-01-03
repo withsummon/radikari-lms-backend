@@ -86,15 +86,17 @@ export async function updateMany(
 		},
 	})
 
-	const existingQuestionMap = new Map<string, typeof existingQuestions[0]>()
+	const existingQuestionMap = new Map<string, (typeof existingQuestions)[0]>()
 	existingQuestions.forEach((q) => existingQuestionMap.set(q.id, q))
 
 	// 2. Identify Questions to Keep/Update vs Delete
 	// Incoming IDs that strictly match existing DB IDs
 	const incomingIds = data
 		.map((d) => d.id)
-		.filter((id): id is string => id !== undefined && existingQuestionMap.has(id))
-	
+		.filter(
+			(id): id is string => id !== undefined && existingQuestionMap.has(id),
+		)
+
 	// Questions in DB not present in incoming payload -> DELETE
 	const questionsToDelete = existingQuestions.filter(
 		(q) => !incomingIds.includes(q.id),
@@ -132,11 +134,16 @@ export async function updateMany(
 					// Smart Update Options to preserve IDs (and User Answers!)
 					const incomingOptions = questionData.options || []
 					const existingOptions = existingQ.assignmentQuestionOptions
-					const existingOptionMap = new Map(existingOptions.map((o) => [o.id, o]))
+					const existingOptionMap = new Map(
+						existingOptions.map((o) => [o.id, o]),
+					)
 
 					const incomingOptionIds = incomingOptions
 						.map((o) => o.id)
-						.filter((id): id is string => id !== undefined && existingOptionMap.has(id))
+						.filter(
+							(id): id is string =>
+								id !== undefined && existingOptionMap.has(id),
+						)
 
 					// Delete removed options
 					const optionsToDelete = existingOptions.filter(
@@ -175,40 +182,40 @@ export async function updateMany(
 				}
 				case AssignmentQuestionType.TRUE_FALSE:
 					// True/False usually has 1-to-1 relation, straightforward update or create if missing
-					// The previous logic assumed update if Question exists. 
+					// The previous logic assumed update if Question exists.
 					// But if type changed from something else to TF, we might need to create.
 					// Prisma's upsert is useful here.
 					if (questionData.trueFalseAnswer) {
-                        await tx.assignmentQuestionTrueFalseAnswer.upsert({
-                            where: { assignmentQuestionId: updatedQuestion.id },
-                            create: {
-                                id: ulid(),
-                                assignmentQuestionId: updatedQuestion.id,
-                                correctAnswer: questionData.trueFalseAnswer.correctAnswer,
-                            },
-                            update: {
-                                correctAnswer: questionData.trueFalseAnswer.correctAnswer,
-                            }
-                        })
+						await tx.assignmentQuestionTrueFalseAnswer.upsert({
+							where: { assignmentQuestionId: updatedQuestion.id },
+							create: {
+								id: ulid(),
+								assignmentQuestionId: updatedQuestion.id,
+								correctAnswer: questionData.trueFalseAnswer.correctAnswer,
+							},
+							update: {
+								correctAnswer: questionData.trueFalseAnswer.correctAnswer,
+							},
+						})
 					}
 					break
 				case AssignmentQuestionType.ESSAY:
 					if (questionData.essayReferenceAnswer) {
-                        await tx.assignmentQuestionEssayReferenceAnswer.upsert({
-                            where: { assignmentQuestionId: updatedQuestion.id },
-                            create: {
-                                id: ulid(),
-                                assignmentQuestionId: updatedQuestion.id,
-                                content: questionData.essayReferenceAnswer.content,
-                            },
-                            update: {
-                                content: questionData.essayReferenceAnswer.content,
-                            }
-                        })
+						await tx.assignmentQuestionEssayReferenceAnswer.upsert({
+							where: { assignmentQuestionId: updatedQuestion.id },
+							create: {
+								id: ulid(),
+								assignmentQuestionId: updatedQuestion.id,
+								content: questionData.essayReferenceAnswer.content,
+							},
+							update: {
+								content: questionData.essayReferenceAnswer.content,
+							},
+						})
 					}
 					break
 			}
-		} 
+		}
 		// B. CREATE New Question
 		else {
 			const newQuestionId = ulid()

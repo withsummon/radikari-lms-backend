@@ -113,7 +113,11 @@ export async function getAll(
 		},
 	}
 
-	if (rawFilters && typeof rawFilters === "object" && Object.keys(rawFilters).length > 0) {
+	if (
+		rawFilters &&
+		typeof rawFilters === "object" &&
+		Object.keys(rawFilters).length > 0
+	) {
 		if (!usedFilters.query.where.AND) {
 			usedFilters.query.where.AND = []
 		}
@@ -377,7 +381,9 @@ export async function getTotalCompletedAssignmentByTenantId(tenantId: string) {
 	})
 }
 
-export async function getTotalReachedGoalAssignmentByTenantId(tenantId: string) {
+export async function getTotalReachedGoalAssignmentByTenantId(
+	tenantId: string,
+) {
 	return prisma.$queryRaw`
             SELECT 
                 a.id,

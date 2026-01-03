@@ -592,7 +592,8 @@ export async function getHistoryUserAssignmentAttempts(
 						isCorrect: assignmentUserAttemptAnswer?.isAnswerCorrect,
 						userAnswer: assignmentUserAttemptAnswer?.essayAnswer,
 						aiGradingFeedback: assignmentUserAttemptAnswer?.aiGradingReasoning,
-						correctAnswer: question.assignmentQuestionEssayReferenceAnswer?.content,
+						correctAnswer:
+							question.assignmentQuestionEssayReferenceAnswer?.content,
 					}
 				} else if (question.type === AssignmentQuestionType.TRUE_FALSE) {
 					return {
@@ -602,7 +603,8 @@ export async function getHistoryUserAssignmentAttempts(
 						type: question.type,
 						isCorrect: assignmentUserAttemptAnswer?.isAnswerCorrect,
 						userAnswer: assignmentUserAttemptAnswer?.trueFalseAnswer,
-						correctAnswer: question.assignmentQuestionTrueFalseAnswer?.correctAnswer,
+						correctAnswer:
+							question.assignmentQuestionTrueFalseAnswer?.correctAnswer,
 					}
 				}
 			})

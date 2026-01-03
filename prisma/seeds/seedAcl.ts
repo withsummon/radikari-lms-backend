@@ -128,20 +128,30 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 
 	// Fetch ALL roles from the database to handle multiple tenants
 	const allRoles = await prisma.tenantRole.findMany()
-	const rolesByIdentifier = allRoles.reduce((acc, role) => {
-		if (!acc[role.identifier]) acc[role.identifier] = []
-		acc[role.identifier].push(role)
-		return acc
-	}, {} as Record<string, typeof allRoles>)
+	const rolesByIdentifier = allRoles.reduce(
+		(acc, role) => {
+			if (!acc[role.identifier]) acc[role.identifier] = []
+			acc[role.identifier].push(role)
+			return acc
+		},
+		{} as Record<string, typeof allRoles>,
+	)
 
-	const accessControlListCreateManyData: Prisma.AccessControlListCreateManyInput[] = []
+	const accessControlListCreateManyData: Prisma.AccessControlListCreateManyInput[] =
+		[]
 
 	// Define feature sets for each role type
 	const headOfOfficeFeatures = [
-		{ featureName: "USER_MANAGEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{
+			featureName: "USER_MANAGEMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
 		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
 		{ featureName: "OPERATION", actions: ["VIEW"] },
-		{ featureName: "ANNOUNCEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{
+			featureName: "ANNOUNCEMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
 		{ featureName: "ASSIGNMENT", actions: ["VIEW"] },
 		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
@@ -150,7 +160,10 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 	]
 
 	const opsSupervisorFeatures = [
-		{ featureName: "USER_MANAGEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{
+			featureName: "USER_MANAGEMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
 		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
 		{ featureName: "OPERATION", actions: ["VIEW"] },
 		{ featureName: "ANNOUNCEMENT", actions: ["VIEW"] },
@@ -164,7 +177,10 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 	const teamLeaderFeatures = [
 		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
 		{ featureName: "OPERATION", actions: ["VIEW"] },
-		{ featureName: "ANNOUNCEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{
+			featureName: "ANNOUNCEMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
 		{ featureName: "ASSIGNMENT", actions: ["VIEW"] },
 		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
@@ -173,9 +189,18 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 	]
 
 	const checkerFeatures = [
-		{ featureName: "USER_MANAGEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "KNOWLEDGE", actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"] },
-		{ featureName: "ASSIGNMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL"] },
+		{
+			featureName: "USER_MANAGEMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
+		{
+			featureName: "KNOWLEDGE",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"],
+		},
+		{
+			featureName: "ASSIGNMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL"],
+		},
 		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "AI_PROMPT", actions: ["VIEW", "UPDATE"] },
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
@@ -186,7 +211,10 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 	const makerFeatures = [
 		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
 		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
-		{ featureName: "ASSIGNMENT", actions: ["CREATE", "VIEW", "UPDATE", "APPROVAL"] },
+		{
+			featureName: "ASSIGNMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "APPROVAL"],
+		},
 		{ featureName: "USER_MANAGEMENT", actions: ["VIEW"] },
 		{ featureName: "FORUM", actions: ["VIEW"] },
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
@@ -201,18 +229,33 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 	]
 
 	const qaTrainerFeatures = [
-		{ featureName: "USER_MANAGEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "KNOWLEDGE", actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"] },
+		{
+			featureName: "USER_MANAGEMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
+		{
+			featureName: "KNOWLEDGE",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"],
+		},
 		{ featureName: "BULK_UPLOAD", actions: ["CREATE"] },
-		{ featureName: "ANNOUNCEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "ASSIGNMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL"] },
+		{
+			featureName: "ANNOUNCEMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
+		{
+			featureName: "ASSIGNMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL"],
+		},
 		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
 		{ featureName: "BROADCAST", actions: ["VIEW", "UPDATE"] },
 	]
 
-	const roleMapping: Record<string, { featureName: string; actions: string[] }[]> = {
+	const roleMapping: Record<
+		string,
+		{ featureName: string; actions: string[] }[]
+	> = {
 		HEAD_OF_OFFICE: headOfOfficeFeatures,
 		OPS_MANAGER: opsSupervisorFeatures,
 		SUPERVISOR: opsSupervisorFeatures,
@@ -229,17 +272,24 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 		const roles = rolesByIdentifier[identifier] || []
 		if (roles.length === 0) continue
 
-		console.log(`  Mapping features for identifier: ${identifier} (${roles.length} roles found)`)
+		console.log(
+			`  Mapping features for identifier: ${identifier} (${roles.length} roles found)`,
+		)
 
 		for (const role of roles) {
 			for (const action of allAction) {
 				const isAllowed = allowedFeatures.some(
-					(f) => f.featureName === action.feature.name && f.actions.includes(action.name)
+					(f) =>
+						f.featureName === action.feature.name &&
+						f.actions.includes(action.name),
 				)
 
 				if (isAllowed) {
 					// Special rule: Deny OPERATION for QA and CHECKER
-					if ((identifier === "QUALITY_ASSURANCE" || identifier === "CHECKER") && action.feature.name === "OPERATION") {
+					if (
+						(identifier === "QUALITY_ASSURANCE" || identifier === "CHECKER") &&
+						action.feature.name === "OPERATION"
+					) {
 						continue
 					}
 

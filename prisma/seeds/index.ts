@@ -13,7 +13,6 @@ import { seedAiPrompt } from "./seedAiPrompt"
 import { seedBroadcast } from "./seedBroadcast"
 import { seedTenant } from "./seedTenant"
 
-
 async function seed() {
 	console.log("🚀 Starting seeder...")
 	let prisma: PrismaClient | null = null

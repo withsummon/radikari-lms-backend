@@ -1,15 +1,15 @@
 import { Context, TypedResponse } from "hono"
 import * as KnowledgeService from "$services/KnowledgeService"
 import {
-    handleServiceErrorWithResponse,
-    response_created,
-    response_success,
-    response_bad_request, // ✅ Pastikan ini diimport
+	handleServiceErrorWithResponse,
+	response_created,
+	response_success,
+	response_bad_request, // ✅ Pastikan ini diimport
 } from "$utils/response.utils"
 import {
-    KnowledgeApprovalDTO,
-    KnowledgeBulkCreateDTO,
-    KnowledgeDTO,
+	KnowledgeApprovalDTO,
+	KnowledgeBulkCreateDTO,
+	KnowledgeDTO,
 } from "$entities/Knowledge"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { UserJWTDAO } from "$entities/User"
@@ -17,311 +17,311 @@ import { KnowledgeShareDTO } from "$entities/Knowledge"
 import { attachOverdueToKnowledgeList } from "$utils/knowledgeOverdue.utils"
 
 export async function create(c: Context): Promise<TypedResponse> {
-    const data: KnowledgeDTO = await c.req.json()
-    const user: UserJWTDAO = c.get("jwtPayload")
-    const tenantId = c.req.param("tenantId")
-    
-    // 🧹 Console log dihapus untuk production
+	const data: KnowledgeDTO = await c.req.json()
+	const user: UserJWTDAO = c.get("jwtPayload")
+	const tenantId = c.req.param("tenantId")
 
-    const serviceResponse = await KnowledgeService.create(user.id, tenantId, data)
+	// 🧹 Console log dihapus untuk production
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	const serviceResponse = await KnowledgeService.create(user.id, tenantId, data)
 
-    return response_created(
-        c,
-        serviceResponse.data,
-        "Successfully created new Knowledge!",
-    )
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
+
+	return response_created(
+		c,
+		serviceResponse.data,
+		"Successfully created new Knowledge!",
+	)
 }
 
 export async function getAll(c: Context): Promise<TypedResponse> {
-    const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(
-        c.req.query(),
-    )
-    const tenantId = c.req.param("tenantId")
-    const user: UserJWTDAO = c.get("jwtPayload")
+	const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(
+		c.req.query(),
+	)
+	const tenantId = c.req.param("tenantId")
+	const user: UserJWTDAO = c.get("jwtPayload")
 
-    const serviceResponse = await KnowledgeService.getAll(user, tenantId, filters)
+	const serviceResponse = await KnowledgeService.getAll(user, tenantId, filters)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    // ✅ Tambahkan warning flag overdue > 24 jam untuk yang PENDING
-    const dataWithOverdue = attachOverdueToKnowledgeList(serviceResponse.data, 24)
+	// ✅ Tambahkan warning flag overdue > 24 jam untuk yang PENDING
+	const dataWithOverdue = attachOverdueToKnowledgeList(serviceResponse.data, 24)
 
-    return response_success(
-        c,
-        dataWithOverdue,
-        "Successfully fetched all Knowledge!",
-    )
+	return response_success(
+		c,
+		dataWithOverdue,
+		"Successfully fetched all Knowledge!",
+	)
 }
 
 export async function getAllArchived(c: Context): Promise<TypedResponse> {
-    const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(
-        c.req.query(),
-    )
-    const tenantId = c.req.param("tenantId")
-    const user: UserJWTDAO = c.get("jwtPayload")
+	const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(
+		c.req.query(),
+	)
+	const tenantId = c.req.param("tenantId")
+	const user: UserJWTDAO = c.get("jwtPayload")
 
-    const serviceResponse = await KnowledgeService.getAllArchived(
-        user,
-        tenantId,
-        filters,
-    )
+	const serviceResponse = await KnowledgeService.getAllArchived(
+		user,
+		tenantId,
+		filters,
+	)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    const dataWithOverdue = attachOverdueToKnowledgeList(serviceResponse.data, 24)
+	const dataWithOverdue = attachOverdueToKnowledgeList(serviceResponse.data, 24)
 
-    return response_success(
-        c,
-        dataWithOverdue,
-        "Successfully fetched all Archived Knowledge!",
-    )
+	return response_success(
+		c,
+		dataWithOverdue,
+		"Successfully fetched all Archived Knowledge!",
+	)
 }
 
 export async function getSummary(c: Context): Promise<TypedResponse> {
-    const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(
-        c.req.query(),
-    )
-    const tenantId = c.req.param("tenantId")
-    const user: UserJWTDAO = c.get("jwtPayload")
+	const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(
+		c.req.query(),
+	)
+	const tenantId = c.req.param("tenantId")
+	const user: UserJWTDAO = c.get("jwtPayload")
 
-    const serviceResponse = await KnowledgeService.getSummary(
-        user,
-        tenantId,
-        filters,
-    )
+	const serviceResponse = await KnowledgeService.getSummary(
+		user,
+		tenantId,
+		filters,
+	)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(
-        c,
-        serviceResponse.data,
-        "Successfully fetched Knowledge summary!",
-    )
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully fetched Knowledge summary!",
+	)
 }
 
 export async function getById(c: Context): Promise<TypedResponse> {
-    const id = c.req.param("id")
-    const tenantId = c.req.param("tenantId")
-    const user: UserJWTDAO = c.get("jwtPayload")
+	const id = c.req.param("id")
+	const tenantId = c.req.param("tenantId")
+	const user: UserJWTDAO = c.get("jwtPayload")
 
-    const serviceResponse = await KnowledgeService.getById(id, tenantId, user.id)
+	const serviceResponse = await KnowledgeService.getById(id, tenantId, user.id)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(
-        c,
-        serviceResponse.data,
-        "Successfully fetched Knowledge by id!",
-    )
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully fetched Knowledge by id!",
+	)
 }
 
 export async function getAllVersionsById(c: Context): Promise<TypedResponse> {
-    const id = c.req.param("id")
+	const id = c.req.param("id")
 
-    const serviceResponse = await KnowledgeService.getAllVersionsById(id)
+	const serviceResponse = await KnowledgeService.getAllVersionsById(id)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(
-        c,
-        serviceResponse.data,
-        "Successfully fetched all Knowledge versions!",
-    )
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully fetched all Knowledge versions!",
+	)
 }
 
 export async function update(c: Context): Promise<TypedResponse> {
-    const data: KnowledgeDTO = await c.req.json()
-    const id = c.req.param("id")
-    const tenantId = c.req.param("tenantId")
-    const user: UserJWTDAO = c.get("jwtPayload")
+	const data: KnowledgeDTO = await c.req.json()
+	const id = c.req.param("id")
+	const tenantId = c.req.param("tenantId")
+	const user: UserJWTDAO = c.get("jwtPayload")
 
-    const serviceResponse = await KnowledgeService.update(
-        id,
-        tenantId,
-        data,
-        user.id,
-    )
+	const serviceResponse = await KnowledgeService.update(
+		id,
+		tenantId,
+		data,
+		user.id,
+	)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(
-        c,
-        serviceResponse.data,
-        "Successfully updated Knowledge!",
-    )
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully updated Knowledge!",
+	)
 }
 
 export async function deleteById(c: Context): Promise<TypedResponse> {
-    const id = c.req.param("id")
-    const tenantId = c.req.param("tenantId")
-    const user: UserJWTDAO = c.get("jwtPayload")
-    const serviceResponse = await KnowledgeService.deleteById(
-        id,
-        tenantId,
-        user.id,
-    )
+	const id = c.req.param("id")
+	const tenantId = c.req.param("tenantId")
+	const user: UserJWTDAO = c.get("jwtPayload")
+	const serviceResponse = await KnowledgeService.deleteById(
+		id,
+		tenantId,
+		user.id,
+	)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(
-        c,
-        serviceResponse.data,
-        "Successfully deleted Knowledge!",
-    )
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully deleted Knowledge!",
+	)
 }
 
 export async function approveById(c: Context): Promise<TypedResponse> {
-    const id = c.req.param("id")
-    const tenantId = c.req.param("tenantId")
-    const user: UserJWTDAO = c.get("jwtPayload")
-    const data: KnowledgeApprovalDTO = await c.req.json()
+	const id = c.req.param("id")
+	const tenantId = c.req.param("tenantId")
+	const user: UserJWTDAO = c.get("jwtPayload")
+	const data: KnowledgeApprovalDTO = await c.req.json()
 
-    const serviceResponse = await KnowledgeService.approveById(
-        id,
-        tenantId,
-        user.id,
-        data,
-    )
+	const serviceResponse = await KnowledgeService.approveById(
+		id,
+		tenantId,
+		user.id,
+		data,
+	)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(
-        c,
-        serviceResponse.data,
-        "Successfully approved Knowledge!",
-    )
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully approved Knowledge!",
+	)
 }
 
 export async function bulkCreate(c: Context): Promise<TypedResponse> {
-    const data: KnowledgeBulkCreateDTO = await c.req.json()
-    const user: UserJWTDAO = c.get("jwtPayload")
+	const data: KnowledgeBulkCreateDTO = await c.req.json()
+	const user: UserJWTDAO = c.get("jwtPayload")
 
-    const serviceResponse = await KnowledgeService.bulkCreate(data, user.id)
+	const serviceResponse = await KnowledgeService.bulkCreate(data, user.id)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_created(
-        c,
-        serviceResponse.data,
-        "Successfully bulk created Knowledge!",
-    )
+	return response_created(
+		c,
+		serviceResponse.data,
+		"Successfully bulk created Knowledge!",
+	)
 }
 
 export async function bulkCreateTypeCase(c: Context): Promise<TypedResponse> {
-    const data: KnowledgeBulkCreateDTO = await c.req.json()
-    const user: UserJWTDAO = c.get("jwtPayload")
+	const data: KnowledgeBulkCreateDTO = await c.req.json()
+	const user: UserJWTDAO = c.get("jwtPayload")
 
-    const serviceResponse = await KnowledgeService.bulkCreateTypeCase(
-        data,
-        user.id,
-    )
+	const serviceResponse = await KnowledgeService.bulkCreateTypeCase(
+		data,
+		user.id,
+	)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_created(
-        c,
-        serviceResponse.data,
-        "Successfully bulk created Knowledge!",
-    )
+	return response_created(
+		c,
+		serviceResponse.data,
+		"Successfully bulk created Knowledge!",
+	)
 }
 
 export async function archiveOrUnarchiveKnowledge(
-    c: Context,
+	c: Context,
 ): Promise<TypedResponse> {
-    const id = c.req.param("id")
-    const user: UserJWTDAO = c.get("jwtPayload")
-    const tenantId = c.req.param("tenantId")
+	const id = c.req.param("id")
+	const user: UserJWTDAO = c.get("jwtPayload")
+	const tenantId = c.req.param("tenantId")
 
-    const serviceResponse = await KnowledgeService.archiveOrUnarchiveKnowledge(
-        id,
-        user.id,
-        tenantId,
-    )
+	const serviceResponse = await KnowledgeService.archiveOrUnarchiveKnowledge(
+		id,
+		user.id,
+		tenantId,
+	)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(
-        c,
-        serviceResponse.data,
-        "Successfully archived or unarchived Knowledge!",
-    )
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully archived or unarchived Knowledge!",
+	)
 }
 
 export async function shareKnowledge(c: Context): Promise<TypedResponse> {
-    const id = c.req.param("id") 
-    const tenantId = c.req.param("tenantId")
-    const user: UserJWTDAO = c.get("jwtPayload")
-    const data: KnowledgeShareDTO = await c.req.json()
+	const id = c.req.param("id")
+	const tenantId = c.req.param("tenantId")
+	const user: UserJWTDAO = c.get("jwtPayload")
+	const data: KnowledgeShareDTO = await c.req.json()
 
-    // ✅ FIX: Validasi mengembalikan Bad Request (400), bukan Created (201)
-    if (!data.emails || data.emails.length === 0) {
-        return response_bad_request(c, "Emails are required")
-    }
+	// ✅ FIX: Validasi mengembalikan Bad Request (400), bukan Created (201)
+	if (!data.emails || data.emails.length === 0) {
+		return response_bad_request(c, "Emails are required")
+	}
 
-    const serviceResponse = await KnowledgeService.shareKnowledge(
-        user.id,
-        tenantId,
-        id,
-        data
-    )
+	const serviceResponse = await KnowledgeService.shareKnowledge(
+		user.id,
+		tenantId,
+		id,
+		data,
+	)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(
-        c,
-        serviceResponse.data,
-        "Successfully shared knowledge!"
-    )
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully shared knowledge!",
+	)
 }
 
 export async function getShareHistory(c: Context): Promise<TypedResponse> {
-    const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(
-        c.req.query()
-    )
-    const tenantId = c.req.param("tenantId")
-    const user: UserJWTDAO = c.get("jwtPayload")
+	const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(
+		c.req.query(),
+	)
+	const tenantId = c.req.param("tenantId")
+	const user: UserJWTDAO = c.get("jwtPayload")
 
-    const serviceResponse = await KnowledgeService.getShareHistory(
-        user.id,
-        tenantId,
-        filters
-    )
+	const serviceResponse = await KnowledgeService.getShareHistory(
+		user.id,
+		tenantId,
+		filters,
+	)
 
-    if (!serviceResponse.status) {
-        return handleServiceErrorWithResponse(c, serviceResponse)
-    }
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
 
-    return response_success(
-        c,
-        serviceResponse.data,
-        "Successfully fetched share history!"
-    )
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully fetched share history!",
+	)
 }
