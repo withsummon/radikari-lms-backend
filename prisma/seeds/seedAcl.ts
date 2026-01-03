@@ -34,7 +34,7 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 		},
 		{
 			featureName: "ASSIGNMENT",
-			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL"],
 		},
 		{
 			featureName: "FORUM",
@@ -99,6 +99,16 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 		}
 	}
 
+	// [CLEANUP] Remove restricted system features from all non-admin roles to ensure strict restriction
+	console.log("  Cleaning up restricted features from existing roles...")
+	await prisma.accessControlList.deleteMany({
+		where: {
+			featureName: {
+				in: ["ACCESS_CONTROL_LIST", "TENANT", "USER_ACTIVITY_LOG"],
+			},
+		},
+	})
+
 	const allAction = await prisma.aclAction.findMany({
 		include: {
 			feature: true,
@@ -129,7 +139,6 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 	// Define feature sets for each role type
 	const headOfOfficeFeatures = [
 		{ featureName: "USER_MANAGEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "TENANT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
 		{ featureName: "OPERATION", actions: ["VIEW"] },
 		{ featureName: "ANNOUNCEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
@@ -142,7 +151,6 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 
 	const opsSupervisorFeatures = [
 		{ featureName: "USER_MANAGEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "TENANT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
 		{ featureName: "OPERATION", actions: ["VIEW"] },
 		{ featureName: "ANNOUNCEMENT", actions: ["VIEW"] },
@@ -154,7 +162,6 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 	]
 
 	const teamLeaderFeatures = [
-		{ featureName: "TENANT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
 		{ featureName: "OPERATION", actions: ["VIEW"] },
 		{ featureName: "ANNOUNCEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
@@ -167,9 +174,8 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 
 	const checkerFeatures = [
 		{ featureName: "USER_MANAGEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "ACCESS_CONTROL_LIST", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "KNOWLEDGE", actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"] },
-		{ featureName: "ASSIGNMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "ASSIGNMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL"] },
 		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "AI_PROMPT", actions: ["VIEW", "UPDATE"] },
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
@@ -180,7 +186,7 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 	const makerFeatures = [
 		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
 		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
-		{ featureName: "ASSIGNMENT", actions: ["CREATE", "VIEW", "UPDATE"] },
+		{ featureName: "ASSIGNMENT", actions: ["CREATE", "VIEW", "UPDATE", "APPROVAL"] },
 		{ featureName: "USER_MANAGEMENT", actions: ["VIEW"] },
 		{ featureName: "FORUM", actions: ["VIEW"] },
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
@@ -196,14 +202,11 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 
 	const qaTrainerFeatures = [
 		{ featureName: "USER_MANAGEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "ACCESS_CONTROL_LIST", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "TENANT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "KNOWLEDGE", actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"] },
 		{ featureName: "BULK_UPLOAD", actions: ["CREATE"] },
 		{ featureName: "ANNOUNCEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "ASSIGNMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "ASSIGNMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL"] },
 		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "USER_ACTIVITY_LOG", actions: ["VIEW"] },
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
 		{ featureName: "BROADCAST", actions: ["VIEW", "UPDATE"] },
@@ -240,7 +243,7 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 						continue
 					}
 
-					const mappingExists = await prisma.accessControlList.findUnique({
+					await prisma.accessControlList.upsert({
 						where: {
 							featureName_actionName_tenantRoleId: {
 								featureName: action.feature.name,
@@ -248,29 +251,22 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 								tenantRoleId: role.id,
 							},
 						},
-					})
-
-					if (!mappingExists) {
-						accessControlListCreateManyData.push({
+						update: {
+							updatedById: adminExist.id,
+						},
+						create: {
 							id: ulid(),
 							featureName: action.feature.name,
 							actionName: action.name,
 							tenantRoleId: role.id,
 							createdById: adminExist.id,
 							updatedById: adminExist.id,
-						})
-					}
+						},
+					})
 				}
 			}
 		}
 	}
 
-	if (accessControlListCreateManyData.length > 0) {
-		const result = await prisma.accessControlList.createMany({
-			data: accessControlListCreateManyData,
-		})
-		console.log(`Access Control List created: ${result.count} mappings added`)
-	} else {
-		console.log("Access Control List is up to date (no new mappings needed)")
-	}
+	console.log("Access Control List updated successfully")
 }

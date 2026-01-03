@@ -110,6 +110,13 @@ export async function getAll(
 		},
 	}
 
+	if (rawFilters && typeof rawFilters === "object" && Object.keys(rawFilters).length > 0) {
+		if (!usedFilters.query.where.AND) {
+			usedFilters.query.where.AND = []
+		}
+		usedFilters.query.where.AND.push(rawFilters)
+	}
+
 	// Show all versions (remove the children filter)
 	usedFilters.query.where.AND.push({
 		isArchived: false,

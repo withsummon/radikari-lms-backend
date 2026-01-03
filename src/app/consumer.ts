@@ -17,6 +17,13 @@ export async function startConsumerApp() {
 		},
 	)
 
+	await commonChannel.consume(
+		PUBSUB_TOPICS.ASSIGNMENT_REGRADE_ATTEMPT,
+		async (message) => {
+			await AssignmentAttemptController.calculateAssignmentScore(message)
+		},
+	)
+
 	await notificationChannel.consume(
 		PUBSUB_TOPICS.KNOWLEDGE_APPROVAL_NOTIFICATION,
 		async (message) => {

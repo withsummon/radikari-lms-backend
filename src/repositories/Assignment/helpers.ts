@@ -19,13 +19,16 @@ export async function generatedFilterForAssignment(
 		tenantRoles.find(
 			(tenantRole) =>
 				tenantRole.identifier == TenantRoleIdentifier.QUALITY_ASSURANCE ||
-				tenantRole.identifier == TenantRoleIdentifier.TRAINER,
+				tenantRole.identifier == TenantRoleIdentifier.TRAINER ||
+				tenantRole.identifier == TenantRoleIdentifier.MAKER ||
+				tenantRole.identifier == TenantRoleIdentifier.CHECKER,
 		)
 	) {
 		return usedFilters
 	}
 
 	usedFilters.query.where.AND.push({
+		status: "PUBLISHED",
 		OR: [
 			{
 				assignmentTenantRoleAccesses: {

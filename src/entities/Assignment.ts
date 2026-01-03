@@ -1,6 +1,7 @@
 import {
 	AssignmentAccess,
 	AssignmentQuestionType,
+	AssignmentStatus,
 } from "../../generated/prisma/client"
 
 export interface AssignmentCreateDTO {
@@ -15,6 +16,7 @@ export interface AssignmentCreateDTO {
 	userEmails: string[]
 	isRandomized: boolean
 	questions: AssignmentQuestionDTO[]
+	status?: AssignmentStatus
 }
 
 export interface AssignmentDTO {
@@ -26,6 +28,13 @@ export interface AssignmentDTO {
 	expiredDate: string
 	access: AssignmentAccess
 	isRandomized: boolean
+	status: AssignmentStatus
+	rejectionComment?: string | null
+}
+
+export interface AssignmentApprovalDTO {
+	action: "APPROVE" | "REVISION" | "REJECT"
+	comment?: string
 }
 
 export interface AssignmentQuestionDTO {
