@@ -2,8 +2,6 @@ import { Hono } from "hono"
 import * as AssignmentController from "$controllers/rest/AssignmentController"
 import * as AuthMiddleware from "$middlewares/authMiddleware"
 import * as AssignmentValidation from "$validations/AssignmentValidation"
-import { TenantRoleIdentifier } from "$entities/TenantRole"
-
 const AssignmentRoutes = new Hono()
 
 AssignmentRoutes.get(
@@ -72,12 +70,7 @@ AssignmentRoutes.get(
 AssignmentRoutes.post(
 	"/",
 	AuthMiddleware.checkJwt,
-	AuthMiddleware.checkRoleAssignmentAccess([
-		TenantRoleIdentifier.TRAINER,
-		TenantRoleIdentifier.QUALITY_ASSURANCE,
-		TenantRoleIdentifier.MAKER,
-		TenantRoleIdentifier.CHECKER,
-	]),
+	AuthMiddleware.checkAccessTenantRole("ASSIGNMENT", "CREATE"),
 	AssignmentValidation.validateAssignmentSchema,
 	AssignmentController.create,
 )
@@ -85,37 +78,29 @@ AssignmentRoutes.post(
 AssignmentRoutes.post(
 	"/generate-questions",
 	AuthMiddleware.checkJwt,
-	AuthMiddleware.checkRoleAssignmentAccess([
-		TenantRoleIdentifier.TRAINER,
-		TenantRoleIdentifier.QUALITY_ASSURANCE,
-		TenantRoleIdentifier.MAKER,
-		TenantRoleIdentifier.CHECKER,
-	]),
+	AuthMiddleware.checkAccessTenantRole("ASSIGNMENT", "CREATE"),
 	AssignmentController.generateQuestionsStream,
 )
 
 AssignmentRoutes.put(
 	"/:id",
 	AuthMiddleware.checkJwt,
-	AuthMiddleware.checkRoleAssignmentAccess([
-		TenantRoleIdentifier.TRAINER,
-		TenantRoleIdentifier.QUALITY_ASSURANCE,
-		TenantRoleIdentifier.MAKER,
-		TenantRoleIdentifier.CHECKER,
-	]),
+	AuthMiddleware.checkAccessTenantRole("ASSIGNMENT", "UPDATE"),
 	AssignmentValidation.validateAssignmentSchema,
 	AssignmentController.update,
+)
+
+AssignmentRoutes.post(
+	"/:id/approve",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkAccessTenantRole("ASSIGNMENT", "APPROVAL"),
+	AssignmentController.approveById,
 )
 
 AssignmentRoutes.delete(
 	"/:id",
 	AuthMiddleware.checkJwt,
-	AuthMiddleware.checkRoleAssignmentAccess([
-		TenantRoleIdentifier.TRAINER,
-		TenantRoleIdentifier.QUALITY_ASSURANCE,
-		TenantRoleIdentifier.MAKER,
-		TenantRoleIdentifier.CHECKER,
-	]),
+	AuthMiddleware.checkAccessTenantRole("ASSIGNMENT", "DELETE"),
 	AssignmentController.deleteById,
 )
 

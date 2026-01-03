@@ -120,6 +120,30 @@ export async function deleteById(c: Context): Promise<TypedResponse> {
 	)
 }
 
+export async function approveById(c: Context): Promise<TypedResponse> {
+	const id = c.req.param("id")
+	const tenantId = c.req.param("tenantId")
+	const user: UserJWTDAO = c.get("jwtPayload")
+	const data = await c.req.json()
+
+	const serviceResponse = await AssignmentService.approveById(
+		id,
+		tenantId,
+		user.id,
+		data,
+	)
+
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
+
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully updated assignment status!",
+	)
+}
+
 export async function getSummaryByUserIdAndTenantId(
 	c: Context,
 ): Promise<TypedResponse> {

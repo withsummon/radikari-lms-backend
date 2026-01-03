@@ -58,6 +58,7 @@ model User {
   forumComments                        ForumComment[]
   forumLikes                           ForumLike[]
   forumCommentLikes                    ForumCommentLike[]
+  assignmentsRevising                  Assignment[]                          @relation("AssignmentRevisor")
   forumPinneds                         ForumPinned[]
   userActivityLogs                     UserActivityLog[]
   notifications                        Notification[]
@@ -426,6 +427,10 @@ enum AssignmentAccess {
 
 enum AssignmentStatus {
   DRAFT
+  PENDING
+  APPROVED
+  REVISION
+  REJECTED
   PUBLISHED
   EXPIRED
 }
@@ -441,10 +446,13 @@ model Assignment {
   showAnswer        Boolean          @default(false)
   expiredDate       String
   tenantId          String
+  rejectionComment  String?          @db.Text
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
   createdByUserId   String?
   createdByUser     User?            @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  lastRevisionByUserId String?
+  lastRevisionByUser   User?            @relation("AssignmentRevisor", fields: [lastRevisionByUserId], references: [id], onDelete: SetNull)
 
   assignmentTenantRoleAccesses AssignmentTenantRoleAccess[]
   assignmentUserAccesses       AssignmentUserAccess[]

@@ -34,7 +34,7 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 		},
 		{
 			featureName: "ASSIGNMENT",
-			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL"],
 		},
 		{
 			featureName: "FORUM",
@@ -175,7 +175,7 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 	const checkerFeatures = [
 		{ featureName: "USER_MANAGEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "KNOWLEDGE", actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"] },
-		{ featureName: "ASSIGNMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "ASSIGNMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL"] },
 		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "AI_PROMPT", actions: ["VIEW", "UPDATE"] },
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
@@ -186,7 +186,7 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 	const makerFeatures = [
 		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
 		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
-		{ featureName: "ASSIGNMENT", actions: ["CREATE", "VIEW", "UPDATE"] },
+		{ featureName: "ASSIGNMENT", actions: ["CREATE", "VIEW", "UPDATE", "APPROVAL"] },
 		{ featureName: "USER_MANAGEMENT", actions: ["VIEW"] },
 		{ featureName: "FORUM", actions: ["VIEW"] },
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
@@ -205,7 +205,7 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 		{ featureName: "KNOWLEDGE", actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"] },
 		{ featureName: "BULK_UPLOAD", actions: ["CREATE"] },
 		{ featureName: "ANNOUNCEMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "ASSIGNMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "ASSIGNMENT", actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL"] },
 		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
@@ -243,7 +243,7 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 						continue
 					}
 
-					const mappingExists = await prisma.accessControlList.findUnique({
+					await prisma.accessControlList.upsert({
 						where: {
 							featureName_actionName_tenantRoleId: {
 								featureName: action.feature.name,
@@ -251,29 +251,22 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 								tenantRoleId: role.id,
 							},
 						},
-					})
-
-					if (!mappingExists) {
-						accessControlListCreateManyData.push({
+						update: {
+							updatedById: adminExist.id,
+						},
+						create: {
 							id: ulid(),
 							featureName: action.feature.name,
 							actionName: action.name,
 							tenantRoleId: role.id,
 							createdById: adminExist.id,
 							updatedById: adminExist.id,
-						})
-					}
+						},
+					})
 				}
 			}
 		}
 	}
 
-	if (accessControlListCreateManyData.length > 0) {
-		const result = await prisma.accessControlList.createMany({
-			data: accessControlListCreateManyData,
-		})
-		console.log(`Access Control List created: ${result.count} mappings added`)
-	} else {
-		console.log("Access Control List is up to date (no new mappings needed)")
-	}
+	console.log("Access Control List updated successfully")
 }

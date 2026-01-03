@@ -21,6 +21,7 @@ export async function create(data: AssignmentCreateDTO) {
 					...rest,
 					id: data.id || ulid(),
 					isRandomized: data.isRandomized,
+					status: data.status || "PENDING",
 				},
 			})
 
@@ -112,6 +113,13 @@ export async function getAll(
 		},
 	}
 
+	if (rawFilters && typeof rawFilters === "object" && Object.keys(rawFilters).length > 0) {
+		if (!usedFilters.query.where.AND) {
+			usedFilters.query.where.AND = []
+		}
+		usedFilters.query.where.AND.push(rawFilters)
+	}
+
 	usedFilters.query.where.AND.push({
 		tenantId,
 	})
@@ -156,6 +164,14 @@ export async function getById(id: string, tenantId: string) {
 			},
 			assignmentTenantRoleAccesses: true,
 			assignmentUserAccesses: true,
+			lastRevisionByUser: {
+				select: {
+					id: true,
+					fullName: true,
+					profilePictureUrl: true,
+					role: true,
+				},
+			},
 		},
 	})
 }
@@ -243,6 +259,31 @@ export async function update(id: string, data: AssignmentCreateDTO) {
 	)
 }
 
+export async function approveById(
+	id: string,
+	tenantId: string,
+	userId: string,
+	data: { action: "APPROVE" | "REVISION" | "REJECT"; comment?: string },
+) {
+	const statusMap = {
+		APPROVE: "PUBLISHED",
+		REVISION: "REVISION",
+		REJECT: "REJECTED",
+	}
+
+	return await prisma.assignment.update({
+		where: {
+			id,
+			tenantId,
+		},
+		data: {
+			status: statusMap[data.action] as any,
+			rejectionComment: data.comment,
+			lastRevisionByUserId: data.action === "REVISION" ? userId : undefined,
+		},
+	})
+}
+
 export async function deleteById(id: string, tenantId: string) {
 	return await prisma.assignment.delete({
 		where: {
@@ -303,19 +344,41 @@ export async function countSubmittedAssignmentByUserIdAndTenantId(
     `
 }
 
+export async function getTotalAssignmentByStatus(
+	tenantId: string,
+	status: string,
+) {
+	return prisma.assignment.count({
+		where: {
+			tenantId,
+			status: status as any,
+		},
+	})
+}
+
 export async function getTotalAssignmentByTenantId(tenantId: string) {
-	return prisma.$queryRaw`
-        SELECT
-            COUNT(*)
-        FROM "Assignment" a
-        WHERE a."tenantId" = ${tenantId}
-    `
+	return prisma.assignment.count({
+		where: {
+			tenantId,
+		},
+	})
 }
 
 export async function getTotalCompletedAssignmentByTenantId(tenantId: string) {
+	return prisma.assignment.count({
+		where: {
+			tenantId,
+			assignmentUserAttempts: {
+				some: {
+					isSubmitted: true,
+				},
+			},
+		},
+	})
+}
+
+export async function getTotalReachedGoalAssignmentByTenantId(tenantId: string) {
 	return prisma.$queryRaw`
-        WITH assignment_user_count AS (
-            -- For USER access: count AssignmentUserAccess per assignment
             SELECT 
                 a.id,
                 COUNT(DISTINCT aua."userId") as required_count
