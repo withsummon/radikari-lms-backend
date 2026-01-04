@@ -27,6 +27,13 @@ KnowledgeRoutes.get(
 )
 
 KnowledgeRoutes.get(
+	"/shared/history",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRoleInTenant,
+	KnowledgeController.getShareHistory,
+)
+
+KnowledgeRoutes.get(
 	"/:id",
 	AuthMiddleware.checkJwt,
 	AuthMiddleware.checkRoleInTenant,
@@ -46,6 +53,13 @@ KnowledgeRoutes.post(
 	AuthMiddleware.checkRoleInTenant,
 	Validations.validateKnowlegeSchema,
 	KnowledgeController.create,
+)
+
+KnowledgeRoutes.post(
+	"/:id/share",
+	AuthMiddleware.checkJwt,
+	AuthMiddleware.checkRoleInTenant,
+	KnowledgeController.shareKnowledge,
 )
 
 KnowledgeRoutes.post(

@@ -35,6 +35,8 @@ import * as TenantRepository from "$repositories/TenantRepository"
 import * as OperationRepository from "$repositories/OperationRepository"
 import * as UserActivityLogService from "$services/UserActivityLogService"
 import * as NotificationService from "$services/NotificationService"
+import { KnowledgeShareDTO } from "$entities/Knowledge"
+import { prisma } from "$pkg/prisma"
 
 export async function create(
 	userId: string,
@@ -322,7 +324,6 @@ export async function approveById(
 			)
 		}
 
-		// Todo handle comment when action is REVISION
 		await KnowledgeRepository.updateStatus(
 			id,
 			userId,
@@ -336,7 +337,7 @@ export async function approveById(
 				"KnowledgeService.approveById: Preparing to send message to queue.",
 				{
 					knowledgeId: knowledge.id,
-					headline: knowledge.headline, // DEBUG: Log the headline from the DB object
+					headline: knowledge.headline,
 				},
 			)
 
@@ -345,7 +346,7 @@ export async function approveById(
 			Logger.info(
 				"KnowledgeService.approveById: Generated payload for queue.",
 				{
-					payload: payload, // DEBUG: Log the entire payload
+					payload: payload,
 				},
 			)
 
@@ -398,8 +399,6 @@ function generateKnowledgeQueueDTO(
 			type: knowledge.type,
 			access: knowledge.access,
 			headline: knowledge.headline,
-			// FIXED: Always include tenantId in metadata for AI service access control
-			// The tenantId represents the context where this knowledge was created
 			tenantId: knowledge.tenantId,
 			accessUserIds:
 				knowledge.access == "EMAIL"
@@ -459,7 +458,6 @@ export async function sendKnowledgeApprovalNotification(
 
 		switch (knowledge.access) {
 			case KnowledgeAccess.TENANT:
-				// Notify all users in the tenant
 				if (knowledge.tenantId) {
 					await NotificationService.notifyTenantUsers(
 						knowledge.tenantId,
@@ -467,13 +465,12 @@ export async function sendKnowledgeApprovalNotification(
 						notificationTitle,
 						notificationMessage,
 						knowledge.id,
-						excludeUserId, // Exclude the approver from notifications
+						excludeUserId,
 					)
 				}
 				break
 
 			case KnowledgeAccess.EMAIL:
-				// Notify specific users who have access via email
 				const userIds = knowledge.userKnowledge
 					.map((uk) => uk.user.id)
 					.filter((id) => id !== excludeUserId)
@@ -491,7 +488,6 @@ export async function sendKnowledgeApprovalNotification(
 				break
 
 			case KnowledgeAccess.PUBLIC:
-				// For PUBLIC access, notify users in the creator's tenant
 				if (knowledge.tenantId) {
 					await NotificationService.notifyTenantUsers(
 						knowledge.tenantId,
@@ -520,7 +516,6 @@ export async function sendKnowledgeApprovalNotification(
 				knowledgeId: knowledgeId,
 			},
 		)
-		// Don't throw - notification failure shouldn't fail the approval
 	}
 }
 
@@ -551,7 +546,7 @@ export async function bulkCreate(data: KnowledgeBulkCreateDTO, userId: string) {
 				if (row["Tenant Name"] === "DANA") {
 					tenant = await TenantRepository.getById("01K9201Z97H20E4NKTEANCFVCP")
 				}
-				console.log("Tenant fetched or created:", tenant) // DEBUG LOG
+				console.log("Tenant fetched or created:", tenant)
 
 				if (!tenant) {
 					const operation = await OperationRepository.findFirst()
@@ -611,8 +606,7 @@ export async function bulkCreate(data: KnowledgeBulkCreateDTO, userId: string) {
 		)
 		await KnowledgeRepository.createManyContent(knwoledgeContentCreateManyInput)
 
-		// Post-creation: Trigger AI indexing
-		const knowledgeIds = knowledgeCreateManyInput.map((k) => k.id as string) // knowledgeCreateManyInput has id
+		const knowledgeIds = knowledgeCreateManyInput.map((k) => k.id as string)
 		const createdKnowledges = await KnowledgeRepository.getByIds(knowledgeIds)
 		const pubsub = GlobalPubSub.getInstance().getPubSub()
 
@@ -807,8 +801,7 @@ export async function bulkCreateTypeCase(
 		await KnowledgeRepository.createMany(knowledgeCreateManyInput)
 		await KnowledgeRepository.createManyContent(knwoledgeContentCreateManyInput)
 
-		// Post-creation: Trigger AI indexing
-		const knowledgeIds = knowledgeCreateManyInput.map((k) => k.id as string) // knowledgeCreateManyInput has id
+		const knowledgeIds = knowledgeCreateManyInput.map((k) => k.id as string)
 		const createdKnowledges = await KnowledgeRepository.getByIds(knowledgeIds)
 		const pubsub = GlobalPubSub.getInstance().getPubSub()
 
@@ -865,6 +858,127 @@ export async function archiveOrUnarchiveKnowledge(
 		Logger.error(`KnowledgeService.archiveOrUnarchiveKnowledge`, {
 			error: error,
 		})
+		return HandleServiceResponseCustomError("Internal Server Error", 500)
+	}
+}
+
+export async function shareKnowledge(
+	userId: string,
+	tenantId: string,
+	knowledgeId: string,
+	data: KnowledgeShareDTO,
+): Promise<ServiceResponse<{}>> {
+	try {
+		const knowledge = await KnowledgeRepository.getById(knowledgeId)
+		if (!knowledge) {
+			return HandleServiceResponseCustomError(
+				"Knowledge not found",
+				ResponseStatus.NOT_FOUND,
+			)
+		}
+
+		const existingUsers = await KnowledgeRepository.findUsersByEmails(
+			data.emails,
+		)
+
+		const recipientsPayload = data.emails.map((email) => {
+			const matchedUser = existingUsers.find((u) => u.email === email)
+			return {
+				email: email,
+				userId: matchedUser ? matchedUser.id : null,
+			}
+		})
+
+		const shareRecord = await KnowledgeRepository.createShare(
+			knowledgeId,
+			userId,
+			data.note,
+			recipientsPayload,
+		)
+
+		await UserActivityLogService.create(
+			userId,
+			"Membagikan pengetahuan",
+			tenantId,
+			`berjudul "${knowledge.headline}" kepada ${data.emails.length} orang`,
+		)
+
+		return HandleServiceResponseSuccess(shareRecord)
+	} catch (err) {
+		Logger.error(`KnowledgeService.shareKnowledge`, { error: err })
+		return HandleServiceResponseCustomError("Internal Server Error", 500)
+	}
+}
+
+export async function getShareHistory(
+	userId: string,
+	tenantId: string,
+	filters: EzFilter.FilteringQuery,
+): Promise<ServiceResponse<{}>> {
+	try {
+		const whereClause: Prisma.KnowledgeShareWhereInput = {
+			AND: [
+				{
+					knowledge: { tenantId: tenantId },
+				},
+				{
+					OR: [
+						{ sharedByUserId: userId },
+						{
+							recipients: {
+								some: {
+									recipientUserId: userId,
+								},
+							},
+						},
+					],
+				},
+			],
+		}
+
+		const [total, entries] = await prisma.$transaction([
+			prisma.knowledgeShare.count({ where: whereClause }),
+			prisma.knowledgeShare.findMany({
+				where: whereClause,
+				orderBy: {
+					createdAt: "desc",
+				},
+				include: {
+					knowledge: {
+						select: {
+							id: true,
+							headline: true,
+							type: true,
+							status: true,
+							tenantId: true,
+						},
+					},
+					recipients: {
+						include: {
+							recipientUser: {
+								select: {
+									fullName: true,
+									email: true,
+								},
+							},
+						},
+					},
+					sharedByUser: {
+						select: {
+							fullName: true,
+							email: true,
+						},
+					},
+				},
+			}),
+		])
+
+		return HandleServiceResponseSuccess({
+			entries,
+			totalData: total,
+		})
+	} catch (err) {
+		Logger.error(`KnowledgeService.getShareHistory`, { error: err })
 		return HandleServiceResponseCustomError("Internal Server Error", 500)
 	}
 }

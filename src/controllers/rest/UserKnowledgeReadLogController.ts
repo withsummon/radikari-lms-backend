@@ -5,13 +5,12 @@ import {
 	handleServiceErrorWithResponse,
 } from "$utils/response.utils"
 
-// Helper sederhana untuk mengubah JSON String ("{...}") menjadi Object ({...})
 const safeParse = (value: any) => {
 	if (typeof value === "string") {
 		try {
 			return JSON.parse(value)
 		} catch {
-			return value // Kembalikan apa adanya jika bukan JSON valid
+			return value
 		}
 	}
 	return value

@@ -4,6 +4,7 @@ import {
 	handleServiceErrorWithResponse,
 	response_created,
 	response_success,
+	response_bad_request, // ✅ Pastikan ini diimport
 } from "$utils/response.utils"
 import {
 	KnowledgeApprovalDTO,
@@ -12,15 +13,15 @@ import {
 } from "$entities/Knowledge"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { UserJWTDAO } from "$entities/User"
-
-// ✅ util baru
+import { KnowledgeShareDTO } from "$entities/Knowledge"
 import { attachOverdueToKnowledgeList } from "$utils/knowledgeOverdue.utils"
 
 export async function create(c: Context): Promise<TypedResponse> {
 	const data: KnowledgeDTO = await c.req.json()
 	const user: UserJWTDAO = c.get("jwtPayload")
 	const tenantId = c.req.param("tenantId")
-	console.log("TENANT ID used in creating knowledge", tenantId)
+
+	// 🧹 Console log dihapus untuk production
 
 	const serviceResponse = await KnowledgeService.create(user.id, tenantId, data)
 
@@ -75,7 +76,6 @@ export async function getAllArchived(c: Context): Promise<TypedResponse> {
 		return handleServiceErrorWithResponse(c, serviceResponse)
 	}
 
-	// ✅ Opsional: tetap kasih overdue flag (kalau archived masih bisa PENDING)
 	const dataWithOverdue = attachOverdueToKnowledgeList(serviceResponse.data, 24)
 
 	return response_success(
@@ -222,7 +222,7 @@ export async function bulkCreate(c: Context): Promise<TypedResponse> {
 		return handleServiceErrorWithResponse(c, serviceResponse)
 	}
 
-	return response_success(
+	return response_created(
 		c,
 		serviceResponse.data,
 		"Successfully bulk created Knowledge!",
@@ -242,7 +242,7 @@ export async function bulkCreateTypeCase(c: Context): Promise<TypedResponse> {
 		return handleServiceErrorWithResponse(c, serviceResponse)
 	}
 
-	return response_success(
+	return response_created(
 		c,
 		serviceResponse.data,
 		"Successfully bulk created Knowledge!",
@@ -270,5 +270,58 @@ export async function archiveOrUnarchiveKnowledge(
 		c,
 		serviceResponse.data,
 		"Successfully archived or unarchived Knowledge!",
+	)
+}
+
+export async function shareKnowledge(c: Context): Promise<TypedResponse> {
+	const id = c.req.param("id")
+	const tenantId = c.req.param("tenantId")
+	const user: UserJWTDAO = c.get("jwtPayload")
+	const data: KnowledgeShareDTO = await c.req.json()
+
+	// ✅ FIX: Validasi mengembalikan Bad Request (400), bukan Created (201)
+	if (!data.emails || data.emails.length === 0) {
+		return response_bad_request(c, "Emails are required")
+	}
+
+	const serviceResponse = await KnowledgeService.shareKnowledge(
+		user.id,
+		tenantId,
+		id,
+		data,
+	)
+
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
+
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully shared knowledge!",
+	)
+}
+
+export async function getShareHistory(c: Context): Promise<TypedResponse> {
+	const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(
+		c.req.query(),
+	)
+	const tenantId = c.req.param("tenantId")
+	const user: UserJWTDAO = c.get("jwtPayload")
+
+	const serviceResponse = await KnowledgeService.getShareHistory(
+		user.id,
+		tenantId,
+		filters,
+	)
+
+	if (!serviceResponse.status) {
+		return handleServiceErrorWithResponse(c, serviceResponse)
+	}
+
+	return response_success(
+		c,
+		serviceResponse.data,
+		"Successfully fetched share history!",
 	)
 }

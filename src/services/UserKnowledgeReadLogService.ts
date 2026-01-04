@@ -17,7 +17,6 @@ function fail(
 	return { status: false, message, error, code }
 }
 
-// Admin checker: list logs scoped by tenant
 export async function getAllByTenant(tenantId: string, filters: any) {
 	try {
 		const data = await UserKnowledgeReadLogRepository.getAllByTenant(
@@ -30,14 +29,12 @@ export async function getAllByTenant(tenantId: string, filters: any) {
 	}
 }
 
-// User: get status (scoped by tenant)
 export async function getStatusInTenant(
 	tenantId: string,
 	userId: string,
 	knowledgeId: string,
 ) {
 	try {
-		// Ensure knowledge belongs to tenant (prevent cross-tenant probing)
 		const knowledge = await prisma.knowledge.findFirst({
 			where: { id: knowledgeId, tenantId },
 			select: { id: true },
@@ -54,7 +51,6 @@ export async function getStatusInTenant(
 	}
 }
 
-// User: mark viewed (scoped by tenant)
 export async function markViewedInTenant(
 	tenantId: string,
 	userId: string,
