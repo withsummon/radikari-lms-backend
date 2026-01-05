@@ -1,7 +1,6 @@
 import { Hono } from "hono"
 import * as AuthMiddleware from "$middlewares/authMiddleware"
 import * as AccessControlListController from "$controllers/rest/AccessControlListController"
-import { Roles } from "../../generated/prisma/client"
 import * as AccessControlListValidation from "$validations/AccessControlListValidation"
 
 const AccessControlListRoutes = new Hono()
@@ -9,7 +8,6 @@ const AccessControlListRoutes = new Hono()
 AccessControlListRoutes.post(
 	"/tenant-roles",
 	AuthMiddleware.checkJwt,
-	AuthMiddleware.checkRole([Roles.ADMIN]),
 	AccessControlListValidation.validateAccessControlListCreateRoleSchema,
 	AccessControlListController.createRole,
 )
@@ -17,7 +15,6 @@ AccessControlListRoutes.post(
 AccessControlListRoutes.put(
 	"/tenant-roles/:tenantRoleId/access",
 	AuthMiddleware.checkJwt,
-	AuthMiddleware.checkRole([Roles.ADMIN]),
 	AccessControlListValidation.validateAccessControlListUpdateAccessSchema,
 	AccessControlListController.updateRoleAccess,
 )

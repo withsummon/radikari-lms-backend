@@ -50,11 +50,16 @@ const ROLE_ACL_PERMISSIONS: Record<
 			featureName: "ASSIGNMENT",
 			actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL"],
 		},
+		{
+			featureName: "ANNOUNCEMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
 		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "AI_PROMPT", actions: ["VIEW", "UPDATE"] },
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "BROADCAST", actions: ["VIEW", "UPDATE"] },
+		{ featureName: "BROADCAST", actions: ["CREATE", "VIEW", "UPDATE"] },
 		{ featureName: "BULK_UPLOAD", actions: ["CREATE"] },
+		{ featureName: "ACCESS_CONTROL_LIST", actions: ["VIEW", "UPDATE"] },
 	],
 	MAKER: [
 		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
@@ -63,9 +68,15 @@ const ROLE_ACL_PERMISSIONS: Record<
 			featureName: "ASSIGNMENT",
 			actions: ["CREATE", "VIEW", "UPDATE", "APPROVAL"],
 		},
+		{
+			featureName: "ANNOUNCEMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
 		{ featureName: "USER_MANAGEMENT", actions: ["VIEW"] },
 		{ featureName: "FORUM", actions: ["VIEW"] },
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "BROADCAST", actions: ["CREATE", "VIEW", "UPDATE"] },
+		{ featureName: "ACCESS_CONTROL_LIST", actions: ["VIEW", "UPDATE"] },
 	],
 	CONSUMER: [
 		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
