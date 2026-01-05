@@ -48,7 +48,7 @@ const ROLE_ACL_PERMISSIONS: Record<
 		},
 		{
 			featureName: "ASSIGNMENT",
-			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL"],
 		},
 		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "AI_PROMPT", actions: ["VIEW", "UPDATE"] },
@@ -59,7 +59,10 @@ const ROLE_ACL_PERMISSIONS: Record<
 	MAKER: [
 		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
 		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
-		{ featureName: "ASSIGNMENT", actions: ["CREATE", "VIEW", "UPDATE"] },
+		{
+			featureName: "ASSIGNMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "APPROVAL"],
+		},
 		{ featureName: "USER_MANAGEMENT", actions: ["VIEW"] },
 		{ featureName: "FORUM", actions: ["VIEW"] },
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
