@@ -36,14 +36,14 @@ UserRoutes.put(
 UserRoutes.delete(
 	"/:id",
 	AuthMiddleware.checkJwt,
-	AuthMiddleware.checkRole([Roles.ADMIN]),
+	AuthMiddleware.checkAccessTenantRole("USER_MANAGEMENT", "DELETE"),
 	UserController.deleteById,
 )
 
 UserRoutes.post(
 	"/restore/:id",
 	AuthMiddleware.checkJwt,
-	AuthMiddleware.checkRole([Roles.ADMIN]),
+	AuthMiddleware.checkAccessTenantRole("USER_MANAGEMENT", "UPDATE"),
 	UserController.restoreById,
 )
 
