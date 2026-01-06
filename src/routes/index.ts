@@ -19,38 +19,41 @@ router.put(
 
 router.route("/users", RoutesRegistry.UserRoutes)
 router.route("/tenants", RoutesRegistry.TenantRoutes)
+
 router.route(
-	"/master-knowledge-categories",
+	"/tenants/:tenantId/master-knowledge-categories",
 	RoutesRegistry.MasterKnowledgeCategoryRoutes,
 )
 router.route(
-	"/master-knowledge-sub-categories",
+	"/tenants/:tenantId/master-knowledge-sub-categories",
 	RoutesRegistry.MasterKnowledgeSubCategoryRoutes,
 )
 router.route(
-	"/master-knowledge-cases",
+	"/tenants/:tenantId/master-knowledge-cases",
 	RoutesRegistry.MasterKnowledgeCaseRoutes,
 )
+
 router.route(
 	"/tenants/:tenantId/users/manage",
 	RoutesRegistry.TenantUserManagementRoutes,
 )
+
 router.route("/tenants/:tenantId/knowledges", RoutesRegistry.KnowledgeRoutes)
-router.route("/bulk", RoutesRegistry.BulkKnowledgeRoutes)
-router.route("/access-control-lists", RoutesRegistry.AccessControlListRoutes)
 router.route("/tenants/:tenantId/assignments", RoutesRegistry.AssignmentRoutes)
 router.route(
 	"/tenants/:tenantId/announcements",
 	RoutesRegistry.AnnouncementRoutes,
 )
 router.route("/tenants/:tenantId/forums", RoutesRegistry.ForumRoutes)
-router.route("/user-activity-logs", RoutesRegistry.UserActivityLogRoutes)
-router.route("/notifications", RoutesRegistry.NotificationRoutes)
 router.route("/tenants/:tenantId/ai-prompts", RoutesRegistry.AiPromptRoutes)
 router.route("/tenants/:tenantId/broadcasts", RoutesRegistry.BroadcastRoutes)
+
+router.route("/bulk", RoutesRegistry.BulkKnowledgeRoutes)
+router.route("/access-control-lists", RoutesRegistry.AccessControlListRoutes)
+router.route("/user-activity-logs", RoutesRegistry.UserActivityLogRoutes)
+router.route("/notifications", RoutesRegistry.NotificationRoutes)
 router.route("/analytics", RoutesRegistry.AnalyticsRoutes)
 
-// AI Chat
 router.route("/ai-chat", RoutesRegistry.ChatRoutes)
 router.route("/ephemeral", RoutesRegistry.EphemeralRoutes)
 router.route("/storage", RoutesRegistry.StorageRoutes)

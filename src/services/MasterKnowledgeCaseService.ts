@@ -2,6 +2,7 @@ import { MasterKnowledgeCase } from "../../generated/prisma/client"
 import { MasterKnowledgeCaseDTO } from "$entities/MasterKnowledgeCase"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import * as MasterKnowledgeCaseRepository from "$repositories/MasterKnowledgeCaseRepository"
+import { prisma } from "$pkg/prisma"
 import {
 	HandleServiceResponseCustomError,
 	HandleServiceResponseSuccess,
@@ -10,11 +11,34 @@ import {
 } from "$entities/Service"
 import Logger from "$pkg/logger"
 
+// Interface agar return type rapi
+
 export async function create(
+	tenantId: string,
 	data: MasterKnowledgeCaseDTO,
 ): Promise<ServiceResponse<MasterKnowledgeCase | {}>> {
 	try {
-		const createdData = await MasterKnowledgeCaseRepository.create(data)
+		// 1. Validasi Parent (SubCategory) harus milik Tenant yg sama
+		const parentSub = await prisma.masterKnowledgeSubCategory.findFirst({
+			where: {
+				id: data.subCategoryId,
+				tenantId: tenantId,
+			},
+		})
+
+		if (!parentSub) {
+			return HandleServiceResponseCustomError(
+				"Invalid Sub-Category Parent or Tenant Mismatch",
+				400,
+			)
+		}
+
+		// 2. Create Case dengan Tenant ID
+		// 2. Create Case dengan Tenant ID
+		const createdData = await MasterKnowledgeCaseRepository.create({
+			...data,
+			tenantId,
+		})
 		return HandleServiceResponseSuccess(createdData)
 	} catch (err) {
 		Logger.error(`MasterKnowledgeCaseService.create : `, {
@@ -25,13 +49,47 @@ export async function create(
 }
 
 export async function getAll(
+	tenantId: string,
 	filters: EzFilter.FilteringQuery,
 ): Promise<
 	ServiceResponse<EzFilter.PaginatedResult<MasterKnowledgeCase[]> | {}>
 > {
 	try {
-		const data = await MasterKnowledgeCaseRepository.getAll(filters)
-		return HandleServiceResponseSuccess(data)
+		const queryOptions = EzFilter.buildFilterQuery(filters)
+
+		const whereClause = {
+			...queryOptions.where,
+			tenantId: tenantId,
+		}
+
+		const [data, total] = await Promise.all([
+			prisma.masterKnowledgeCase.findMany({
+				where: whereClause,
+				orderBy: queryOptions.orderBy,
+				take: queryOptions.take,
+				skip: queryOptions.skip,
+				include: {
+					subCategory: {
+						include: {
+							category: true, // Include Grandparent
+						},
+					},
+				},
+			}),
+			prisma.masterKnowledgeCase.count({
+				where: whereClause,
+			}),
+		])
+
+		let totalPage = 1
+		if (total > queryOptions.take)
+			totalPage = Math.ceil(total / queryOptions.take)
+
+		return HandleServiceResponseSuccess({
+			entries: data,
+			totalData: total,
+			totalPage,
+		})
 	} catch (err) {
 		Logger.error(`MasterKnowledgeCaseService.getAll`, {
 			error: err,
@@ -39,12 +97,16 @@ export async function getAll(
 		return HandleServiceResponseCustomError("Internal Server Error", 500)
 	}
 }
-
 export async function getById(
 	id: string,
 ): Promise<ServiceResponse<MasterKnowledgeCase | {}>> {
 	try {
-		let masterKnowledgeCase = await MasterKnowledgeCaseRepository.getById(id)
+		const masterKnowledgeCase = await prisma.masterKnowledgeCase.findUnique({
+			where: { id },
+			include: {
+				subCategory: true,
+			},
+		})
 
 		if (!masterKnowledgeCase)
 			return HandleServiceResponseCustomError(
@@ -67,17 +129,22 @@ export async function update(
 	data: MasterKnowledgeCaseDTO,
 ): Promise<ServiceResponse<UpdateResponse>> {
 	try {
-		let masterKnowledgeCase = await MasterKnowledgeCaseRepository.getById(id)
+		const existing = await prisma.masterKnowledgeCase.findUnique({
+			where: { id },
+		})
 
-		if (!masterKnowledgeCase)
+		if (!existing)
 			return HandleServiceResponseCustomError(
 				"Invalid ID",
 				ResponseStatus.NOT_FOUND,
 			)
 
-		masterKnowledgeCase = await MasterKnowledgeCaseRepository.update(id, data)
+		const updated = await prisma.masterKnowledgeCase.update({
+			where: { id },
+			data: { name: data.name },
+		})
 
-		return HandleServiceResponseSuccess(masterKnowledgeCase)
+		return HandleServiceResponseSuccess(updated)
 	} catch (err) {
 		Logger.error(`MasterKnowledgeCaseService.update`, {
 			error: err,
@@ -88,7 +155,15 @@ export async function update(
 
 export async function deleteById(id: string): Promise<ServiceResponse<{}>> {
 	try {
-		await MasterKnowledgeCaseRepository.deleteById(id)
+		const existing = await prisma.masterKnowledgeCase.findUnique({
+			where: { id },
+		})
+		if (!existing)
+			return HandleServiceResponseCustomError("Case not found", 404)
+
+		await prisma.masterKnowledgeCase.delete({
+			where: { id },
+		})
 		return HandleServiceResponseSuccess({})
 	} catch (err) {
 		Logger.error(`MasterKnowledgeCaseService.deleteById`, {

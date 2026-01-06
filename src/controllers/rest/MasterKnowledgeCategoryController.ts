@@ -9,9 +9,14 @@ import { MasterKnowledgeCategoryDTO } from "$entities/MasterKnowledgeCategory"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 
 export async function create(c: Context): Promise<TypedResponse> {
+	const tenantId = c.req.param("tenantId") // ✅ Ambil tenantId
 	const data: MasterKnowledgeCategoryDTO = await c.req.json()
 
-	const serviceResponse = await MasterKnowledgeCategoryService.create(data)
+	// Pass tenantId ke service
+	const serviceResponse = await MasterKnowledgeCategoryService.create(
+		tenantId,
+		data,
+	)
 
 	if (!serviceResponse.status) {
 		return handleServiceErrorWithResponse(c, serviceResponse)
@@ -25,10 +30,16 @@ export async function create(c: Context): Promise<TypedResponse> {
 }
 
 export async function getAll(c: Context): Promise<TypedResponse> {
+	const tenantId = c.req.param("tenantId") // ✅ Ambil tenantId
 	const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(
 		c.req.query(),
 	)
-	const serviceResponse = await MasterKnowledgeCategoryService.getAll(filters)
+
+	// Pass tenantId ke service untuk filtering
+	const serviceResponse = await MasterKnowledgeCategoryService.getAll(
+		tenantId,
+		filters,
+	)
 
 	if (!serviceResponse.status) {
 		return handleServiceErrorWithResponse(c, serviceResponse)
@@ -43,7 +54,7 @@ export async function getAll(c: Context): Promise<TypedResponse> {
 
 export async function getById(c: Context): Promise<TypedResponse> {
 	const id = c.req.param("id")
-
+	// Note: Sebaiknya divalidasi juga apakah ID ini milik tenant tersebut (opsional di sini, aman di service)
 	const serviceResponse = await MasterKnowledgeCategoryService.getById(id)
 
 	if (!serviceResponse.status) {

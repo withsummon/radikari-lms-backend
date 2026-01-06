@@ -9,9 +9,14 @@ import { MasterKnowledgeCaseDTO } from "$entities/MasterKnowledgeCase"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 
 export async function create(c: Context): Promise<TypedResponse> {
+	const tenantId = c.req.param("tenantId") // ✅ Ambil Tenant ID dari URL
 	const data: MasterKnowledgeCaseDTO = await c.req.json()
 
-	const serviceResponse = await MasterKnowledgeCaseService.create(data)
+	// Pass tenantId ke service
+	const serviceResponse = await MasterKnowledgeCaseService.create(
+		tenantId,
+		data,
+	)
 
 	if (!serviceResponse.status) {
 		return handleServiceErrorWithResponse(c, serviceResponse)
@@ -25,10 +30,16 @@ export async function create(c: Context): Promise<TypedResponse> {
 }
 
 export async function getAll(c: Context): Promise<TypedResponse> {
+	const tenantId = c.req.param("tenantId") // ✅ Ambil Tenant ID
 	const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(
 		c.req.query(),
 	)
-	const serviceResponse = await MasterKnowledgeCaseService.getAll(filters)
+
+	// Pass tenantId ke service
+	const serviceResponse = await MasterKnowledgeCaseService.getAll(
+		tenantId,
+		filters,
+	)
 
 	if (!serviceResponse.status) {
 		return handleServiceErrorWithResponse(c, serviceResponse)
@@ -43,7 +54,6 @@ export async function getAll(c: Context): Promise<TypedResponse> {
 
 export async function getById(c: Context): Promise<TypedResponse> {
 	const id = c.req.param("id")
-
 	const serviceResponse = await MasterKnowledgeCaseService.getById(id)
 
 	if (!serviceResponse.status) {
@@ -76,7 +86,6 @@ export async function update(c: Context): Promise<TypedResponse> {
 
 export async function deleteById(c: Context): Promise<TypedResponse> {
 	const id = c.req.param("id")
-
 	const serviceResponse = await MasterKnowledgeCaseService.deleteById(id)
 
 	if (!serviceResponse.status) {

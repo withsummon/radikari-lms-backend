@@ -1,17 +1,15 @@
 import { z } from "zod"
 
-export const MasterKnowledgeCaseSchema = z
+export const MasterKnowledgeSubCategorySchema = z
 	.strictObject({
 		id: z.string().optional(),
-
 		name: z.string({
 			error: (issue) =>
 				issue.input === undefined ? "name is required" : undefined,
 		}),
-
-		subCategoryId: z.string({
+		categoryId: z.string({
 			error: (issue) =>
-				issue.input === undefined ? "subCategoryId is required" : undefined,
+				issue.input === undefined ? "categoryId is required" : undefined,
 		}),
 	})
 	.strict()

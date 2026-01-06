@@ -87,7 +87,7 @@ export async function getAll(
 	filters: EzFilter.FilteringQuery,
 ) {
 	const queryBuilder = new EzFilter.BuildQueryFilter()
-	const { filters: rawFilters, ...rest } = filters
+	let { filters: rawFilters, ...rest } = filters
 	const usedFilters = queryBuilder.build(rest as any)
 	// usedFilters = await TenantRoleHelpers.buildFilterTenantRole(usedFilters, user, tenantId)
 
@@ -110,15 +110,56 @@ export async function getAll(
 		},
 	}
 
+	// ✅ FIX: Parse filters if it's a string (JSON)
+	if (typeof rawFilters === "string") {
+		try {
+			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+			// @ts-ignore
+			rawFilters = JSON.parse(rawFilters)
+		} catch (e) {
+			console.error("Failed to parse filters:", e)
+			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+			// @ts-ignore
+			rawFilters = {}
+		}
+	}
+
 	if (
 		rawFilters &&
 		typeof rawFilters === "object" &&
 		Object.keys(rawFilters).length > 0
 	) {
+		const processedFilters: any = {}
+		const andConditions: any[] = []
+
+		for (const [key, value] of Object.entries(rawFilters)) {
+			if (key === "subCategory" && Array.isArray(value) && value.length > 0) {
+				// Handle SubCategory as CSV strings: OR [ { contains: val1 }, { contains: val2 } ]
+				andConditions.push({
+					OR: value.map((v) => ({
+						subCategory: {
+							contains: v,
+						},
+					})),
+				})
+			} else if (Array.isArray(value)) {
+				processedFilters[key] = { in: value }
+			} else {
+				processedFilters[key] = value
+			}
+		}
+
 		if (!usedFilters.query.where.AND) {
 			usedFilters.query.where.AND = []
 		}
-		usedFilters.query.where.AND.push(rawFilters)
+
+		if (Object.keys(processedFilters).length > 0) {
+			usedFilters.query.where.AND.push(processedFilters)
+		}
+
+		if (andConditions.length > 0) {
+			usedFilters.query.where.AND.push(...andConditions)
+		}
 	}
 
 	// Show all versions (remove the children filter)
@@ -168,7 +209,7 @@ export async function getAllArchived(
 	filters: EzFilter.FilteringQuery,
 ) {
 	const queryBuilder = new EzFilter.BuildQueryFilter()
-	const { filters: rawFilters, ...rest } = filters
+	let { filters: rawFilters, ...rest } = filters
 	const usedFilters = queryBuilder.build(rest as any)
 	// usedFilters = await TenantRoleHelpers.buildFilterTenantRole(usedFilters, user, tenantId)
 
@@ -179,6 +220,58 @@ export async function getAllArchived(
 				fullName: true,
 			},
 		},
+	}
+
+	// ✅ FIX: Parse filters if it's a string (JSON)
+	if (typeof rawFilters === "string") {
+		try {
+			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+			// @ts-ignore
+			rawFilters = JSON.parse(rawFilters)
+		} catch (e) {
+			console.error("Failed to parse filters:", e)
+			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+			// @ts-ignore
+			rawFilters = {}
+		}
+	}
+
+	if (
+		rawFilters &&
+		typeof rawFilters === "object" &&
+		Object.keys(rawFilters).length > 0
+	) {
+		const processedFilters: any = {}
+		const andConditions: any[] = []
+
+		for (const [key, value] of Object.entries(rawFilters)) {
+			if (key === "subCategory" && Array.isArray(value) && value.length > 0) {
+				// Handle SubCategory as CSV strings: OR [ { contains: val1 }, { contains: val2 } ]
+				andConditions.push({
+					OR: value.map((v) => ({
+						subCategory: {
+							contains: v,
+						},
+					})),
+				})
+			} else if (Array.isArray(value)) {
+				processedFilters[key] = { in: value }
+			} else {
+				processedFilters[key] = value
+			}
+		}
+
+		if (!usedFilters.query.where.AND) {
+			usedFilters.query.where.AND = []
+		}
+
+		if (Object.keys(processedFilters).length > 0) {
+			usedFilters.query.where.AND.push(processedFilters)
+		}
+
+		if (andConditions.length > 0) {
+			usedFilters.query.where.AND.push(...andConditions)
+		}
 	}
 
 	usedFilters.query.where.AND.push({

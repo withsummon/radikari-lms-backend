@@ -9,9 +9,14 @@ import { MasterKnowledgeSubCategoryDTO } from "$entities/MasterKnowledgeSubCateg
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 
 export async function create(c: Context): Promise<TypedResponse> {
+	const tenantId = c.req.param("tenantId") // ✅ Ambil tenantId
 	const data: MasterKnowledgeSubCategoryDTO = await c.req.json()
 
-	const serviceResponse = await MasterKnowledgeSubCategoryService.create(data)
+	// Pass tenantId ke service
+	const serviceResponse = await MasterKnowledgeSubCategoryService.create(
+		tenantId,
+		data,
+	)
 
 	if (!serviceResponse.status) {
 		return handleServiceErrorWithResponse(c, serviceResponse)
@@ -25,11 +30,16 @@ export async function create(c: Context): Promise<TypedResponse> {
 }
 
 export async function getAll(c: Context): Promise<TypedResponse> {
+	const tenantId = c.req.param("tenantId") // ✅ Ambil tenantId
 	const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(
 		c.req.query(),
 	)
-	const serviceResponse =
-		await MasterKnowledgeSubCategoryService.getAll(filters)
+
+	// Pass tenantId ke service
+	const serviceResponse = await MasterKnowledgeSubCategoryService.getAll(
+		tenantId,
+		filters,
+	)
 
 	if (!serviceResponse.status) {
 		return handleServiceErrorWithResponse(c, serviceResponse)

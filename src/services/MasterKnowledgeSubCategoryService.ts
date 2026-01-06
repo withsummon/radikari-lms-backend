@@ -1,7 +1,7 @@
 import { MasterKnowledgeSubCategory } from "../../generated/prisma/client"
 import { MasterKnowledgeSubCategoryDTO } from "$entities/MasterKnowledgeSubCategory"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
-import * as MasterKnowledgeSubCategoryRepository from "$repositories/MasterKnowledgeSubCategoryRepository"
+import { prisma } from "$pkg/prisma"
 import {
 	HandleServiceResponseCustomError,
 	HandleServiceResponseSuccess,
@@ -11,10 +11,31 @@ import {
 import Logger from "$pkg/logger"
 
 export async function create(
+	tenantId: string,
 	data: MasterKnowledgeSubCategoryDTO,
 ): Promise<ServiceResponse<MasterKnowledgeSubCategory | {}>> {
 	try {
-		const createdData = await MasterKnowledgeSubCategoryRepository.create(data)
+		const parentCategory = await prisma.masterKnowledgeCategory.findFirst({
+			where: {
+				id: data.categoryId,
+				tenantId: tenantId, // Security Check
+			},
+		})
+
+		if (!parentCategory) {
+			return HandleServiceResponseCustomError(
+				"Invalid Parent Category or Tenant Mismatch",
+				400,
+			)
+		}
+
+		const createdData = await prisma.masterKnowledgeSubCategory.create({
+			data: {
+				name: data.name,
+				categoryId: data.categoryId,
+				tenantId: tenantId, // Inject Tenant ID
+			},
+		})
 		return HandleServiceResponseSuccess(createdData)
 	} catch (err) {
 		Logger.error(`MasterKnowledgeSubCategoryService.create : `, {
@@ -25,13 +46,46 @@ export async function create(
 }
 
 export async function getAll(
+	tenantId: string,
 	filters: EzFilter.FilteringQuery,
 ): Promise<
 	ServiceResponse<EzFilter.PaginatedResult<MasterKnowledgeSubCategory[]> | {}>
 > {
 	try {
-		const data = await MasterKnowledgeSubCategoryRepository.getAll(filters)
-		return HandleServiceResponseSuccess(data)
+		const queryOptions = EzFilter.buildFilterQuery(filters)
+
+		const whereClause = {
+			...queryOptions.where,
+			tenantId: tenantId, // Wajib filter per tenant
+		}
+
+		const [data, total] = await Promise.all([
+			prisma.masterKnowledgeSubCategory.findMany({
+				where: whereClause,
+				orderBy: queryOptions.orderBy,
+				take: queryOptions.take,
+				skip: queryOptions.skip,
+				include: {
+					category: true,
+					_count: {
+						select: { cases: true },
+					},
+				},
+			}),
+			prisma.masterKnowledgeSubCategory.count({
+				where: whereClause,
+			}),
+		])
+
+		let totalPage = 1
+		if (total > queryOptions.take)
+			totalPage = Math.ceil(total / queryOptions.take)
+
+		return HandleServiceResponseSuccess({
+			entries: data,
+			totalData: total,
+			totalPage,
+		})
 	} catch (err) {
 		Logger.error(`MasterKnowledgeSubCategoryService.getAll`, {
 			error: err,
@@ -44,8 +98,14 @@ export async function getById(
 	id: string,
 ): Promise<ServiceResponse<MasterKnowledgeSubCategory | {}>> {
 	try {
-		let masterKnowledgeSubCategory =
-			await MasterKnowledgeSubCategoryRepository.getById(id)
+		const masterKnowledgeSubCategory =
+			await prisma.masterKnowledgeSubCategory.findUnique({
+				where: { id },
+				include: {
+					category: true,
+					_count: { select: { cases: true } },
+				},
+			})
 
 		if (!masterKnowledgeSubCategory)
 			return HandleServiceResponseCustomError(
@@ -68,19 +128,25 @@ export async function update(
 	data: MasterKnowledgeSubCategoryDTO,
 ): Promise<ServiceResponse<UpdateResponse>> {
 	try {
-		let masterKnowledgeSubCategory =
-			await MasterKnowledgeSubCategoryRepository.getById(id)
+		const existing = await prisma.masterKnowledgeSubCategory.findUnique({
+			where: { id },
+		})
 
-		if (!masterKnowledgeSubCategory)
+		if (!existing)
 			return HandleServiceResponseCustomError(
 				"Invalid ID",
 				ResponseStatus.NOT_FOUND,
 			)
 
-		masterKnowledgeSubCategory =
-			await MasterKnowledgeSubCategoryRepository.update(id, data)
+		const updated = await prisma.masterKnowledgeSubCategory.update({
+			where: { id },
+			data: {
+				name: data.name,
+				categoryId: data.categoryId,
+			},
+		})
 
-		return HandleServiceResponseSuccess(masterKnowledgeSubCategory)
+		return HandleServiceResponseSuccess(updated)
 	} catch (err) {
 		Logger.error(`MasterKnowledgeSubCategoryService.update`, {
 			error: err,
@@ -91,7 +157,29 @@ export async function update(
 
 export async function deleteById(id: string): Promise<ServiceResponse<{}>> {
 	try {
-		await MasterKnowledgeSubCategoryRepository.deleteById(id)
+		// 1. Cek Child (Cases)
+		const subCategory = await prisma.masterKnowledgeSubCategory.findUnique({
+			where: { id },
+			include: {
+				_count: { select: { cases: true } },
+			},
+		})
+
+		if (!subCategory) {
+			return HandleServiceResponseCustomError("Sub-Category not found", 404)
+		}
+
+		// 2. Guard
+		if (subCategory._count.cases > 0) {
+			return HandleServiceResponseCustomError(
+				"Cannot delete sub-category because it has cases attached.",
+				400,
+			)
+		}
+
+		// 3. Delete
+		await prisma.masterKnowledgeSubCategory.delete({ where: { id } })
+
 		return HandleServiceResponseSuccess({})
 	} catch (err) {
 		Logger.error(`MasterKnowledgeSubCategoryService.deleteById`, {
