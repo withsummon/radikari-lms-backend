@@ -18,7 +18,6 @@ router.put(
 )
 
 router.route("/users", RoutesRegistry.UserRoutes)
-router.route("/operations", RoutesRegistry.OperationRoutes)
 router.route("/tenants", RoutesRegistry.TenantRoutes)
 router.route(
 	"/master-knowledge-categories",

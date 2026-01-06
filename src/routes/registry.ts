@@ -5,7 +5,6 @@ import MasterKnowledgeCategoryRoutes from "./MasterKnowledgeCategory"
 import MasterKnowledgeSubCategoryRoutes from "./MasterKnowledgeSubCategory"
 import MasterKnowledgeCaseRoutes from "./MasterKnowledgeCase"
 import KnowledgeRoutes from "./Knowledge"
-import OperationRoutes from "./Operation"
 import ChatRoutes from "./AiChat/Chat"
 import BulkKnowledgeRoutes from "./BulkUpload"
 import AccessControlListRoutes from "./AccessControlList"
@@ -26,7 +25,6 @@ const RoutesRegistry = {
 	AnalyticsRoutes,
 	EphemeralRoutes,
 	ExampleBufferRoutes,
-	OperationRoutes,
 	TenantRoutes,
 	MasterKnowledgeCategoryRoutes,
 	MasterKnowledgeSubCategoryRoutes,
