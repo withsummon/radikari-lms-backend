@@ -173,8 +173,8 @@ model TenantSetting {
 model MasterKnowledgeCategory {
   id        String   @id @unique @default(uuid())
   name      String
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId  String?
+  tenant    Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -188,11 +188,11 @@ model MasterKnowledgeSubCategory {
   id         String   @id @unique @default(uuid())
   name       String
   
-  tenantId   String
-  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId   String?
+  tenant     Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  categoryId String
-  category   MasterKnowledgeCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade) // Cascade delete parent
+  categoryId String?
+  category   MasterKnowledgeCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade) // Cascade delete parent
 
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -208,11 +208,11 @@ model MasterKnowledgeCase {
   id            String   @id @unique @default(uuid())
   name          String
   
-  tenantId      String
-  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId      String?
+  tenant        Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  subCategoryId String
-  subCategory   MasterKnowledgeSubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade) // Cascade delete parent
+  subCategoryId String?
+  subCategory   MasterKnowledgeSubCategory? @relation(fields: [subCategoryId], references: [id], onDelete: Cascade) // Cascade delete parent
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
