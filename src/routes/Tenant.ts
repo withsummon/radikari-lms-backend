@@ -11,7 +11,6 @@ const TenantRoutes = new Hono()
 TenantRoutes.get(
 	"/",
 	AuthMiddleware.checkJwt,
-	AuthMiddleware.checkRole([Roles.ADMIN]),
 	TenantController.getAll,
 )
 
@@ -86,14 +85,14 @@ TenantRoutes.get(
 TenantRoutes.post(
 	"/:id/users",
 	AuthMiddleware.checkJwt,
-	AuthMiddleware.checkRole([Roles.ADMIN]),
+	AuthMiddleware.checkAccessTenantRole("USER_MANAGEMENT", "CREATE"),
 	TenantController.addMember,
 )
 
 TenantRoutes.put(
 	"/:id/users",
 	AuthMiddleware.checkJwt,
-	AuthMiddleware.checkRole([Roles.ADMIN]),
+	AuthMiddleware.checkAccessTenantRole("USER_MANAGEMENT", "UPDATE"),
 	Validations.validateTenantUserUpdateSchema,
 	TenantController.assignUserToTenant,
 )

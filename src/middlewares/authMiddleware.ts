@@ -21,6 +21,7 @@ import { prisma } from "$pkg/prisma"
  */
 function getTenantIdParam(c: Context): string | undefined {
 	return (
+		c.req.query("tenantId") ||
 		c.req.param("tenantId") ||
 		c.req.param("id") ||
 		c.req.param("tenant_id") ||
@@ -210,15 +211,15 @@ export function checkAccessTenantRole(featureName: string, actionName: string) {
 			const user = getJwtUser(c)
 			if (!user) return response_unauthorized(c, "Invalid token payload")
 
-			const tenantId = getTenantIdParam(c)
-			if (!tenantId) {
-				return response_forbidden(c, "Tenant id is missing on route parameter!")
-			}
-
-			// ✅ Admin bypass (optional but usually expected)
+			// ✅ Admin bypass moved up
 			if (user.role === Roles.ADMIN) {
 				await next()
 				return
+			}
+
+			const tenantId = getTenantIdParam(c)
+			if (!tenantId) {
+				return response_forbidden(c, "Tenant id is missing on route parameter!")
 			}
 
 			const userWithRoles = await prisma.user.findUnique({

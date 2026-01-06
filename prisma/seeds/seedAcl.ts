@@ -104,7 +104,7 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 	await prisma.accessControlList.deleteMany({
 		where: {
 			featureName: {
-				in: ["ACCESS_CONTROL_LIST", "TENANT", "USER_ACTIVITY_LOG"],
+				in: ["TENANT", "USER_ACTIVITY_LOG"],
 			},
 		},
 	})
@@ -201,11 +201,16 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 			featureName: "ASSIGNMENT",
 			actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL"],
 		},
+		{
+			featureName: "ANNOUNCEMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
 		{ featureName: "FORUM", actions: ["CREATE", "VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "AI_PROMPT", actions: ["VIEW", "UPDATE"] },
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
-		{ featureName: "BROADCAST", actions: ["VIEW", "UPDATE"] },
+		{ featureName: "BROADCAST", actions: ["CREATE", "VIEW", "UPDATE"] },
 		{ featureName: "BULK_UPLOAD", actions: ["CREATE"] },
+		{ featureName: "ACCESS_CONTROL_LIST", actions: ["VIEW", "UPDATE"] },
 	]
 
 	const makerFeatures = [
@@ -215,9 +220,15 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 			featureName: "ASSIGNMENT",
 			actions: ["CREATE", "VIEW", "UPDATE", "APPROVAL"],
 		},
+		{
+			featureName: "ANNOUNCEMENT",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE"],
+		},
 		{ featureName: "USER_MANAGEMENT", actions: ["VIEW"] },
 		{ featureName: "FORUM", actions: ["VIEW"] },
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "BROADCAST", actions: ["CREATE", "VIEW", "UPDATE"] },
+		{ featureName: "ACCESS_CONTROL_LIST", actions: ["VIEW", "UPDATE"] },
 	]
 
 	const consumerFeatures = [
