@@ -1,7 +1,7 @@
 import { Hono } from "hono"
 import * as MasterKnowledgeSubCategoryController from "$controllers/rest/MasterKnowledgeSubCategoryController"
 import * as AuthMiddleware from "$middlewares/authMiddleware"
-import * as Validations from "$validations/MasterKnowledgeCategoryValidation"
+import * as Validations from "$validations/MasterKnowledgeSubCategoryValidation"
 
 const MasterKnowledgeSubCategoryRoutes = new Hono()
 
@@ -20,14 +20,14 @@ MasterKnowledgeSubCategoryRoutes.get(
 MasterKnowledgeSubCategoryRoutes.post(
 	"/",
 	AuthMiddleware.checkJwt,
-	Validations.validateMasterKnowledgeCategory,
+	Validations.validateMasterKnowledgeSubCategory,
 	MasterKnowledgeSubCategoryController.create,
 )
 
 MasterKnowledgeSubCategoryRoutes.put(
 	"/:id",
 	AuthMiddleware.checkJwt,
-	Validations.validateUpdateMasterKnowledgeCategory,
+	Validations.validateUpdateMasterKnowledgeSubCategory,
 	MasterKnowledgeSubCategoryController.update,
 )
 

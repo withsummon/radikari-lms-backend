@@ -2,9 +2,15 @@ import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { prisma } from "$pkg/prisma"
 import { MasterKnowledgeCategoryDTO } from "$entities/MasterKnowledgeCategory"
 
-export async function create(data: MasterKnowledgeCategoryDTO) {
+export async function create(
+	tenantId: string,
+	data: MasterKnowledgeCategoryDTO,
+) {
 	return await prisma.masterKnowledgeCategory.create({
-		data,
+		data: {
+			name: data.name,
+			tenantId,
+		},
 	})
 }
 
@@ -43,7 +49,9 @@ export async function update(id: string, data: MasterKnowledgeCategoryDTO) {
 		where: {
 			id,
 		},
-		data,
+		data: {
+			name: data.name,
+		},
 	})
 }
 

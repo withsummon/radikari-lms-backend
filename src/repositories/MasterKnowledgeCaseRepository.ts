@@ -2,7 +2,9 @@ import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { prisma } from "$pkg/prisma"
 import { MasterKnowledgeCaseDTO } from "$entities/MasterKnowledgeCase"
 
-export async function create(data: MasterKnowledgeCaseDTO) {
+export async function create(
+	data: MasterKnowledgeCaseDTO & { tenantId: string },
+) {
 	return await prisma.masterKnowledgeCase.create({
 		data,
 	})

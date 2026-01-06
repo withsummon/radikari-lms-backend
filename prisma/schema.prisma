@@ -99,16 +99,20 @@ model Tenant {
 
   operation Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
 
-  tenantUser      TenantUser[]
-  tenantSetting   TenantSetting[]
-  knowledge       Knowledge[]
-  aiChatRooms     AiChatRoom[]
-  announcements   Announcement[]
-  forums          Forum[]
-  aiPrompt        AiPrompt?
-  broadcast       Broadcast?
-  aiUsageLogs     AiUsageLog[]
-  tenantRoles     TenantRole[]
+  tenantUser    TenantUser[]
+  tenantSetting TenantSetting[]
+  knowledge     Knowledge[]
+  aiChatRooms   AiChatRoom[]
+  announcements Announcement[]
+  forums        Forum[]
+  aiPrompt      AiPrompt?
+  broadcast     Broadcast?
+  aiUsageLogs   AiUsageLog[]
+  tenantRoles   TenantRole[]
+
+  masterKnowledgeCategories    MasterKnowledgeCategory[]
+  masterKnowledgeSubCategories MasterKnowledgeSubCategory[]
+  masterKnowledgeCases         MasterKnowledgeCase[]
 }
 
 model TenantRole {
@@ -164,25 +168,58 @@ model TenantSetting {
   @@unique([tenantId, key])
 }
 
-model MasterKnowledgeCategory {
-  id        String   @id @unique
-  name      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
+// ... kode lainnya ...
 
-model MasterKnowledgeSubCategory {
-  id        String   @id @unique
-  name      String   @unique
+model MasterKnowledgeCategory {
+  id        String   @id @unique @default(uuid())
+  name      String
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  subCategories MasterKnowledgeSubCategory[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+model MasterKnowledgeSubCategory {
+  id         String   @id @unique @default(uuid())
+  name       String
+  
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  categoryId String
+  category   MasterKnowledgeCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade) // Cascade delete parent
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  cases      MasterKnowledgeCase[]
+
+  @@unique([categoryId, name])
+  @@index([tenantId]) 
+  @@index([categoryId])
 }
 
 model MasterKnowledgeCase {
-  id        String   @id @unique
-  name      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @unique @default(uuid())
+  name          String
+  
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  subCategoryId String
+  subCategory   MasterKnowledgeSubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade) // Cascade delete parent
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([subCategoryId, name])
+  @@index([tenantId])
+  @@index([subCategoryId])
 }
 
 enum KnowledgeStatus {
