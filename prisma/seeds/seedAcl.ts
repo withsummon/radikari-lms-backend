@@ -215,7 +215,10 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 
 	const makerFeatures = [
 		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
-		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
+		{
+			featureName: "KNOWLEDGE",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"],
+		},
 		{
 			featureName: "ASSIGNMENT",
 			actions: ["CREATE", "VIEW", "UPDATE", "APPROVAL"],
@@ -229,6 +232,7 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "BROADCAST", actions: ["CREATE", "VIEW", "UPDATE"] },
 		{ featureName: "ACCESS_CONTROL_LIST", actions: ["VIEW", "UPDATE"] },
+		{ featureName: "TENANT", actions: ["VIEW"] },
 	]
 
 	const consumerFeatures = [

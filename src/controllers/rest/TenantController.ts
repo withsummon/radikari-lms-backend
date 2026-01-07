@@ -33,10 +33,17 @@ export async function create(c: Context): Promise<TypedResponse> {
 }
 
 export async function getAll(c: Context): Promise<TypedResponse> {
+	const user: UserJWTDAO = c.get("jwtPayload")
 	const filters: EzFilter.FilteringQuery = EzFilter.extractQueryFromParams(
 		c.req.query(),
 	)
-	const serviceResponse = await TenantService.getAll(filters)
+
+	let serviceResponse
+	if (user.role === Roles.ADMIN) {
+		serviceResponse = await TenantService.getAll(filters)
+	} else {
+		serviceResponse = await TenantService.getAllByUserId(filters, user)
+	}
 
 	if (!serviceResponse.status) {
 		return handleServiceErrorWithResponse(c, serviceResponse)

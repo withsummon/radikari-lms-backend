@@ -63,7 +63,10 @@ const ROLE_ACL_PERMISSIONS: Record<
 	],
 	MAKER: [
 		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
-		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
+		{
+			featureName: "KNOWLEDGE",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"],
+		},
 		{
 			featureName: "ASSIGNMENT",
 			actions: ["CREATE", "VIEW", "UPDATE", "APPROVAL"],
@@ -77,6 +80,7 @@ const ROLE_ACL_PERMISSIONS: Record<
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "BROADCAST", actions: ["CREATE", "VIEW", "UPDATE"] },
 		{ featureName: "ACCESS_CONTROL_LIST", actions: ["VIEW", "UPDATE"] },
+		{ featureName: "TENANT", actions: ["VIEW"] },
 	],
 	CONSUMER: [
 		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
