@@ -174,6 +174,16 @@ export async function getById(id: string, tenantId: string) {
 					fullName: true,
 					profilePictureUrl: true,
 					role: true,
+					tenantUser: {
+						select: {
+							tenantId: true,
+							tenantRole: {
+								select: {
+									name: true,
+								},
+							},
+						},
+					},
 				},
 			},
 		},

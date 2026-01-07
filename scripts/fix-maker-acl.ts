@@ -27,7 +27,7 @@ async function main() {
 		{ featureName: "KNOWLEDGE", actionName: "APPROVAL" },
 		{ featureName: "KNOWLEDGE", actionName: "ARCHIVE" },
 		{ featureName: "TENANT", actionName: "VIEW" },
-	];
+	]
 
 	let fixCount = 0
 

@@ -211,6 +211,7 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 		{ featureName: "BROADCAST", actions: ["CREATE", "VIEW", "UPDATE"] },
 		{ featureName: "BULK_UPLOAD", actions: ["CREATE"] },
 		{ featureName: "ACCESS_CONTROL_LIST", actions: ["VIEW", "UPDATE"] },
+		{ featureName: "TENANT", actions: ["VIEW"] },
 	]
 
 	const makerFeatures = [

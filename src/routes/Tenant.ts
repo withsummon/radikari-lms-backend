@@ -8,11 +8,7 @@ import * as UserKnowledgeReadLogController from "$controllers/rest/UserKnowledge
 const TenantRoutes = new Hono()
 
 // Admin list tenants
-TenantRoutes.get(
-	"/",
-	AuthMiddleware.checkJwt,
-	TenantController.getAll,
-)
+TenantRoutes.get("/", AuthMiddleware.checkJwt, TenantController.getAll)
 
 /**
  * ✅ Knowledge read logs (spesifik dulu, sebelum "/:id")
