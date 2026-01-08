@@ -242,6 +242,7 @@ export async function seedAccessControlList(prisma: PrismaClient) {
 		{ featureName: "ASSIGNMENT", actions: ["VIEW"] },
 		{ featureName: "FORUM", actions: ["VIEW"] },
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "TENANT", actions: ["VIEW"] },
 	]
 
 	const qaTrainerFeatures = [

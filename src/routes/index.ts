@@ -18,8 +18,6 @@ router.put(
 )
 
 router.route("/users", RoutesRegistry.UserRoutes)
-router.route("/tenants", RoutesRegistry.TenantRoutes)
-
 router.route(
 	"/tenants/:tenantId/master-knowledge-categories",
 	RoutesRegistry.MasterKnowledgeCategoryRoutes,
@@ -47,6 +45,8 @@ router.route(
 router.route("/tenants/:tenantId/forums", RoutesRegistry.ForumRoutes)
 router.route("/tenants/:tenantId/ai-prompts", RoutesRegistry.AiPromptRoutes)
 router.route("/tenants/:tenantId/broadcasts", RoutesRegistry.BroadcastRoutes)
+
+router.route("/tenants", RoutesRegistry.TenantRoutes)
 
 router.route("/bulk", RoutesRegistry.BulkKnowledgeRoutes)
 router.route("/access-control-lists", RoutesRegistry.AccessControlListRoutes)
