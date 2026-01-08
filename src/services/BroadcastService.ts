@@ -15,11 +15,7 @@ export async function getByTenantId(
 ): Promise<ServiceResponse<Broadcast | {}>> {
 	try {
 		const broadcast = await BroadcastRepository.getByTenantId(tenantId)
-		if (!broadcast)
-			return HandleServiceResponseCustomError(
-				"Invalid ID",
-				ResponseStatus.NOT_FOUND,
-			)
+		if (!broadcast) return HandleServiceResponseSuccess({})
 		return HandleServiceResponseSuccess(broadcast)
 	} catch (err) {
 		Logger.error(`BroadcastService.getByTenantId`, {

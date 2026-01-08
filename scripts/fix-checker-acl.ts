@@ -15,12 +15,16 @@ async function main() {
 		return
 	}
 
-	// Find all checker roles across all tenants
-	const checkerRoles = await prisma.tenantRole.findMany({
-		where: { identifier: "CHECKER" },
+	// Find all administrative roles across all tenants
+	const targetRoles = await prisma.tenantRole.findMany({
+		where: {
+			identifier: {
+				in: ["CHECKER", "QUALITY_ASSURANCE", "HEAD_OF_OFFICE", "OPS_MANAGER"],
+			},
+		},
 	})
 
-	console.log(`🔍 Found ${checkerRoles.length} CHECKER roles.`)
+	console.log(`🔍 Found ${targetRoles.length} administrative roles.`)
 
 	const requiredPermissions = [
 		{ featureName: "KNOWLEDGE", actionName: "APPROVAL" },
@@ -29,9 +33,17 @@ async function main() {
 		{ featureName: "TENANT", actionName: "VIEW" },
 	]
 
-	let fixCount = 0
+	const unauthorizedPermissions = [
+		{ featureName: "TENANT", actionName: "CREATE" },
+		{ featureName: "TENANT", actionName: "UPDATE" },
+		{ featureName: "TENANT", actionName: "DELETE" },
+	]
 
-	for (const role of checkerRoles) {
+	let fixCount = 0
+	let cleanupCount = 0
+
+	for (const role of targetRoles) {
+		// 1. Add required permissions
 		for (const perm of requiredPermissions) {
 			const existing = await prisma.accessControlList.findUnique({
 				where: {
@@ -60,9 +72,28 @@ async function main() {
 				fixCount++
 			}
 		}
+
+		// 2. Cleanup unauthorized permissions
+		for (const perm of unauthorizedPermissions) {
+			const deleted = await prisma.accessControlList.deleteMany({
+				where: {
+					featureName: perm.featureName,
+					actionName: perm.actionName,
+					tenantRoleId: role.id,
+				},
+			})
+			if (deleted.count > 0) {
+				console.log(
+					`🗑️ Removed unauthorized ${perm.featureName}.${perm.actionName} from role ${role.name} (${role.tenantId})`,
+				)
+				cleanupCount += deleted.count
+			}
+		}
 	}
 
-	console.log(`\n✨ Finished! Fixed ${fixCount} missing permissions.`)
+	console.log(
+		`\n✨ Finished! Fixed ${fixCount} missing and cleaned up ${cleanupCount} unauthorized permissions.`,
+	)
 }
 
 main()

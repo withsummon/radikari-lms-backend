@@ -4,7 +4,7 @@ import { ulid } from "ulid"
 const prisma = new PrismaClient()
 
 async function main() {
-	console.log("🚀 Starting MAKER ACL fix script...")
+	console.log("🚀 Starting CONSUMER ACL fix script...")
 
 	const adminUser = await prisma.user.findFirst({
 		where: { role: "ADMIN" },
@@ -15,17 +15,14 @@ async function main() {
 		return
 	}
 
-	// Find all maker roles across all tenants
-	const makerRoles = await prisma.tenantRole.findMany({
-		where: { identifier: "MAKER" },
+	// Find all consumer roles across all tenants
+	const consumerRoles = await prisma.tenantRole.findMany({
+		where: { identifier: "CONSUMER" },
 	})
 
-	console.log(`🔍 Found ${makerRoles.length} MAKER roles.`)
+	console.log(`🔍 Found ${consumerRoles.length} CONSUMER roles.`)
 
 	const requiredPermissions = [
-		{ featureName: "KNOWLEDGE", actionName: "CREATE" },
-		{ featureName: "KNOWLEDGE", actionName: "APPROVAL" },
-		{ featureName: "KNOWLEDGE", actionName: "ARCHIVE" },
 		{ featureName: "TENANT", actionName: "VIEW" },
 	]
 
@@ -38,7 +35,7 @@ async function main() {
 	let fixCount = 0
 	let cleanupCount = 0
 
-	for (const role of makerRoles) {
+	for (const role of consumerRoles) {
 		// 1. Add required permissions
 		for (const perm of requiredPermissions) {
 			const existing = await prisma.accessControlList.findUnique({

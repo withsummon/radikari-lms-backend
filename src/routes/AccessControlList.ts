@@ -32,7 +32,7 @@ AccessControlListRoutes.get(
 )
 
 AccessControlListRoutes.get(
-	"tenant-roles/:tenantRoleId/features",
+	"/tenant-roles/:tenantRoleId/features",
 	AuthMiddleware.checkJwt,
 	AccessControlListController.getEnabledFeaturesByTenantRoleId,
 )

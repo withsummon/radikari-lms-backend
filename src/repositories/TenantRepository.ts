@@ -89,6 +89,7 @@ const ROLE_ACL_PERMISSIONS: Record<
 		{ featureName: "ASSIGNMENT", actions: ["VIEW"] },
 		{ featureName: "FORUM", actions: ["VIEW"] },
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
+		{ featureName: "TENANT", actions: ["VIEW"] },
 	],
 }
 
