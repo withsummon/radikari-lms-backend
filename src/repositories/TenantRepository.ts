@@ -60,10 +60,14 @@ const ROLE_ACL_PERMISSIONS: Record<
 		{ featureName: "BROADCAST", actions: ["CREATE", "VIEW", "UPDATE"] },
 		{ featureName: "BULK_UPLOAD", actions: ["CREATE"] },
 		{ featureName: "ACCESS_CONTROL_LIST", actions: ["VIEW", "UPDATE"] },
+		{ featureName: "TENANT", actions: ["VIEW"] },
 	],
 	MAKER: [
 		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
-		{ featureName: "KNOWLEDGE", actions: ["VIEW"] },
+		{
+			featureName: "KNOWLEDGE",
+			actions: ["CREATE", "VIEW", "UPDATE", "DELETE", "APPROVAL", "ARCHIVE"],
+		},
 		{
 			featureName: "ASSIGNMENT",
 			actions: ["CREATE", "VIEW", "UPDATE", "APPROVAL"],
@@ -77,6 +81,7 @@ const ROLE_ACL_PERMISSIONS: Record<
 		{ featureName: "NOTIFICATION", actions: ["VIEW", "UPDATE", "DELETE"] },
 		{ featureName: "BROADCAST", actions: ["CREATE", "VIEW", "UPDATE"] },
 		{ featureName: "ACCESS_CONTROL_LIST", actions: ["VIEW", "UPDATE"] },
+		{ featureName: "TENANT", actions: ["VIEW"] },
 	],
 	CONSUMER: [
 		{ featureName: "AI_PROMPT", actions: ["VIEW"] },
@@ -253,10 +258,18 @@ export async function getAllByUserId(
 	usedFilters.query.include = {
 		tenantUser: {
 			where: {
-				userId: user.id,
+				OR: [
+					{ userId: user.id },
+					{
+						tenantRole: {
+							identifier: { in: ["CHECKER", "HEAD_OF_OFFICE"] },
+						},
+					},
+				],
 			},
-			select: {
+			include: {
 				tenantRole: true,
+				user: true,
 			},
 		},
 	}
@@ -280,7 +293,19 @@ export async function getAllByUserId(
 			tenantRole:
 				user.role === Roles.ADMIN
 					? Roles.ADMIN
-					: tenant.tenantUser[0].tenantRole,
+					: tenant.tenantUser.find((tu: any) => tu.userId === user.id)
+							?.tenantRole,
+			headOfOffice: exclude(
+				(
+					tenant.tenantUser.find(
+						(tu: any) => tu.tenantRole.identifier === "CHECKER",
+					) ||
+					tenant.tenantUser.find(
+						(tu: any) => tu.tenantRole.identifier === "HEAD_OF_OFFICE",
+					)
+				)?.user ?? {},
+				"password",
+			),
 			tokenLimit: tenant.tokenLimit,
 		})),
 		totalData,

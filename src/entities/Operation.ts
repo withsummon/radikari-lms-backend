@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod"
 
 export const OperationSchema = z.object({
 	id: z.string().optional(),
@@ -7,6 +7,6 @@ export const OperationSchema = z.object({
 	headOfOperationUserId: z
 		.string()
 		.min(1, { message: "Head of Operation is required" }),
-});
+})
 
-export type OperationDTO = z.infer<typeof OperationSchema>;
+export type OperationDTO = z.infer<typeof OperationSchema>

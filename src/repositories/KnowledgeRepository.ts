@@ -455,6 +455,17 @@ export async function getById(id: string) {
 							id: true,
 							fullName: true,
 							profilePictureUrl: true,
+							role: true,
+							tenantUser: {
+								select: {
+									tenantId: true,
+									tenantRole: {
+										select: {
+											name: true,
+										},
+									},
+								},
+							},
 						},
 					},
 				},
@@ -534,6 +545,16 @@ export async function getByIds(ids: string[]) {
 							id: true,
 							fullName: true,
 							profilePictureUrl: true,
+							tenantUser: {
+								select: {
+									tenantId: true,
+									tenantRole: {
+										select: {
+											name: true,
+										},
+									},
+								},
+							},
 						},
 					},
 				},
