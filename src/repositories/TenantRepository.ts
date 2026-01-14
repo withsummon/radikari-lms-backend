@@ -160,7 +160,6 @@ export async function create(data: TenantCreateUpdateDTO) {
 			}
 		}
 
-		// 4. Assign CHECKER role to the head of tenant
 		const checkerRole = createdRoles["CHECKER"]
 		if (headOfTenantUserId && checkerRole) {
 			await tx.tenantUser.create({
