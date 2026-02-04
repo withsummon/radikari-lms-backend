@@ -4,15 +4,14 @@ import {
 	KnowledgeActivityLogAction,
 	KnowledgeAttachment,
 	KnowledgeStatus,
+	KnowledgeType,
 	NotificationType,
 	Prisma,
 	UserKnowledge,
 } from "../../generated/prisma/client"
 import {
 	KnowledgeApprovalDTO,
-	KnowledgeBulkCreateDataRow,
 	KnowledgeBulkCreateDTO,
-	KnowledgeBulkCreateTypeCaseDataRow,
 	KnowledgeDTO,
 	KnowledgeQueueDTO,
 } from "$entities/Knowledge"
@@ -414,11 +413,23 @@ function generateKnowledgeQueueDTO(
 		},
 		fileType:
 			knowledge.knowledgeAttachment && knowledge.knowledgeAttachment.length > 0
-				? knowledge.knowledgeAttachment
-						.map((attachment: any) => attachment.attachmentUrl.split(".").pop())
-						.includes("pdf")
-					? "PDF"
-					: "IMAGE"
+				? (() => {
+						const extensions = knowledge.knowledgeAttachment.map(
+							(attachment: any) =>
+								attachment.attachmentUrl.split(".").pop()?.toLowerCase(),
+						)
+						if (
+							extensions.some((ext: any) =>
+								["xlsx", "xls", "csv"].includes(ext),
+							)
+						) {
+							return "SPREADSHEET"
+						}
+						if (extensions.includes("pdf")) {
+							return "PDF"
+						}
+						return "IMAGE"
+					})()
 				: "",
 		fileUrls: knowledge.knowledgeAttachment.map(
 			(attachment: any) => attachment.attachmentUrl,
@@ -527,10 +538,15 @@ export async function bulkCreate(data: KnowledgeBulkCreateDTO, userId: string) {
 
 		const responseData = file.data
 		const workbook = XLSX.read(responseData, { type: "buffer" })
-		const knowledges = workbook.Sheets[workbook.SheetNames[2]]
 
-		const rowData: KnowledgeBulkCreateDataRow[] =
-			XLSX.utils.sheet_to_json<KnowledgeBulkCreateDataRow>(knowledges)
+		// Fallback: use 3rd sheet if exists, otherwise try "Knowledge", then finally first sheet
+		let knowledges = workbook.Sheets[workbook.SheetNames[2]]
+		if (!knowledges) {
+			knowledges =
+				workbook.Sheets["Knowledge"] || workbook.Sheets[workbook.SheetNames[0]]
+		}
+
+		const rowData: any[] = XLSX.utils.sheet_to_json(knowledges)
 
 		const knowledgeCreateManyInput: Prisma.KnowledgeCreateManyInput[] = []
 		const knwoledgeAttachmentCreateManyInput: Prisma.KnowledgeAttachmentCreateManyInput[] =
@@ -538,26 +554,61 @@ export async function bulkCreate(data: KnowledgeBulkCreateDTO, userId: string) {
 		const knwoledgeContentCreateManyInput: Prisma.KnowledgeContentCreateManyInput[] =
 			[]
 
-		for (const row of rowData) {
-			let tenantId: string | undefined
-			if (row["Tenant Name"] && row["Tenant Name"] !== "") {
-				let tenant = await TenantRepository.getByName(row["Tenant Name"])
+		for (const rawRow of rowData) {
+			// Normalize row keys to handle case-insensitivity
+			const row: any = {}
+			for (const key in rawRow) {
+				row[key.trim().toLowerCase()] = rawRow[key]
+			}
 
-				if (row["Tenant Name"] === "DANA") {
-					tenant = await TenantRepository.getById("01K9201Z97H20E4NKTEANCFVCP")
-				}
-				console.log("Tenant fetched or created:", tenant)
+			// Column name mapping (flexible with Indonesian support)
+			const tenantName =
+				row["tenant name"] || row["tenant"] || row["nama tenant"] || row["unit"]
+			const headline =
+				row["headline"] ||
+				row["title"] ||
+				row["judul"] ||
+				row["nama pengetahuan"] ||
+				row["topik"]
+			const category = row["category"] || row["kategori"] || ""
+			const subCategory =
+				row["sub category"] || row["subcategory"] || row["sub kategori"] || ""
+			const caseName = row["case"] || row["kasus"] || row["tipe kasus"] || ""
+			const description =
+				row["description"] ||
+				row["deskripsi"] ||
+				row["isi"] ||
+				row["penjelasan"] ||
+				""
+			const attachmentStr =
+				row["attachments"] ||
+				row["attachment"] ||
+				row["lampiran"] ||
+				row["link"] ||
+				""
+
+			if (!headline) {
+				Logger.warning(
+					"KnowledgeService.bulkCreate: Skipping row due to missing headline column (expected: headline, title, judul, or topik)",
+					{
+						foundHeaders: Object.keys(row),
+						row: rawRow,
+					},
+				)
+				continue
+			}
+
+			let tenantId: string | undefined = data.tenantId
+			if (tenantName && tenantName !== "") {
+				let tenant = await TenantRepository.getByName(tenantName)
 
 				if (!tenant) {
 					const operation = await OperationRepository.findFirst()
 
 					tenant = await TenantRepository.create({
-						id:
-							row["Tenant Name"] === "DANA"
-								? "01K9201Z97H20E4NKTEANCFVCP"
-								: ulid(),
-						name: row["Tenant Name"],
-						description: row["Tenant Name"],
+						id: ulid(),
+						name: tenantName,
+						description: tenantName,
 						operationId: operation!.id,
 						headOfTenantUserId: userId,
 					})
@@ -572,16 +623,16 @@ export async function bulkCreate(data: KnowledgeBulkCreateDTO, userId: string) {
 				tenantId: tenantId,
 				createdByUserId: userId,
 				access: data.access,
-				type: data.type,
-				category: row.Category,
-				subCategory: row["Sub Category"],
-				case: row.Case,
-				headline: row.Headline,
+				type: data.type as KnowledgeType,
+				category: category,
+				subCategory: subCategory,
+				case: caseName,
+				headline: headline,
 				status: KnowledgeStatus.PENDING,
 			})
 
-			if (row.Attachments && row.Attachments !== "") {
-				const attachments = row.Attachments.split(",")
+			if (attachmentStr && attachmentStr !== "") {
+				const attachments = attachmentStr.split(",")
 				for (const attachment of attachments) {
 					knwoledgeAttachmentCreateManyInput.push({
 						id: ulid(),
@@ -594,8 +645,8 @@ export async function bulkCreate(data: KnowledgeBulkCreateDTO, userId: string) {
 			knwoledgeContentCreateManyInput.push({
 				id: ulid(),
 				knowledgeId: knowledgeId,
-				title: row.Headline,
-				description: row.Description,
+				title: headline,
+				description: description,
 				order: 1,
 			})
 		}
@@ -645,34 +696,64 @@ export async function bulkCreateTypeCase(
 
 		const responseData = file.data
 		const workbook = XLSX.read(responseData, { type: "buffer" })
-		const knowledges = workbook.Sheets[workbook.SheetNames[2]]
 
-		const rowData: KnowledgeBulkCreateTypeCaseDataRow[] =
-			XLSX.utils.sheet_to_json<KnowledgeBulkCreateTypeCaseDataRow>(knowledges)
+		// Fallback: use 3rd sheet if exists, otherwise try "Knowledge" or "Case", then finally first sheet
+		let knowledges = workbook.Sheets[workbook.SheetNames[2]]
+		if (!knowledges) {
+			knowledges =
+				workbook.Sheets["Knowledge"] ||
+				workbook.Sheets["Case"] ||
+				workbook.Sheets[workbook.SheetNames[0]]
+		}
+
+		const rowData: any[] = XLSX.utils.sheet_to_json(knowledges)
 
 		const knowledgeCreateManyInput: Prisma.KnowledgeCreateManyInput[] = []
 		const knwoledgeContentCreateManyInput: Prisma.KnowledgeContentCreateManyInput[] =
 			[]
 
-		for (const row of rowData) {
-			let tenantId: string | undefined
-			if (row["Tenant Name"] && row["Tenant Name"] !== "") {
-				let tenant = await TenantRepository.getByName(row["Tenant Name"])
+		for (const rawRow of rowData) {
+			// Normalize row keys
+			const row: any = {}
+			for (const key in rawRow) {
+				row[key.trim().toLowerCase()] = rawRow[key]
+			}
 
-				if (row["Tenant Name"] === "DANA") {
-					tenant = await TenantRepository.getById("01K9201Z97H20E4NKTEANCFVCP")
-				}
+			const tenantName =
+				row["tenant name"] || row["tenant"] || row["nama tenant"] || row["unit"]
+			const headline =
+				row["detail case"] ||
+				row["headline"] ||
+				row["title"] ||
+				row["judul"] ||
+				row["nama pengetahuan"] ||
+				row["topik"]
+			const caseName = row["case"] || ""
+			const category = row["category"] || ""
+			const subCategory = row["sub category"] || row["subcategory"] || ""
+
+			if (!headline) {
+				Logger.warning(
+					"KnowledgeService.bulkCreateTypeCase: Skipping row due to missing headline column (expected: headline, title, judul, or topik)",
+					{
+						foundHeaders: Object.keys(row),
+						row: rawRow,
+					},
+				)
+				continue
+			}
+
+			let tenantId: string | undefined = data.tenantId
+			if (tenantName && tenantName !== "") {
+				let tenant = await TenantRepository.getByName(tenantName)
 
 				if (!tenant) {
 					const operation = await OperationRepository.findFirst()
 
 					tenant = await TenantRepository.create({
-						id:
-							row["Tenant Name"] === "DANA"
-								? "01K9201Z97H20E4NKTEANCFVCP"
-								: ulid(),
-						name: row["Tenant Name"],
-						description: row["Tenant Name"],
+						id: ulid(),
+						name: tenantName,
+						description: tenantName,
 						operationId: operation!.id,
 						headOfTenantUserId: userId,
 					})
@@ -687,112 +768,112 @@ export async function bulkCreateTypeCase(
 				tenantId: tenantId,
 				createdByUserId: userId,
 				access: data.access,
-				type: data.type,
-				headline: row["Detail Case"],
-				case: row["Case"],
-				category: row["Category"],
-				subCategory: row["Sub Category"],
+				type: data.type as KnowledgeType,
+				headline: headline,
+				case: caseName,
+				category: category,
+				subCategory: subCategory,
 				status: KnowledgeStatus.PENDING,
 			})
 
 			let order = 1
 
-			if (row["Merchant Name"] && row["Merchant Name"] !== "") {
+			if (row["merchant name"] && row["merchant name"] !== "") {
 				knwoledgeContentCreateManyInput.push({
 					id: ulid(),
 					knowledgeId: knowledgeId,
 					title: "Merchant Name",
-					description: row["Merchant Name"],
+					description: row["merchant name"],
 					order: order++,
 				})
 			}
 
-			if (row["Aggregator Name"] && row["Aggregator Name"] !== "") {
+			if (row["aggregator name"] && row["aggregator name"] !== "") {
 				knwoledgeContentCreateManyInput.push({
 					id: ulid(),
 					knowledgeId: knowledgeId,
 					title: "Aggregator Name",
-					description: row["Aggregator Name"],
+					description: row["aggregator name"],
 					order: order++,
 				})
 			}
 
-			if (row["Probing"] && row["Probing"] !== "") {
+			if (row["probing"] && row["probing"] !== "") {
 				knwoledgeContentCreateManyInput.push({
 					id: ulid(),
 					knowledgeId: knowledgeId,
 					title: "Probing",
-					description: row["Probing"],
+					description: row["probing"],
 					order: order++,
 				})
 			}
 
-			if (row["NEED KBA?"] && row["NEED KBA?"] !== "") {
+			if (row["need kba?"] && row["need kba?"] !== "") {
 				knwoledgeContentCreateManyInput.push({
 					id: ulid(),
 					knowledgeId: knowledgeId,
 					title: "NEED KBA?",
-					description: row["NEED KBA?"],
+					description: row["need kba?"],
 					order: order++,
 				})
 			}
 
-			if (row["FCR"] && row["FCR"] !== "") {
+			if (row["fcr"] && row["fcr"] !== "") {
 				knwoledgeContentCreateManyInput.push({
 					id: ulid(),
 					knowledgeId: knowledgeId,
 					title: "FCR",
-					description: row["FCR"],
+					description: row["fcr"],
 					order: order++,
 				})
 			}
 
-			if (row["Guidance"] && row["Guidance"] !== "") {
+			if (row["guidance"] && row["guidance"] !== "") {
 				knwoledgeContentCreateManyInput.push({
 					id: ulid(),
 					knowledgeId: knowledgeId,
 					title: "Guidance",
-					description: row["Guidance"],
+					description: row["guidance"],
 					order: order++,
 				})
 			}
 
-			if (row["Note"] && row["Note"] !== "") {
+			if (row["note"] && row["note"] !== "") {
 				knwoledgeContentCreateManyInput.push({
 					id: ulid(),
 					knowledgeId: knowledgeId,
 					title: "Note",
-					description: row["Note"],
+					description: row["note"],
 					order: order++,
 				})
 			}
 
-			if (row["SLA ESCALATION"] && row["SLA ESCALATION"] !== "") {
+			if (row["sla escalation"] && row["sla escalation"] !== "") {
 				knwoledgeContentCreateManyInput.push({
 					id: ulid(),
 					knowledgeId: knowledgeId,
 					title: "SLA ESCALATION",
-					description: row["SLA ESCALATION"],
+					description: row["sla escalation"],
 					order: order++,
 				})
 			}
 
-			if (row["Assign"] && row["Assign"] !== "") {
+			if (row["assign"] && row["assign"] !== "") {
 				knwoledgeContentCreateManyInput.push({
 					id: ulid(),
 					knowledgeId: knowledgeId,
 					title: "Assign",
-					description: row["Assign"],
+					description: row["assign"],
 					order: order++,
 				})
 			}
 
-			if (row["Keterangan"] && row["Keterangan"] !== "") {
+			if (row["keterangan"] && row["keterangan"] !== "") {
 				knwoledgeContentCreateManyInput.push({
 					id: ulid(),
 					knowledgeId: knowledgeId,
 					title: "Keterangan",
-					description: row["Keterangan"],
+					description: row["keterangan"],
 					order: order++,
 				})
 			}

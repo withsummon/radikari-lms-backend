@@ -58,7 +58,10 @@ export async function logIn(data: UserLoginDTO): Promise<ServiceResponse<any>> {
 		Logger.error(`AuthService.login`, {
 			error: err,
 		})
-		return HandleServiceResponseCustomError("Internal Server Error", 500)
+		return HandleServiceResponseCustomError(
+			`Internal Server Error: ${err instanceof Error ? err.message : String(err)}`,
+			500,
+		)
 	}
 }
 
