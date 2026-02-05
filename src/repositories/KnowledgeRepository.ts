@@ -336,6 +336,7 @@ export async function getSummary(
 
 	usedFilters.query.where.AND.push({
 		tenantId, // Filter by tenant first
+		isArchived: false,
 	})
 
 	usedFilters.query.where.AND.push({
