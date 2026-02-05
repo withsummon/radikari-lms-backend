@@ -67,6 +67,7 @@ export interface KnowledgeBulkCreateDTO {
 	type: KnowledgeType
 	emails: string[]
 	fileUrl: string
+	tenantId?: string
 }
 
 export interface KnowledgeBulkCreateDataRow {

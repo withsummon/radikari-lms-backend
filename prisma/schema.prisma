@@ -524,6 +524,7 @@ model AssignmentUserAccess {
 
 enum AssignmentQuestionType {
   MULTIPLE_CHOICE
+  MULTIPLE_SELECT
   ESSAY
   TRUE_FALSE
 }
@@ -553,6 +554,7 @@ model AssignmentQuestionOption {
 
   assignmentQuestion                   AssignmentQuestion                    @relation(fields: [assignmentQuestionId], references: [id], onDelete: Cascade)
   assignmentUserAttemptQuestionAnswers AssignmentUserAttemptQuestionAnswer[]
+  assignmentUserAttemptQuestionAnswerOptions AssignmentUserAttemptQuestionAnswerOption[]
 }
 
 model AssignmentQuestionTrueFalseAnswer {
@@ -607,8 +609,21 @@ model AssignmentUserAttemptQuestionAnswer {
   assignmentQuestion       AssignmentQuestion        @relation(fields: [assignmentQuestionId], references: [id], onDelete: Cascade)
   assignmentQuestionOption AssignmentQuestionOption? @relation(fields: [assignmentQuestionOptionId], references: [id], onDelete: Cascade)
   gradedByUser             User?                     @relation(fields: [gradedByUserId], references: [id], onDelete: Cascade)
+  
+  selectedOptions          AssignmentUserAttemptQuestionAnswerOption[]
 
   @@unique([assignmentUserAttemptId, assignmentQuestionId])
+}
+
+model AssignmentUserAttemptQuestionAnswerOption {
+  id                                String                              @id @unique
+  assignmentUserAttemptQuestionAnswerId String
+  assignmentQuestionOptionId        String
+
+  assignmentUserAttemptQuestionAnswer AssignmentUserAttemptQuestionAnswer @relation(fields: [assignmentUserAttemptQuestionAnswerId], references: [id], onDelete: Cascade)
+  assignmentQuestionOption            AssignmentQuestionOption            @relation(fields: [assignmentQuestionOptionId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentUserAttemptQuestionAnswerId, assignmentQuestionOptionId])
 }
 
 model Announcement {

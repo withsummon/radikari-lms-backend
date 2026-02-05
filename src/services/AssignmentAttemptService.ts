@@ -310,6 +310,33 @@ export async function calculateAssignmentScore(
 						score += (userAttemptAnswer as any).points || 0
 					}
 					break
+				case AssignmentQuestionType.MULTIPLE_SELECT: {
+					const correctQuestion = correctAnswers.find(
+						(answer) => answer.id === userAttemptAnswer.assignmentQuestionId,
+					)
+					const correctOptionIds =
+						correctQuestion?.assignmentQuestionOptions
+							.filter((o) => o.isCorrectAnswer)
+							.map((o) => o.id) || []
+
+					const userSelectedOptionIds =
+						(userAttemptAnswer as any).selectedOptions?.map(
+							(o: any) => o.assignmentQuestionOptionId,
+						) || []
+
+					// Strict scoring: All correct options selected, no incorrect options selected
+					const isStrictlyCorrect =
+						userSelectedOptionIds.length === correctOptionIds.length &&
+						correctOptionIds.every((id: string) =>
+							userSelectedOptionIds.includes(id),
+						)
+
+					if (isStrictlyCorrect) {
+						isCorrect = true
+						score += (userAttemptAnswer as any).points || 0
+					}
+					break
+				}
 				case AssignmentQuestionType.TRUE_FALSE:
 					let correctAnswer = correctAnswers.find(
 						(answer) => answer.id === userAttemptAnswer.assignmentQuestionId,
@@ -476,6 +503,22 @@ export async function getAllQuestionsAndAnswers(
 						}
 					}),
 					userAnswer: assignmentUserAttemptAnswer?.assignmentQuestionOptionId,
+				}
+			} else if (question.type === AssignmentQuestionType.MULTIPLE_SELECT) {
+				return {
+					id: question.id,
+					order: question.order,
+					content: question.content,
+					type: question.type,
+					options: question.assignmentQuestionOptions.map((option) => {
+						return {
+							id: option.id,
+							content: option.content,
+						}
+					}),
+					userAnswer: (
+						assignmentUserAttemptAnswer as any
+					)?.selectedOptions?.map((o: any) => o.assignmentQuestionOptionId),
 				}
 			} else if (question.type === AssignmentQuestionType.ESSAY) {
 				return {

@@ -22,9 +22,7 @@ async function main() {
 
 	console.log(`🔍 Found ${consumerRoles.length} CONSUMER roles.`)
 
-	const requiredPermissions = [
-		{ featureName: "TENANT", actionName: "VIEW" },
-	]
+	const requiredPermissions = [{ featureName: "TENANT", actionName: "VIEW" }]
 
 	const unauthorizedPermissions = [
 		{ featureName: "TENANT", actionName: "CREATE" },

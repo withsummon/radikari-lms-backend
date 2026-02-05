@@ -13,8 +13,10 @@ import {
 } from "$entities/Knowledge"
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { UserJWTDAO } from "$entities/User"
+import { KnowledgeType } from "../../../generated/prisma/client"
 import { KnowledgeShareDTO } from "$entities/Knowledge"
 import { attachOverdueToKnowledgeList } from "$utils/knowledgeOverdue.utils"
+import Logger from "$pkg/logger"
 
 export async function create(c: Context): Promise<TypedResponse> {
 	const data: KnowledgeDTO = await c.req.json()
@@ -216,7 +218,22 @@ export async function bulkCreate(c: Context): Promise<TypedResponse> {
 	const data: KnowledgeBulkCreateDTO = await c.req.json()
 	const user: UserJWTDAO = c.get("jwtPayload")
 
-	const serviceResponse = await KnowledgeService.bulkCreate(data, user.id)
+	Logger.info("bulkCreate called with data:", {
+		type: data.type,
+		access: data.access,
+		fileUrl: data.fileUrl,
+		KnowledgeTypeCASE: KnowledgeType.CASE,
+		isTypeEqual: data.type === KnowledgeType.CASE,
+	})
+
+	let serviceResponse
+	if (data.type === KnowledgeType.CASE) {
+		Logger.info("Calling bulkCreateTypeCase service", {})
+		serviceResponse = await KnowledgeService.bulkCreateTypeCase(data, user.id)
+	} else {
+		Logger.info("Calling bulkCreate service (for ARTICLE)", {})
+		serviceResponse = await KnowledgeService.bulkCreate(data, user.id)
+	}
 
 	if (!serviceResponse.status) {
 		return handleServiceErrorWithResponse(c, serviceResponse)

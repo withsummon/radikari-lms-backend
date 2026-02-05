@@ -59,51 +59,73 @@ export async function updateAnswer(
 	assignmentUserAttemptId: string,
 	data: AssignmentUserAttemptAnswerDTO,
 ) {
-	const answerAttempt =
-		await prisma.assignmentUserAttemptQuestionAnswer.findUnique({
+	return await prisma.$transaction(async (tx) => {
+		const answerAttempt =
+			await tx.assignmentUserAttemptQuestionAnswer.findUnique({
+				where: {
+					assignmentUserAttemptId_assignmentQuestionId: {
+						assignmentUserAttemptId,
+						assignmentQuestionId: data.assignmentQuestionId,
+					},
+				},
+			})
+
+		if (!answerAttempt) {
+			throw new Error("Assignment user attempt question answer not found")
+		}
+
+		let dataToUpdate: any = {}
+
+		switch (answerAttempt.type) {
+			case AssignmentQuestionType.MULTIPLE_CHOICE:
+				dataToUpdate = {
+					assignmentQuestionOptionId: data.optionAnswerId,
+				}
+				break
+			case AssignmentQuestionType.MULTIPLE_SELECT:
+				if (data.optionAnswerIds) {
+					// 1. Clear existing options
+					await tx.assignmentUserAttemptQuestionAnswerOption.deleteMany({
+						where: {
+							assignmentUserAttemptQuestionAnswerId: answerAttempt.id,
+						},
+					})
+
+					// 2. Insert new options
+					if (data.optionAnswerIds.length > 0) {
+						await tx.assignmentUserAttemptQuestionAnswerOption.createMany({
+							data: data.optionAnswerIds.map((optId) => ({
+								id: ulid(),
+								assignmentUserAttemptQuestionAnswerId: answerAttempt.id,
+								assignmentQuestionOptionId: optId,
+							})),
+						})
+					}
+				}
+				break
+			case AssignmentQuestionType.ESSAY:
+				dataToUpdate = {
+					essayAnswer: data.essayAnswer,
+				}
+				break
+			case AssignmentQuestionType.TRUE_FALSE:
+				dataToUpdate = {
+					trueFalseAnswer: data.trueFalseAnswer,
+				}
+				break
+			default:
+				throw new Error("Assignment question type not supported")
+		}
+
+		return await tx.assignmentUserAttemptQuestionAnswer.update({
 			where: {
 				assignmentUserAttemptId_assignmentQuestionId: {
 					assignmentUserAttemptId,
 					assignmentQuestionId: data.assignmentQuestionId,
 				},
 			},
+			data: dataToUpdate,
 		})
-
-	if (!answerAttempt) {
-		// This should ideally be handled in the service layer, but as a safeguard:
-		throw new Error("Assignment user attempt question answer not found")
-	}
-
-	let dataToUpdate: any = {}
-
-	switch (answerAttempt.type) {
-		case AssignmentQuestionType.MULTIPLE_CHOICE:
-			dataToUpdate = {
-				assignmentQuestionOptionId: data.optionAnswerId,
-			}
-			break
-		case AssignmentQuestionType.ESSAY:
-			dataToUpdate = {
-				essayAnswer: data.essayAnswer,
-			}
-			break
-		case AssignmentQuestionType.TRUE_FALSE:
-			dataToUpdate = {
-				trueFalseAnswer: data.trueFalseAnswer,
-			}
-			break
-		default:
-			throw new Error("Assignment question type not supported")
-	}
-
-	return await prisma.assignmentUserAttemptQuestionAnswer.update({
-		where: {
-			assignmentUserAttemptId_assignmentQuestionId: {
-				assignmentUserAttemptId,
-				assignmentQuestionId: data.assignmentQuestionId,
-			},
-		},
-		data: dataToUpdate,
 	})
 }
 
@@ -185,6 +207,7 @@ export async function getAllUserAttemptAnswers(
 		},
 		include: {
 			assignmentQuestionOption: true,
+			selectedOptions: true,
 		},
 	})
 }
@@ -332,7 +355,12 @@ export async function getHistoryUserAssignmentAttempts(
 					},
 				},
 			},
-			assignmentUserAttemptQuestionAnswers: true,
+			assignmentUserAttemptQuestionAnswers: {
+				include: {
+					selectedOptions: true,
+					assignmentQuestionOption: true,
+				},
+			},
 		},
 	})
 }

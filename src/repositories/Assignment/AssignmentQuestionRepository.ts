@@ -32,6 +32,7 @@ export async function createMany(
 
 		switch (item.type) {
 			case AssignmentQuestionType.MULTIPLE_CHOICE:
+			case AssignmentQuestionType.MULTIPLE_SELECT:
 				questionOptionCreateManyInput.push(
 					...options.map((option) => ({
 						...option,
@@ -130,7 +131,8 @@ export async function updateMany(
 
 			// Handle Relation Updates based on Type
 			switch (questionData.type) {
-				case AssignmentQuestionType.MULTIPLE_CHOICE: {
+				case AssignmentQuestionType.MULTIPLE_CHOICE:
+				case AssignmentQuestionType.MULTIPLE_SELECT: {
 					// Smart Update Options to preserve IDs (and User Answers!)
 					const incomingOptions = questionData.options || []
 					const existingOptions = existingQ.assignmentQuestionOptions
@@ -233,6 +235,7 @@ export async function updateMany(
 			// Create Relations
 			switch (questionData.type) {
 				case AssignmentQuestionType.MULTIPLE_CHOICE:
+				case AssignmentQuestionType.MULTIPLE_SELECT:
 					if (questionData.options?.length) {
 						await tx.assignmentQuestionOption.createMany({
 							data: questionData.options.map((o) => ({
