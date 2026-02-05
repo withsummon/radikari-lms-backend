@@ -10,13 +10,13 @@
 ALTER TYPE "AssignmentQuestionType" ADD VALUE 'MULTIPLE_SELECT';
 
 -- DropIndex
-DROP INDEX "MasterKnowledgeCase_name_key";
+DROP INDEX IF EXISTS "MasterKnowledgeCase_name_key";
 
 -- DropIndex
-DROP INDEX "MasterKnowledgeCategory_name_key";
+DROP INDEX IF EXISTS "MasterKnowledgeCategory_name_key";
 
 -- DropIndex
-DROP INDEX "MasterKnowledgeSubCategory_name_key";
+DROP INDEX IF EXISTS "MasterKnowledgeSubCategory_name_key";
 
 -- AlterTable
 ALTER TABLE "MasterKnowledgeCase" ADD COLUMN     "subCategoryId" TEXT,
