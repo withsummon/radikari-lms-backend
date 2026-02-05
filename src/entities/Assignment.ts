@@ -81,6 +81,7 @@ export interface AssignmentAttemptDTO {
 export interface AssignmentUserAttemptAnswerDTO {
 	assignmentQuestionId: string
 	optionAnswerId?: string
+	optionAnswerIds?: string[] // Multiple select answer
 	essayAnswer?: string
 	trueFalseAnswer?: boolean
 }
