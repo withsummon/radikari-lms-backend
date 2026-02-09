@@ -99,7 +99,7 @@ export async function validateBulkCreateKnowledgeSchema(
 		type: data.type,
 		typeIsValid: data.type === "CASE" || data.type === "ARTICLE",
 		access: data.access,
-		fileUrl: data.fileUrl,
+		fileUrls: data.fileUrls,
 	})
 
 	let invalidFields: Helpers.ErrorStructure[] = Helpers.validateSchema(

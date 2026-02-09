@@ -66,7 +66,7 @@ export interface KnowledgeBulkCreateDTO {
 	access: KnowledgeAccess
 	type: KnowledgeType
 	emails: string[]
-	fileUrl: string
+	fileUrls: string[]
 	tenantId?: string
 }
 
