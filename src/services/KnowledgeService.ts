@@ -73,7 +73,6 @@ export async function getAll(
 	filters: EzFilter.FilteringQuery,
 ): Promise<ServiceResponse<EzFilter.PaginatedResult<Knowledge[]> | {}>> {
 	try {
-		console.log(filters)
 		const data = await KnowledgeRepository.getAll(user, tenantId, filters)
 		return HandleServiceResponseSuccess(data)
 	} catch (err) {
@@ -425,7 +424,7 @@ function generateKnowledgeQueueDTO(
 						) {
 							return "SPREADSHEET"
 						}
-						if (extensions.includes("pdf")) {
+						if (extensions.includes("pdf") || extensions.includes("docx")) {
 							return "PDF"
 						}
 						return "IMAGE"
@@ -532,148 +531,68 @@ export async function sendKnowledgeApprovalNotification(
 
 export async function bulkCreate(data: KnowledgeBulkCreateDTO, userId: string) {
 	try {
-		const file = await axios.get(data.fileUrl, {
-			responseType: "arraybuffer",
+		const fileUrls = data.fileUrls
+		Logger.info("bulkCreate: Starting with", {
+			fileUrls,
+			type: data.type,
+			access: data.access,
 		})
 
-		const responseData = file.data
-		const workbook = XLSX.read(responseData, { type: "buffer" })
+		// Separate Excel files from PDF/DOCX files
+		const excelFiles = fileUrls.filter((url) => {
+			const ext = url.split(".").pop()?.toLowerCase() || ""
+			return ["xlsx", "xls", "csv"].includes(ext)
+		})
 
-		// Fallback: use 3rd sheet if exists, otherwise try "Knowledge", then finally first sheet
-		let knowledges = workbook.Sheets[workbook.SheetNames[2]]
-		if (!knowledges) {
-			knowledges =
-				workbook.Sheets["Knowledge"] || workbook.Sheets[workbook.SheetNames[0]]
-		}
+		const documentFiles = fileUrls.filter((url) => {
+			const ext = url.split(".").pop()?.toLowerCase() || ""
+			return ["pdf", "docx"].includes(ext)
+		})
 
-		const rowData: any[] = XLSX.utils.sheet_to_json(knowledges)
+		Logger.info("bulkCreate: Excel files found", { excelFiles, documentFiles })
 
-		const knowledgeCreateManyInput: Prisma.KnowledgeCreateManyInput[] = []
-		const knwoledgeAttachmentCreateManyInput: Prisma.KnowledgeAttachmentCreateManyInput[] =
-			[]
-		const knwoledgeContentCreateManyInput: Prisma.KnowledgeContentCreateManyInput[] =
-			[]
+		// Process ALL files as attachments to a SINGLE knowledge entry
+		const allFiles = [...excelFiles, ...documentFiles]
 
-		for (const rawRow of rowData) {
-			// Normalize row keys to handle case-insensitivity
-			const row: any = {}
-			for (const key in rawRow) {
-				row[key.trim().toLowerCase()] = rawRow[key]
-			}
-
-			// Column name mapping (flexible with Indonesian support)
-			const tenantName =
-				row["tenant name"] || row["tenant"] || row["nama tenant"] || row["unit"]
-			const headline =
-				row["headline"] ||
-				row["title"] ||
-				row["judul"] ||
-				row["nama pengetahuan"] ||
-				row["topik"]
-			const category = row["category"] || row["kategori"] || ""
-			const subCategory =
-				row["sub category"] || row["subcategory"] || row["sub kategori"] || ""
-			const caseName = row["case"] || row["kasus"] || row["tipe kasus"] || ""
-			const description =
-				row["description"] ||
-				row["deskripsi"] ||
-				row["isi"] ||
-				row["penjelasan"] ||
-				""
-			const attachmentStr =
-				row["attachments"] ||
-				row["attachment"] ||
-				row["lampiran"] ||
-				row["link"] ||
-				""
-
-			if (!headline) {
-				Logger.warning(
-					"KnowledgeService.bulkCreate: Skipping row due to missing headline column (expected: headline, title, judul, or topik)",
-					{
-						foundHeaders: Object.keys(row),
-						row: rawRow,
-					},
-				)
-				continue
-			}
-
-			let tenantId: string | undefined = data.tenantId
-			if (tenantName && tenantName !== "") {
-				let tenant = await TenantRepository.getByName(tenantName)
-
-				if (!tenant) {
-					const operation = await OperationRepository.findFirst()
-
-					tenant = await TenantRepository.create({
-						id: ulid(),
-						name: tenantName,
-						description: tenantName,
-						operationId: operation!.id,
-						headOfTenantUserId: userId,
-					})
-				}
-
-				tenantId = tenant.id
-			}
-
+		if (allFiles.length > 0) {
 			const knowledgeId = ulid()
-			knowledgeCreateManyInput.push({
+			const knowledgeCreateInput: Prisma.KnowledgeCreateManyInput = {
 				id: knowledgeId,
-				tenantId: tenantId,
+				tenantId: data.tenantId,
 				createdByUserId: userId,
 				access: data.access,
 				type: data.type as KnowledgeType,
-				category: category,
-				subCategory: subCategory,
-				case: caseName,
-				headline: headline,
+				headline: `Bulk Upload - ${new Date().toLocaleDateString("id-ID")}`,
 				status: KnowledgeStatus.PENDING,
-			})
-
-			if (attachmentStr && attachmentStr !== "") {
-				const attachments = attachmentStr.split(",")
-				for (const attachment of attachments) {
-					knwoledgeAttachmentCreateManyInput.push({
-						id: ulid(),
-						knowledgeId: knowledgeId,
-						attachmentUrl: attachment,
-					})
-				}
 			}
 
-			knwoledgeContentCreateManyInput.push({
+			await KnowledgeRepository.createMany([knowledgeCreateInput])
+
+			// Create attachments for ALL files
+			const attachmentInputs: Prisma.KnowledgeAttachmentCreateManyInput[] =
+				allFiles.map((fileUrl) => ({
+					id: ulid(),
+					knowledgeId: knowledgeId,
+					attachmentUrl: fileUrl,
+				}))
+			await KnowledgeRepository.createManyAttachments(attachmentInputs)
+
+			// Create content
+			const contentInput: Prisma.KnowledgeContentCreateManyInput = {
 				id: ulid(),
 				knowledgeId: knowledgeId,
-				title: headline,
-				description: description,
+				title: "Uploaded Files",
+				description: `${allFiles.length} file(s) uploaded via bulk upload`,
 				order: 1,
-			})
-		}
-
-		await KnowledgeRepository.createMany(knowledgeCreateManyInput)
-		await KnowledgeRepository.createManyAttachments(
-			knwoledgeAttachmentCreateManyInput,
-		)
-		await KnowledgeRepository.createManyContent(knwoledgeContentCreateManyInput)
-
-		const knowledgeIds = knowledgeCreateManyInput.map((k) => k.id as string)
-		const createdKnowledges = await KnowledgeRepository.getByIds(knowledgeIds)
-		const pubsub = GlobalPubSub.getInstance().getPubSub()
-
-		for (const knowledge of createdKnowledges) {
-			const payload = generateKnowledgeQueueDTO(knowledge as any)
-			try {
-				await pubsub.sendToQueue(PUBSUB_TOPICS.KNOWLEDGE_CREATE, payload)
-			} catch (mqError) {
-				Logger.warning(
-					"KnowledgeService.bulkCreate: Failed to publish create event",
-					{
-						error: mqError,
-						knowledgeId: knowledge.id,
-					},
-				)
 			}
+			await KnowledgeRepository.createManyContent([contentInput])
+
+			Logger.info("bulkCreate: Completed successfully", {
+				knowledgeId,
+				filesCount: allFiles.length,
+			})
+		} else {
+			Logger.info("bulkCreate: No files to process", {})
 		}
 
 		return HandleServiceResponseSuccess({})
@@ -690,7 +609,17 @@ export async function bulkCreateTypeCase(
 	userId: string,
 ) {
 	try {
-		const file = await axios.get(data.fileUrl, {
+		// Only process the first Excel file
+		const excelFiles = data.fileUrls.filter((url) => {
+			const ext = url.split(".").pop()?.toLowerCase() || ""
+			return ["xlsx", "xls", "csv"].includes(ext)
+		})
+
+		if (excelFiles.length === 0) {
+			return HandleServiceResponseSuccess({})
+		}
+
+		const file = await axios.get(excelFiles[0], {
 			responseType: "arraybuffer",
 		})
 
@@ -879,8 +808,33 @@ export async function bulkCreateTypeCase(
 			}
 		}
 
+		// Error if no valid rows found
+		if (knowledgeCreateManyInput.length === 0) {
+			Logger.error("bulkCreateTypeCase: No valid rows found in Excel file", {
+				totalRows: rowData.length,
+				headers: Object.keys(rowData[0] || {}),
+				expectedColumn:
+					"headline (or title, judul, nama pengetahuan, topik, detail case)",
+			})
+			return HandleServiceResponseCustomError(
+				"Tidak ada data yang valid di Excel. Pastikan ada kolom 'headline' atau 'detail case' dengan data.",
+				400,
+			)
+		}
+
 		await KnowledgeRepository.createMany(knowledgeCreateManyInput)
 		await KnowledgeRepository.createManyContent(knwoledgeContentCreateManyInput)
+
+		// FIX: Also attach the uploaded Excel file to all created knowledge entries
+		if (excelFiles.length > 0) {
+			const excelFileAttachmentInput: Prisma.KnowledgeAttachmentCreateManyInput[] =
+				knowledgeCreateManyInput.map((knowledge) => ({
+					id: ulid(),
+					knowledgeId: knowledge.id as string,
+					attachmentUrl: excelFiles[0],
+				}))
+			await KnowledgeRepository.createManyAttachments(excelFileAttachmentInput)
+		}
 
 		const knowledgeIds = knowledgeCreateManyInput.map((k) => k.id as string)
 		const createdKnowledges = await KnowledgeRepository.getByIds(knowledgeIds)

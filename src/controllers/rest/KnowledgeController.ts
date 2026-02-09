@@ -221,7 +221,7 @@ export async function bulkCreate(c: Context): Promise<TypedResponse> {
 	Logger.info("bulkCreate called with data:", {
 		type: data.type,
 		access: data.access,
-		fileUrl: data.fileUrl,
+		fileUrls: data.fileUrls,
 		KnowledgeTypeCASE: KnowledgeType.CASE,
 		isTypeEqual: data.type === KnowledgeType.CASE,
 	})
