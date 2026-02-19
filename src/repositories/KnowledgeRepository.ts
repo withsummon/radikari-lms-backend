@@ -418,6 +418,7 @@ export async function getById(id: string) {
 			version: true,
 			parentId: true,
 			rejectionComment: true,
+			isDownloadHidden: true,
 			userKnowledge: {
 				select: {
 					user: {
@@ -508,6 +509,7 @@ export async function getByIds(ids: string[]) {
 			version: true,
 			parentId: true,
 			rejectionComment: true,
+			isDownloadHidden: true,
 			userKnowledge: {
 				select: {
 					user: {

@@ -114,6 +114,7 @@ export const KnowlegeSchema = z.object({
 			}),
 		)
 		.optional(),
+	isDownloadHidden: z.boolean().optional(),
 })
 
 export const KnowledgeApprovalSchema = z

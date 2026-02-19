@@ -21,6 +21,7 @@ export interface KnowledgeDTO {
 	contents: KnowledgeContentDTO[]
 	parentId?: string
 	version: number
+	isDownloadHidden?: boolean
 }
 
 export interface KnowledgeAttachmentDTO {

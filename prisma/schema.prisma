@@ -302,6 +302,9 @@ model Knowledge {
   // ✅ [NEW FEATURE]: Share Knowledge Relation
   knowledgeShares KnowledgeShare[]
 
+  // ✅ [NEW FEATURE]: Hide Download Button
+  isDownloadHidden Boolean @default(false)
+
   @@unique([parentId, version])
   @@index([tenantId, access])
   @@index([createdByUserId])
