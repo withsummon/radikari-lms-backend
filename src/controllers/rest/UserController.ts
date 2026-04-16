@@ -8,9 +8,19 @@ import {
 import * as EzFilter from "@nodewave/prisma-ezfilter"
 import { Context, TypedResponse } from "hono"
 import { UserJWTDAO } from "$entities/User"
+import { randomUUID } from "node:crypto"
 
 export async function create(c: Context): Promise<TypedResponse> {
-	const data: CreateUserDTO = await c.req.json()
+	const body = await c.req.json()
+
+	const data: CreateUserDTO = {
+		...body,
+		id: randomUUID(),
+		password:
+			typeof body.password === "string" && body.password.trim().length > 0
+				? await Bun.password.hash(body.password, "argon2id")
+				: "",
+	}
 
 	const serviceResponse = await UserService.create(data)
 	if (!serviceResponse.status) {

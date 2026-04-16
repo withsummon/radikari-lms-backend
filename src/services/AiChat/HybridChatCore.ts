@@ -9,7 +9,7 @@ import {
 import { openai } from "@ai-sdk/openai"
 import { qdrantClient } from "$pkg/qdrant"
 import Logger from "$pkg/logger"
-import { getById } from "$repositories/KnowledgeRepository"
+import { getById, getByIds } from "$repositories/KnowledgeRepository"
 import { createGoogleGenerativeAI } from "@ai-sdk/google"
 import { checkTokenLimit } from "$services/Tenant/TenantLimitService"
 import * as AiPromptService from "$services/AiPromptService"
@@ -127,7 +127,29 @@ export async function executeHybridChatCore({
 					}
 				}
 
-				const resultsForClient = uniqueResults.slice(0, 10)
+				const knowledgeIds = [
+					...new Set(
+						uniqueResults
+							.map((r) => (r.payload as any)?.knowledge_id)
+							.filter(Boolean),
+					),
+				] as string[]
+
+				const knowledgeRecords = await getByIds(knowledgeIds)
+				const approvedIds = new Set(
+					knowledgeRecords
+						.filter(
+							(k) =>
+								k.status === KnowledgeStatus.APPROVED && !k.isArchived,
+						)
+						.map((k) => k.id),
+				)
+
+				const approvedResults = uniqueResults.filter((item) =>
+					approvedIds.has((item.payload as any)?.knowledge_id),
+				)
+
+				const resultsForClient = approvedResults.slice(0, 10)
 				for (const item of resultsForClient) {
 					const payload = item.payload as any
 					if (!payload) continue
@@ -144,7 +166,7 @@ export async function executeHybridChatCore({
 					} as any)
 				}
 
-				const topThreeResults = uniqueResults.slice(0, 3)
+				const topThreeResults = approvedResults.slice(0, 3)
 				const contextParts: string[] = []
 
 				for (const result of topThreeResults) {
@@ -158,8 +180,6 @@ export async function executeHybridChatCore({
 					try {
 						const fullKnowledge = await getById(knowledgeId)
 						if (!fullKnowledge) continue
-
-						if (fullKnowledge.status !== KnowledgeStatus.APPROVED) continue
 
 						let contextPart = `[${fullKnowledge.headline}] (Relevance Score: ${
 							score?.toFixed(3) || "N/A"

@@ -20,7 +20,6 @@ export async function create(
 	data: CreateUserDTO,
 ): Promise<ServiceResponse<CreateResponse>> {
 	try {
-		data.password = await Bun.password.hash(data.password, "argon2id")
 		const user = await UserRepository.create(data)
 		return {
 			status: true,
@@ -57,7 +56,12 @@ export async function getAll(
 					}
 				}
 
-				newFilters.push({ key: "_scopedTenantId", value: tenantId })
+				const hasExplicitTenantId = newFilters.some(
+					(f: any) => f.key === "tenantId",
+				)
+				if (!hasExplicitTenantId) {
+					newFilters.push({ key: "_scopedTenantId", value: tenantId })
+				}
 				filters.filters = newFilters
 			}
 		}
