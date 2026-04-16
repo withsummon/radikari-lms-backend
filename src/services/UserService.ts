@@ -20,7 +20,6 @@ export async function create(
 	data: CreateUserDTO,
 ): Promise<ServiceResponse<CreateResponse>> {
 	try {
-		data.password = await Bun.password.hash(data.password, "argon2id")
 		const user = await UserRepository.create(data)
 		return {
 			status: true,

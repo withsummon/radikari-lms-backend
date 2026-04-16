@@ -1,28 +1,29 @@
 import { z } from "zod"
 import { ErrorMessages } from "./ErrorMessages"
 
-export const UserValidationCreateSchema = z
-	.strictObject({
-		fullName: z
-			.string({
-				error: (issue) => (issue.input === undefined ? undefined : undefined),
-			})
-			.min(5, ErrorMessages.user.fullName.min),
-		email: z.string({
+export const UserValidationCreateSchema = z.object({
+	fullName: z
+		.string({
 			error: (issue) => (issue.input === undefined ? undefined : undefined),
-		}),
-		password: z
-			.string({
-				error: (issue) => (issue.input === undefined ? undefined : undefined),
-			})
-			.min(5, ErrorMessages.user.password.min),
-		phoneNumber: z
-			.string({
-				error: (issue) => (issue.input === undefined ? undefined : undefined),
-			})
-			.min(10, ErrorMessages.user.phoneNumber.min),
-	})
-	.strict()
+		})
+		.min(5, ErrorMessages.user.fullName.min),
+	email: z.string({
+		error: (issue) => (issue.input === undefined ? undefined : undefined),
+	}),
+	password: z
+		.string({
+			error: (issue) => (issue.input === undefined ? undefined : undefined),
+		})
+		.min(5, ErrorMessages.user.password.min)
+		.optional()
+		.or(z.literal("")),
+	phoneNumber: z
+		.string({
+			error: (issue) => (issue.input === undefined ? undefined : undefined),
+		})
+		.min(10, ErrorMessages.user.phoneNumber.min),
+	profilePictureUrl: z.string().optional().nullable(),
+})
 
 export const UserValidationUpdateSchema = z
 	.strictObject({
