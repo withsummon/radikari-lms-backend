@@ -60,6 +60,7 @@ export async function validateAssignmentSchema(c: Context, next: Next) {
 
 		switch (question.type) {
 			case AssignmentQuestionType.MULTIPLE_CHOICE:
+			case AssignmentQuestionType.MULTIPLE_SELECT:
 				invalidFields.push(
 					...Helpers.validateSchema(AssignmentQuestionOptionSchema, options),
 				)

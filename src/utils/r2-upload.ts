@@ -139,11 +139,12 @@ export class R2Upload {
 	}
 
 	validateImageFile(file: File): { isValid: boolean; error?: string } {
-		const maxSize = 5 * 1024 * 1024 // 5MB
+		const maxSizeMB = Number(process.env.MAX_UPLOAD_SIZE_MB) || 5
+		const maxSize = maxSizeMB * 1024 * 1024
 		if (file.size > maxSize) {
 			return {
 				isValid: false,
-				error: "File size too large. Maximum size is 5MB.",
+				error: `File size too large. Maximum size is ${maxSizeMB}MB.`,
 			}
 		}
 		return { isValid: true }
